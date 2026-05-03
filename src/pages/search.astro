@@ -1,0 +1,135 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+
+const normalizedPosts = [
+  ...(await getCollection('blog')).filter((post) => !post.data.draft),
+  ...(await getCollection('notes')).filter((post) => !post.data.draft),
+  ...(await getCollection('important')).filter((post) => !post.data.draft)
+]
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
+  .map((post) => ({
+    title: post.data.title,
+    summary: post.data.summary,
+    tags: post.data.tags,
+    category: post.data.category,
+    collection: post.collection,
+    slug: post.slug,
+    date: post.data.date.toISOString(),
+    updated: post.data.updated.toISOString()
+  }));
+---
+
+<BaseLayout title="搜索" description="站内文章快速检索">
+  <section class="space-y-6">
+    <header>
+      <h1 class="text-3xl font-bold">站内搜索</h1>
+      <p class="mt-2 text-sm text-slate-600 dark:text-slate-300">支持标题、摘要、标签与分类关键词匹配</p>
+    </header>
+
+    <form class="flex" role="search" id="search-form">
+      <label for="search-input" class="sr-only">搜索</label>
+      <input
+        id="search-input"
+        type="search"
+        placeholder="输入关键词"
+        class="w-full rounded-l-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-800"
+      />
+      <button
+        type="submit"
+        class="rounded-r-md border border-slate-300 bg-slate-100 px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-700"
+      >
+        搜索
+      </button>
+    </form>
+
+    <p id="count" class="text-sm text-slate-500 dark:text-slate-300"></p>
+    <div id="search-result" class="space-y-3"></div>
+  </section>
+
+  <script is:inline>
+    const allPosts = ${JSON.stringify(normalizedPosts)};
+    const input = document.getElementById('search-input');
+    const result = document.getElementById('search-result');
+    const count = document.getElementById('count');
+    const form = document.getElementById('search-form');
+
+    function toUrl(post) {
+      if (post.collection === 'blog') return `/blog/${post.slug}`;
+      if (post.collection === 'notes') return `/notes/${post.slug}`;
+      return `/important/${post.slug}`;
+    }
+
+    function textLower(value) {
+      return String(value || '').toLowerCase();
+    }
+
+    function filterPosts(query) {
+      const keyword = query.trim().toLowerCase();
+      if (!keyword) return allPosts;
+      return allPosts.filter((item) => {
+        const tags = textLower(item.tags.join(' '));
+        return (
+          textLower(item.title).includes(keyword) ||
+          textLower(item.summary).includes(keyword) ||
+          textLower(item.category).includes(keyword) ||
+          tags.includes(keyword)
+        );
+      });
+    }
+
+    function render(list) {
+      const query = textLower(input.value).trim();
+      const listToRender = filterPosts(query);
+      count.textContent = `共 ${listToRender.length} 条结果`;
+      if (listToRender.length === 0) {
+        result.innerHTML = '<p class="text-sm text-slate-500 dark:text-slate-300">未命中内容，建议缩短关键词或换词。</p>';
+        return;
+      }
+
+      const html = listToRender
+        .map((post) => {
+          const tags = post.tags.map((tag) => `#${tag}`).join(' ');
+          return `
+            <article class="rounded-xl border border-slate-200 p-4 dark:border-slate-700">
+              <a href="${toUrl(post)}" class="block">
+                <h3 class="text-lg font-semibold">${post.title}</h3>
+                <p class="text-sm text-slate-500 dark:text-slate-300">${new Date(post.date).toLocaleDateString('zh-CN')} · ${post.collection}</p>
+                <p class="mt-2 text-slate-700 dark:text-slate-200">${post.summary}</p>
+                <p class="mt-2 text-xs text-slate-500">${tags}</p>
+              </a>
+            </article>
+          `;
+        })
+        .join('');
+
+      result.innerHTML = html;
+    }
+
+    function syncFromQuery() {
+      const params = new URLSearchParams(window.location.search);
+      const q = params.get('q') || '';
+      input.value = q;
+      render(allPosts);
+      if (!q) {
+        count.textContent = `共 ${allPosts.length} 条内容`;
+      }
+    }
+
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const q = input.value.trim();
+      const url = new URL(window.location.href);
+      if (q) {
+        url.searchParams.set('q', q);
+      } else {
+        url.searchParams.delete('q');
+      }
+      window.history.replaceState({}, '', url);
+      render(allPosts);
+    });
+
+    input.addEventListener('input', () => render(allPosts));
+    syncFromQuery();
+  </script>
+</BaseLayout>

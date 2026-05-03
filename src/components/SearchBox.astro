@@ -1,0 +1,25 @@
+---
+const { autofocus = false } = Astro.props as { autofocus?: boolean };
+const currentQuery = Astro.url.searchParams.get('q') ?? '';
+---
+
+<form class="flex" role="search" action="/search" method="get">
+  <label for="q" class="sr-only">搜索</label>
+  <input
+    id="q"
+    name="q"
+    type="search"
+    value={currentQuery}
+    placeholder="搜索标题、摘要、标签"
+    autocomplete="off"
+    class="w-56 rounded-l-md border border-slate-300 bg-white px-3 py-1.5 text-sm dark:border-slate-600 dark:bg-slate-800"
+    {autofocus}
+  />
+  <button
+    type="submit"
+    class="rounded-r-md border border-slate-300 bg-slate-100 px-3 py-1.5 text-sm dark:border-slate-600 dark:bg-slate-700"
+    aria-label="执行搜索"
+  >
+    搜索
+  </button>
+</form>
