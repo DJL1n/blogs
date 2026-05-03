@@ -20,7 +20,7 @@ const TYPES = [
       </p>
     </header>
 
-    <section class="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
+    <section class="space-y-6 reading-shell">
       <form id="writer-form" class="space-y-4" autocomplete="off">
         <div class="surface-card space-y-4">
           <h2 class="text-lg font-semibold">元数据</h2>
@@ -67,17 +67,8 @@ const TYPES = [
               />
             </label>
 
-            <label class="space-y-2">
-              <span class="text-sm font-medium">发布时间（自动）</span>
-              <p id="date-text" class="h-10 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">-</p>
-              <input id="date" type="hidden" />
-            </label>
-
-            <label class="space-y-2">
-              <span class="text-sm font-medium">更新时间（自动）</span>
-              <p id="updated-text" class="h-10 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">-</p>
-              <input id="updated" type="hidden" />
-            </label>
+            <input id="date" type="hidden" />
+            <input id="updated" type="hidden" />
 
             <label class="space-y-2 md:col-span-2">
               <span class="text-sm font-medium">标签（英文逗号分隔）</span>
@@ -167,11 +158,16 @@ const TYPES = [
         <p id="state-tip" class="text-sm text-slate-500 dark:text-slate-300">支持像文档一样编辑；命令盘会给你推荐操作，效果直接可见。</p>
       </form>
 
-      <aside class="surface-card">
-        <h2 class="mb-2 text-lg font-semibold">生成结果</h2>
-        <p class="mb-3 text-sm text-slate-500 dark:text-slate-300">会自动生成 frontmatter + 正文 Markdown。</p>
-        <pre class="rounded-xl bg-slate-900 text-slate-100"><code id="output" class="block min-h-[22rem] overflow-x-auto p-4 text-xs">（点击「生成 Markdown」后自动输出）</code></pre>
-      </aside>
+      <div id="output-section" class="surface-card">
+        <div class="mb-2 flex items-center justify-between gap-3">
+          <h2 class="text-lg font-semibold">生成结果（Markdown）</h2>
+          <button type="button" id="toggle-output" class="rounded-md border border-slate-300 px-2.5 py-1 text-xs dark:border-slate-700">展开查看 Markdown</button>
+        </div>
+        <p class="mb-3 text-sm text-slate-500 dark:text-slate-300">会自动生成 frontmatter + 正文 Markdown。默认折叠，可手动展开查看。</p>
+        <div id="output-pane" class="hidden">
+          <pre class="rounded-xl bg-slate-900 text-slate-100"><code id="output" class="block min-h-[22rem] overflow-x-auto p-4 text-xs">（点击「生成 Markdown」后自动输出）</code></pre>
+        </div>
+      </div>
     </section>
   </section>
 
@@ -197,20 +193,19 @@ const TYPES = [
 
   <script is:inline>
     const LS_KEY = 'kb-editor-draft-v3';
-    const form = document.getElementById('writer-form');
     const titleInput = document.getElementById('title');
     const typeInput = document.getElementById('type');
     const categoryInput = document.getElementById('category');
     const importanceInput = document.getElementById('importance');
     const dateInput = document.getElementById('date');
     const updatedInput = document.getElementById('updated');
-    const dateText = document.getElementById('date-text');
-    const updatedText = document.getElementById('updated-text');
     const tagsInput = document.getElementById('tags');
     const summaryInput = document.getElementById('summary');
     const editor = document.getElementById('editor');
     const sourceEditor = document.getElementById('source-editor');
     const buildBtn = document.getElementById('build-btn');
+    const outputToggleBtn = document.getElementById('toggle-output');
+    const outputPane = document.getElementById('output-pane');
     const copyBtn = document.getElementById('copy-btn');
     const downloadBtn = document.getElementById('download-btn');
     const clearBtn = document.getElementById('clear-btn');
@@ -235,6 +230,7 @@ const TYPES = [
     const query = new URL(window.location.href).searchParams;
 
     let currentMode = 'visual';
+    let outputVisible = false;
 
     const COMMANDS = [
       { id: 'bold', label: '加粗', description: '将选中文本设为加粗', group: '文本样式', keywords: ['bold', '加粗', 'B'] },
@@ -264,7 +260,7 @@ const TYPES = [
       { id: 'quote', label: '引用', description: '转成引用段落', run: () => applyBlock('blockquote') },
       { id: 'ul', label: '无序列表', description: '转成无序列表', run: () => toggleList('ul') },
       { id: 'ol', label: '有序列表', description: '转成有序列表', run: () => toggleList('ol') },
-      { id: 'codeBlock', label: '代码块', description: '插入代码块', run: () => applyBlock('pre') },
+      { id: 'codeBlock', label: '代码块', description: '插入代码块', run: () => applyCodeBlock() },
       { id: 'p', label: '正文', description: '转成普通段落', run: () => applyBlock('p') },
       { id: 'hr', label: '分割线', description: '插入分割线', run: () => insertHorizontalRule() },
     ];
@@ -285,6 +281,24 @@ const TYPES = [
       return Math.min(Math.max(Math.round(num), 1), 5);
     }
 
+    function normalizeLanguageLabel(value) {
+      const label = String(value || '').trim().toLowerCase();
+      if (!label) return '';
+      return label.replace(/[^a-z0-9+#-]/g, '').replace(/^[^a-z0-9]+|[^a-z0-9]+$/g, '');
+    }
+
+    function setOutputVisible(visible) {
+      if (!outputPane || !outputToggleBtn) return;
+      outputVisible = visible;
+      outputPane.classList.toggle('hidden', !outputVisible);
+      outputToggleBtn.textContent = outputVisible ? '收起' : '展开查看 Markdown';
+      outputToggleBtn.setAttribute('aria-expanded', outputVisible ? 'true' : 'false');
+    }
+
+    function toggleOutputVisibility() {
+      setOutputVisible(!outputVisible);
+    }
+
     function cleanText(value) {
       return String(value || '').replace(/\s+/g, ' ').trim();
     }
@@ -302,9 +316,7 @@ const TYPES = [
 
     function syncDateMeta(now = toDateString()) {
       if (!dateInput.value) dateInput.value = now;
-      if (!updatedInput.value) updatedInput.value = now;
-      if (dateText) dateText.textContent = dateInput.value || now;
-      if (updatedText) updatedText.textContent = updatedInput.value || now;
+      updatedInput.value = now;
     }
 
     function updateModeUI() {
@@ -522,7 +534,7 @@ const TYPES = [
             applyBlock('blockquote');
             break;
           case 'codeBlock':
-            applyBlock('pre');
+            applyCodeBlock();
             break;
           case 'h1':
             applyHeading(1);
@@ -556,6 +568,32 @@ const TYPES = [
       newBlock.innerHTML = rawHtml || (fallbackText ? fallbackText : `标题 ${level}`);
       block.replaceWith(newBlock);
       setCaretToEnd(newBlock);
+      updateEmptyState();
+      saveDraft();
+    }
+
+    function applyCodeBlock() {
+      if (currentMode !== 'visual') return;
+      const language = normalizeLanguageLabel(window.prompt('代码块语言（可空：bash、ts、terminal）', 'bash'));
+      focusEditor(true);
+      const block = getActiveBlockElement();
+      const codeText = (block && (block.textContent || block.innerText)) ? (block.textContent || '').replace(/\n+$/g, '') : '';
+      const pre = document.createElement('pre');
+      if (language) {
+        pre.setAttribute('data-language', language);
+      }
+      const code = document.createElement('code');
+      if (language) {
+        code.className = `language-${language}`;
+      }
+      code.textContent = codeText;
+      pre.appendChild(code);
+      if (block) {
+        block.replaceWith(pre);
+      } else {
+        editor.appendChild(pre);
+      }
+      setCaretToEnd(pre);
       updateEmptyState();
       saveDraft();
     }
@@ -690,7 +728,7 @@ const TYPES = [
     }
 
     function runCommandById(id) {
-    if (currentMode === 'source' && !['openCommand','colorPicker'].includes(id)) {
+      if (currentMode === 'source' && !['openCommand','colorPicker'].includes(id)) {
         stateTip.textContent = '当前为源码模式，先切到文档模式执行可视化命令。';
         return;
       }
@@ -717,7 +755,7 @@ const TYPES = [
           applyBlock('blockquote');
           break;
         case 'codeBlock':
-          applyBlock('pre');
+          applyCodeBlock();
           break;
         case 'ul':
           toggleList('ul');
@@ -779,11 +817,29 @@ const TYPES = [
         return `${'\\n'}${'#'.repeat(level)} ${children.trim()}${'\\n'}${'\\n'}`;
       }
       if (tag === 'blockquote') return `> ${children.trim()}\\n\\n`;
-      if (tag === 'pre') return `\\n\\n\`\`\`\\n${children}\\n\`\`\`\\n\\n`;
+      if (tag === 'pre') {
+        const codeNode = node.querySelector('code');
+        const langMatch = (codeNode?.className || node.getAttribute('data-language') || '').match(/language-([\\w+#+-]+)/);
+        const lang = langMatch ? langMatch[1] : '';
+        const codeText = (codeNode ? codeNode.textContent : children).replace(/^\\n+|\\n+$/g, '');
+        return `\\n\\n\`\`\`${lang ? `${lang}` : ''}\\n${codeText}\\n\`\`\`\\n\\n`;
+      }
       if (tag === 'hr') return `---\\n\\n`;
       if (tag === 'p') return `${children.trim()}\\n\\n`;
       if (tag === 'li') {
         return `- ${children.trim()}\\n`;
+      }
+      if (tag === 'table') {
+        const thead = node.querySelectorAll('thead tr')[0];
+        const rows = Array.from(node.querySelectorAll('tbody tr'));
+        if (!thead) return children;
+        const headCols = Array.from(thead.children)
+          .map((item) => item.textContent?.trim() || '');
+        const bodyLines = rows.map((row) =>
+          `| ${Array.from(row.children).map((cell) => cell.textContent?.trim() || '').join(' | ')} |`
+        );
+        const alignLine = `| ${headCols.map(() => '---').join(' | ')} |`;
+        return `${'\\n'}| ${headCols.join(' | ')} |\\n${alignLine}${bodyLines.length ? `\\n${bodyLines.join('\\n')}` : ''}\\n\\n`;
       }
       if (tag === 'ul' || tag === 'ol') {
         return `${Array.from(node.children)
@@ -812,71 +868,216 @@ const TYPES = [
         .trim();
     }
 
-    function htmlToMarkdownNodes(lines) {
-      return lines
+    function escapeHtml(value) {
+      return String(value || '')
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;');
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
     }
 
-    function markdownToHtml(md) {
-      const text = String(md || '').replace(/\\r\\n/g, '\\n');
-      const blocks = text.split(/\\n{2,}/);
-      const htmlParts = blocks.map((block) => {
-        const trimmed = block.trim();
-        if (!trimmed) return '';
-        const fenced = trimmed.match(/^```[^\\n]*\\n([\\s\\S]*)\\n```$/);
-        if (fenced) {
-          const inner = fenced[1] || '';
-          return `<pre><code>${htmlToMarkdownNodes(inner)}</code></pre>`;
-        }
-        if (/^#{1,6}\\s+/.test(trimmed)) {
-          const level = trimmed.match(/^(#{1,6})\\s+/)?.[1]?.length || 1;
-          const content = trimmed.replace(/^#{1,6}\\s+/, '');
-          return `<h${level}>${htmlToMarkdownNodes(content)}</h${level}>`;
-        }
-        if (/^>\\s+/.test(trimmed)) {
-          const content = trimmed
-            .split('\\n')
-            .map((line) => line.replace(/^>\\s?/, ''))
-            .join('\\n');
-          return `<blockquote>${htmlToMarkdownNodes(content)}</blockquote>`;
-        }
-        if (/^\\-\\s+/.test(trimmed) || /^\\*\\s+/.test(trimmed)) {
-          const items = trimmed
-            .split('\\n')
-            .filter((line) => /^[-*]\\s+/.test(line))
-            .map((line) => `<li>${htmlToMarkdownNodes(line.replace(/^[-*]\\s+/, ''))}</li>`);
-          return `<ul>${items.join('')}</ul>`;
-        }
-        if (/^\\d+\\.\\s+/.test(trimmed)) {
-          const items = trimmed
-            .split('\\n')
-            .filter((line) => /^\\d+\\.\\s+/.test(line))
-            .map((line) => `<li>${htmlToMarkdownNodes(line.replace(/^\\d+\\.\\s+/, ''))}</li>`);
-          return `<ol>${items.join('')}</ol>`;
-        }
-        if (/^!\\[[^\\]]*\\]\\([^)]*\\)$/m.test(trimmed)) {
-          const img = trimmed.match(/!\\[([^\\]]*)\\]\\(([^)]*)\\)/);
-          if (!img) return `<p>${inlineMarkdownToHtml(trimmed)}</p>`;
-          return `<p><img src="${img[2]}" alt="${img[1] || ''}" /></p>`;
-        }
-        return `<p>${inlineMarkdownToHtml(trimmed).replace(/\\n/g, '<br/>')}</p>`;
+    function isExternalUrl(url) {
+      return /^https?:\\/\\//i.test(String(url || '').trim());
+    }
+
+    function makeLinkTag(text, url) {
+      const href = encodeURI(String(url || '').trim());
+      if (!href) return escapeHtml(text);
+      const attrs = isExternalUrl(href)
+        ? ` href="${href}" target="_blank" rel="noopener noreferrer"`
+        : ` href="${href}"`;
+      return `<a${attrs}>${escapeHtml(text)}</a>`;
+    }
+
+    function isHorizontalRule(line) {
+      return /^(\\s*-{3,}\\s*)$/.test(line) || /^(\\s*_{3,}\\s*)$/.test(line) || /^(\\s*\\*{3,}\\s*)$/.test(line);
+    }
+
+    function isTableRow(line) {
+      return /^\\s*\\|?\\s*[^|]+\\s*\\|\\s*[^|]+\\s*(\\|\\s*[^|]+\\s*)*\\|?\\s*$/.test(line.trim());
+    }
+
+    function isTableSeparator(line) {
+      return /^\\s*\\|?(\\s*:?[-]{3,}:?\\s*\\|)+\\s*$/.test(line.trim());
+    }
+
+    function splitMarkdownRow(line) {
+      return line
+        .replace(/^\\s*\\|/, '')
+        .replace(/\\|\\s*$/, '')
+        .split('|')
+        .map((cell) => cell.trim());
+    }
+
+    function inlineMarkdownToHtml(text, refLinks = new Map()) {
+      let out = escapeHtml(text);
+      out = out.replace(/!\\[([^\\]]*)\\]\\(([^)]+)\\)/g, (_, alt, href) => {
+        const src = encodeURI(String(href || '').trim());
+        return `<img src="${src}" alt="${escapeHtml(alt || '')}" />`;
       });
-      return htmlParts.filter(Boolean).join('\\n');
-    }
-
-    function inlineMarkdownToHtml(text) {
-      let out = htmlToMarkdownNodes(text);
+      out = out.replace(/\\[([^\\]]+)\\]\\(([^)]+)\\)/g, (_, label, href) => makeLinkTag(label, href));
+      out = out.replace(
+        /\\[([^\\]]+)\\]\\[([^\\]]+)\\]/g,
+        (_, label, ref) => makeLinkTag(label, refLinks.get(String(ref).trim().toLowerCase()) || '#')
+      );
       out = out
         .replace(/\\*\\*([^*]+)\\*\\*/g, '<strong>$1</strong>')
         .replace(/__([^_]+)__/g, '<strong>$1</strong>')
         .replace(/\\*([^*]+)\\*/g, '<em>$1</em>')
         .replace(/_([^_]+)_/g, '<em>$1</em>')
         .replace(/~~([^~]+)~~/g, '<del>$1</del>')
-        .replace(/`([^`]+)`/g, '<code>$1</code>')
-        .replace(/\\[([^\\]]+)\\]\\(([^)]+)\\)/g, '<a href="$2">$1</a>');
+        .replace(/`([^`]+)`/g, '<code>$1</code>');
       return out;
+    }
+
+    function markdownToHtml(md) {
+      const source = String(md || '').replace(/\\r\\n/g, '\\n');
+      const rawLines = source.split('\\n');
+      const refLinks = new Map();
+      const lines = [];
+
+      for (const line of rawLines) {
+        const ref = line.match(/^\\s*\\[([^\\]]+)\\]:\\s*(\\S+)(?:\\s+["'][^"']*["'])?\\s*$/);
+        if (ref) {
+          refLinks.set(ref[1].trim().toLowerCase(), ref[2].trim());
+          continue;
+        }
+        lines.push(line);
+      }
+
+      const htmlParts = [];
+      let i = 0;
+
+      while (i < lines.length) {
+        const current = (lines[i] || '').replace(/\t/g, '  ');
+        const trimmed = current.trim();
+        if (!trimmed) {
+          i += 1;
+          continue;
+        }
+
+        if (/^```/.test(trimmed)) {
+          const language = (trimmed.match(/^```(.*)$/)?.[1] || '').trim();
+          const codeLines = [];
+          i += 1;
+          while (i < lines.length && !/^```/.test((lines[i] || '').trim())) {
+            codeLines.push(lines[i]);
+            i += 1;
+          }
+          if (i < lines.length) i += 1;
+          const escapedCode = escapeHtml(codeLines.join('\\n'));
+          const lang = normalizeLanguageLabel(language);
+          const cls = lang ? ` class=\"language-${lang}\"` : '';
+          const meta = lang ? ` data-language=\"${lang}\"` : '';
+          htmlParts.push(`<pre${meta}><code${cls}>${escapedCode}</code></pre>`);
+          continue;
+        }
+
+        if (/^#{1,6}\\s+/.test(trimmed)) {
+          const level = trimmed.match(/^(#{1,6})\\s+/)?.[1]?.length || 1;
+          const title = trimmed.replace(/^#{1,6}\\s+/, '');
+          htmlParts.push(`<h${level}>${escapeHtml(title)}</h${level}>`);
+          i += 1;
+          continue;
+        }
+
+        if (/^>/.test(trimmed)) {
+          const quoteLines = [];
+          while (i < lines.length && /^>/.test((lines[i] || '').trim())) {
+            quoteLines.push((lines[i] || '').replace(/^> ?/, ''));
+            i += 1;
+          }
+          htmlParts.push(`<blockquote>${inlineMarkdownToHtml(quoteLines.join('\\n'), refLinks).replace(/\\n/g, '<br/>')}</blockquote>`);
+          continue;
+        }
+
+        if (isTableRow(trimmed) && isTableSeparator(lines[i + 1]?.trim() || '')) {
+          const headCells = splitMarkdownRow(trimmed);
+          const alignLine = lines[i + 1] || '';
+          i += 2;
+          const rows = [];
+          while (i < lines.length && isTableRow(lines[i].trim())) {
+            rows.push(splitMarkdownRow(lines[i]));
+            i += 1;
+          }
+
+          const alignDefs = alignLine
+            .replace(/^\\s*\\|?/, '')
+            .replace(/\\|\\s*$/, '')
+            .split('|')
+            .map((item) => item.trim());
+
+          const alignAttrs = alignDefs.map((item) => {
+            if (item.startsWith(':') && item.endsWith(':')) return ' style=\"text-align:center\"';
+            if (item.endsWith(':')) return ' style=\"text-align:right\"';
+            if (item.startsWith(':')) return ' style=\"text-align:left\"';
+            return '';
+          });
+
+          const thead = `<thead><tr>${headCells
+            .map((cell, idx) => `<th${alignAttrs[idx] || ''}>${inlineMarkdownToHtml(cell, refLinks)}</th>`)
+            .join('')}</tr></thead>`;
+          const body = rows
+            .map(
+              (rowCells) =>
+                `<tr>${rowCells
+                  .map((cell, idx) => `<td${alignAttrs[idx] || ''}>${inlineMarkdownToHtml(cell, refLinks)}</td>`)
+                  .join('')}</tr>`
+            )
+            .join('');
+          htmlParts.push(`<table>${thead}<tbody>${body}</tbody></table>`);
+          continue;
+        }
+
+        if (/^-\\s+/.test(trimmed) || /^\\*\\s+/.test(trimmed)) {
+          const items = [];
+          while (i < lines.length && (/^-\\s+/.test((lines[i] || '').trim()) || /^\\*\\s+/.test((lines[i] || '').trim()))) {
+            items.push((lines[i] || '').trim().replace(/^[-*]\\s+/, ''));
+            i += 1;
+          }
+          const content = items.map((item) => `<li>${inlineMarkdownToHtml(item, refLinks)}</li>`).join('');
+          htmlParts.push(`<ul>${content}</ul>`);
+          continue;
+        }
+
+        if (/^\\d+\\.\\s+/.test(trimmed)) {
+          const items = [];
+          while (i < lines.length && /^\\d+\\.\\s+/.test((lines[i] || '').trim())) {
+            items.push((lines[i] || '').trim().replace(/^\\d+\\.\\s+/, ''));
+            i += 1;
+          }
+          const content = items.map((item, index) => `<li>${inlineMarkdownToHtml(item, refLinks)}</li>`).join('');
+          htmlParts.push(`<ol>${content}</ol>`);
+          continue;
+        }
+
+        if (isHorizontalRule(trimmed)) {
+          htmlParts.push('<hr />');
+          i += 1;
+          continue;
+        }
+
+        const paragraphLines = [lines[i]];
+        i += 1;
+        while (i < lines.length) {
+          const next = (lines[i] || '').trim();
+          const nextIsBlock =
+            !next ||
+            /^#{1,6}\\s+/.test(next) ||
+            /^>/.test(next) ||
+            /^```/.test(next) ||
+            /^\\d+\\.\\s+/.test(next) ||
+            /^[-*]\\s+/.test(next) ||
+            isHorizontalRule(next) ||
+            (isTableRow(next) && isTableSeparator(lines[i + 1]?.trim() || ''));
+          if (nextIsBlock) break;
+          paragraphLines.push(lines[i]);
+          i += 1;
+        }
+        htmlParts.push(`<p>${inlineMarkdownToHtml(paragraphLines.join('\\n'), refLinks).replace(/\\n/g, '<br/>')}</p>`);
+      }
+
+      return htmlParts.filter(Boolean).join('\\n');
     }
 
     function getActiveBodyMarkdown() {
@@ -1074,15 +1275,7 @@ const TYPES = [
         importanceInput.value = String(clampImportance(query.get('importance')));
         used = true;
       }
-      if (query.get('date')) {
-        dateInput.value = query.get('date');
-        used = true;
-      }
-      if (query.get('updated')) {
-        updatedInput.value = query.get('updated');
-        used = true;
-      }
-    if (query.get('body')) {
+      if (query.get('body')) {
         const body = query.get('body');
         if (body) {
           currentMode = query.get('bodyMode') === 'source' ? 'source' : currentMode;
@@ -1248,7 +1441,7 @@ const TYPES = [
       syncDateMeta(now);
       const markdown = buildMarkdown(data);
       output.textContent = markdown;
-      stateTip.textContent = '已生成 Markdown，可复制或下载为 .md 文件。';
+      stateTip.textContent = '已生成 Markdown，可复制或下载为 .md 文件；如需查看可点击“展开查看 Markdown”。';
       saveDraft();
     });
 
@@ -1294,6 +1487,7 @@ const TYPES = [
       editor.innerHTML = '';
       sourceEditor.value = '';
       output.textContent = '（点击「生成 Markdown」后自动输出）';
+      setOutputVisible(false);
       localStorage.removeItem(LS_KEY);
       const now = toDateString();
       dateInput.value = now;
@@ -1302,6 +1496,10 @@ const TYPES = [
       updateEmptyState();
       stateTip.textContent = '草稿已清空。';
     });
+
+    if (outputToggleBtn) {
+      outputToggleBtn.addEventListener('click', toggleOutputVisibility);
+    }
 
     function insertClipboardImage(file) {
       return new Promise((resolve) => {
@@ -1335,6 +1533,7 @@ const TYPES = [
       dateInput.value = now;
       updatedInput.value = now;
       syncDateMeta(now);
+      setOutputVisible(false);
       updateModeUI();
       const hasQuery = restoreQuery();
       if (!hasQuery) hydrateDraft();
@@ -1428,6 +1627,37 @@ const TYPES = [
       background: rgb(241 245 249);
       overflow-x: auto;
       white-space: pre-wrap;
+      position: relative;
+    }
+    .writer-canvas pre::before {
+      content: attr(data-language);
+      position: absolute;
+      top: 0.35rem;
+      right: 0.6rem;
+      font-size: 0.7rem;
+      color: rgb(100 116 139);
+      background: rgb(248 250 252);
+      border: 1px solid rgb(226 232 240);
+      border-radius: 999px;
+      padding: 0.03rem 0.35rem;
+      text-transform: uppercase;
+    }
+    .writer-canvas table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+      font-size: 0.95rem;
+    }
+    .writer-canvas th,
+    .writer-canvas td {
+      border: 1px solid rgb(226 232 240);
+      padding: 0.45rem 0.55rem;
+      text-align: left;
+      vertical-align: top;
+    }
+    .writer-canvas th {
+      background: rgb(248 250 252);
+      font-weight: 600;
     }
     .writer-canvas img {
       max-width: 100%;
@@ -1439,6 +1669,14 @@ const TYPES = [
       border: none;
       border-top: 1px solid rgb(226 232 240);
       margin: 1rem 0;
+    }
+    .writer-canvas a {
+      color: rgb(37 99 235);
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+    .writer-canvas a:hover {
+      color: rgb(29 78 216);
     }
     .writer-canvas:focus-within,
     .writer-canvas:focus {
