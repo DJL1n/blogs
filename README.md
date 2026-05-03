@@ -23,6 +23,7 @@ npm run build
 - `/important` 重要事项列表
 - `/tags` 标签页
 - `/tags/[tag]` 标签过滤
+- `/editor` 写作助手页（生成 Markdown）
 - `/about` 关于页
 - `/rss.xml` RSS feed
 
@@ -41,6 +42,7 @@ npm run new:post
 ```
 
 按提示输入后会在对应目录生成 `*.md`，站点会自动从该文件渲染为对应详情页。
+另外可以直接打开 `/editor` 在网页里填写信息，自动生成标准 frontmatter 文本，再复制到文件提交。
 详情页仍保留静态站点优势（快、稳定、可迁移），后续如果你想要“纯网页在线编辑”，可以再接一个后台服务（类似 Notion 风格的数据库/API）。
 
 前置字段（Markdown frontmatter）：

@@ -48,6 +48,22 @@ draft: false
 
 ## 推荐新增文章方式（推荐）
 
+### 方式 A：网页写作器（推荐）
+
+1. 打开站点 `/editor` 页面（顶部导航里有「写作」入口）。
+2. 填写标题、类型、分类、标签、正文。
+3. 点击「生成 Markdown」。
+4. 点击「复制内容」粘贴到新文件，或「下载 .md」后放到对应目录。
+5. 提交 Git。
+
+路径映射：
+
+- `note` -> `src/content/notes`
+- `blog` -> `src/content/blog`
+- `important` -> `src/content/important`
+
+### 方式 B：命令行模板（适合批量）
+
 1. 在终端运行：
 
 ```bash
@@ -55,7 +71,7 @@ npm run new:post
 ```
 
 2. 按提示输入类型、标题、摘要、分类、标签等。
-3. 命令会生成 `src/content/<type>/<slug>.md`，并带上标准模板。
+3. 命令会生成 `src/content/<type>/<slug>.md`（`note` 会生成到 `notes`），并带上标准模板。
 4. 编辑该 md 文件内容，确认后提交：
 
 ```bash
