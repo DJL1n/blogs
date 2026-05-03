@@ -20,7 +20,7 @@ const TYPES = [
       </p>
     </header>
 
-    <section class="space-y-6">
+    <section class="space-y-6 content-shell">
       <form id="writer-form" class="space-y-4" autocomplete="off">
         <div class="surface-card space-y-4">
           <h2 class="text-lg font-semibold">元数据</h2>
@@ -358,24 +358,7 @@ const TYPES = [
     }
 
     function isEditorEmpty() {
-      if (!editor) return true;
-
-      const plainText = (editor.textContent || '').replace(/\u200b/g, '').trim();
-      if (plainText) return false;
-
-      if (editor.children.length === 0) return true;
-
-      for (const child of Array.from(editor.children)) {
-        const tag = child.tagName?.toLowerCase();
-        if (tag === 'br') continue;
-        if ((child.textContent || '').replace(/\u200b/g, '').trim()) return false;
-        if (tag === 'img' || tag === 'pre' || tag === 'hr') return false;
-        if (child.querySelector) {
-          if (child.querySelector('img, pre, hr, table, blockquote, ul, ol, h1, h2, h3, h4, h5, h6')) return false;
-        }
-      }
-
-      return true;
+      return (editor.textContent || '').replace(/\u200b/g, '').trim().length === 0;
     }
 
     function updateEmptyState() {
@@ -612,7 +595,6 @@ const TYPES = [
       }
       setCaretToEnd(pre);
       updateEmptyState();
-      stateTip.textContent = '已插入代码块。';
       saveDraft();
     }
 
@@ -746,30 +728,9 @@ const TYPES = [
     }
 
     function runCommandById(id) {
-      const visualModeCommands = new Set([
-        'bold',
-        'italic',
-        'underline',
-        'strikeThrough',
-        'insertUnorderedList',
-        'insertOrderedList',
-        'quote',
-        'codeBlock',
-        'h1',
-        'h2',
-        'h3',
-        'ul',
-        'ol',
-        'p',
-        'hr',
-        'link',
-        'removeFormat',
-        'undo',
-        'redo'
-      ]);
-
-      if (currentMode === 'source' && visualModeCommands.has(id)) {
-        setMode('visual', true);
+      if (currentMode === 'source' && !['openCommand','colorPicker'].includes(id)) {
+        stateTip.textContent = '当前为源码模式，先切到文档模式执行可视化命令。';
+        return;
       }
 
       switch (id) {
@@ -829,7 +790,6 @@ const TYPES = [
           break;
       }
       stateTip.textContent = `已执行：${id}`;
-      updateEmptyState();
     }
 
     function serializeNode(node) {
@@ -1434,17 +1394,12 @@ const TYPES = [
       }
     });
 
-    editor.addEventListener('keyup', () => {
-      updateEmptyState();
-      openSlashIfNeeded();
-    });
+    editor.addEventListener('keyup', openSlashIfNeeded);
     editor.addEventListener('input', () => {
       updateEmptyState();
       openSlashIfNeeded();
       saveDraft();
     });
-    editor.addEventListener('focus', updateEmptyState);
-    editor.addEventListener('blur', updateEmptyState);
     editor.addEventListener('paste', async (event) => {
       const clipboard = event.clipboardData;
       if (!clipboard) return;
@@ -1629,11 +1584,8 @@ const TYPES = [
       user-select: none;
       font-size: 0.95rem;
     }
-    .writer-canvas:not(.is-empty)::before {
-      display: none;
-      content: none;
-    }
-    .writer-canvas.is-empty:focus::before {
+    .writer-canvas.is-empty:focus::before,
+    .writer-canvas:focus::before {
       color: rgb(148 163 184 / 85%);
     }
     .writer-canvas h1,
