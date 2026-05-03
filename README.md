@@ -34,6 +34,15 @@ npm run build
 - `src/content/notes`
 - `src/content/important`
 
+创建与发布都应通过 Markdown 文件完成（非前端页面）：
+
+```bash
+npm run new:post
+```
+
+按提示输入后会在对应目录生成 `*.md`，站点会自动从该文件渲染为对应详情页。
+详情页仍保留静态站点优势（快、稳定、可迁移），后续如果你想要“纯网页在线编辑”，可以再接一个后台服务（类似 Notion 风格的数据库/API）。
+
 前置字段（Markdown frontmatter）：
 
 - `title`
