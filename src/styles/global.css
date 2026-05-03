@@ -4,7 +4,7 @@
 
 @layer utilities {
   .content-shell {
-    @apply mx-auto w-full max-w-[54rem] px-4 sm:px-6 lg:px-8;
+    @apply mx-auto w-full max-w-[64ch] px-4 sm:px-6 lg:px-8;
   }
 
   .post-shell {
