@@ -3,6 +3,27 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import PostCard from '../../components/PostCard.astro';
 import { getCollection } from 'astro:content';
 
+export async function getStaticPaths() {
+  const posts = [
+    ...(await getCollection('blog')).filter((post) => !post.data.draft),
+    ...(await getCollection('notes')).filter((post) => !post.data.draft),
+    ...(await getCollection('important')).filter((post) => !post.data.draft)
+  ];
+
+  const categorySet = new Set<string>();
+  for (const post of posts) {
+    if (post.data.category) {
+      categorySet.add(post.data.category.toLowerCase());
+    }
+  }
+
+  return [...categorySet].map((category) => ({
+    params: {
+      category
+    }
+  }));
+}
+
 const { category } = Astro.params;
 const target = (category || '').toLowerCase();
 

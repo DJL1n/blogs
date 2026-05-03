@@ -1,6 +1,17 @@
 ---
-import { getEntryBySlug, render } from 'astro:content';
+import { getCollection, getEntryBySlug, render } from 'astro:content';
 import PostLayout from '../../layouts/PostLayout.astro';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('important');
+  return posts
+    .filter((post) => !post.data.draft)
+    .map((post) => ({
+      params: {
+        slug: post.slug
+      }
+    }));
+}
 
 function estimateReadingTime(content: string): number {
   const plainChinese = content.replace(/[^\u4e00-\u9fff]/g, '');
