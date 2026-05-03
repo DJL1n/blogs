@@ -455,8 +455,31 @@ const TYPES = [
         const selected = selection.toString().trim();
         if (selected.length > 0) {
           insertAtCursor(`<${tag.toLowerCase()}>${selected}</${tag.toLowerCase()}>`);
+          return;
+        }
+
+        const anchor = selection.anchorNode;
+        let current = anchor && anchor.nodeType === 3 ? anchor.parentElement : anchor;
+        while (current && current !== editor && current.parentElement) {
+          const nodeName = (current.tagName || '').toLowerCase();
+          if (['p', 'div', 'li', 'blockquote', 'pre'].includes(nodeName)) break;
+          current = current.parentElement;
+        }
+        if (current && current !== editor && current.parentElement === editor) {
+          const html = current.innerHTML;
+          current.outerHTML = `<${tag.toLowerCase()}>${html}</${tag.toLowerCase()}>`;
+          const rangeAfter = document.createRange();
+          const next = editor.querySelector(`h${level}:last-child`);
+          if (next) {
+            rangeAfter.setStartAfter(next);
+            rangeAfter.collapse(true);
+            selection.removeAllRanges();
+            selection.addRange(rangeAfter);
+            editor.focus();
+          }
         }
       }
+      updateEditorEmptyState();
       saveDraft();
     }
 
