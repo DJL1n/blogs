@@ -24,6 +24,12 @@
       radial-gradient(circle at 100% 0%, rgb(244 247 255) 0%, transparent 45%);
   }
 
+  .dark body {
+    background-image:
+      radial-gradient(circle at 0% 0%, rgb(30 41 59) 0%, transparent 55%),
+      radial-gradient(circle at 100% 0%, rgb(15 23 42) 0%, transparent 45%);
+  }
+
   a {
     @apply transition-colors duration-200;
   }
