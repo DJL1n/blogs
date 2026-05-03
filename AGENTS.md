@@ -108,3 +108,11 @@ Proposed `src` layout:
 - Run build at the end of implementation.
 - Keep types consistent across content collections.
 - Summarize modified files and decisions in final handoff.
+
+## Git workflow (required)
+- Keep changes committed frequently; each logical change should be one commit.
+- After each meaningful modification, run:
+  - `git add .`
+  - `git commit -m "<type>: <summary>"`
+  - `git push` (or `git push origin main`)
+- For local work that is not finalized, prefer a temporary WIP commit and squash/pick later.
