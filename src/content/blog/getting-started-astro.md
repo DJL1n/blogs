@@ -1,7 +1,7 @@
 ---
 title: '搭建 Astro 个人知识库博客实录'
-date: 2026-05-03
-updated: 2026-05-03
+date: '2026-05-03'
+updated: '2026-05-03'
 summary: '使用 Astro 构建个人知识库博客的第一篇长文：为什么选它、如何落地到内容管理。'
 tags: ['astro', 'markdown', 'content-collections', 'github']
 category: '技术'

@@ -48,7 +48,7 @@ const normalizedPosts = [
   </section>
 
   <script is:inline>
-    const allPosts = ${JSON.stringify(normalizedPosts)};
+    const allPosts = {JSON.stringify(normalizedPosts)};
     const input = document.getElementById('search-input');
     const result = document.getElementById('search-result');
     const count = document.getElementById('count');

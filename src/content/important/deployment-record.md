@@ -1,7 +1,7 @@
 ---
 title: '博客技术栈决策记录'
-date: 2026-05-03
-updated: 2026-05-03
+date: '2026-05-03'
+updated: '2026-05-03'
 summary: '记录博客初始技术栈选择与迁移策略，便于后续长期维护。'
 tags: ['decision', 'stack', 'workflow']
 category: '决策'

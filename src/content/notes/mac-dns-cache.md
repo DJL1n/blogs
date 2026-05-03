@@ -1,6 +1,7 @@
+---
 title: 'Mac 上刷新 DNS 缓存'
-date: 2026-05-03
-updated: 2026-05-03
+date: '2026-05-03'
+updated: '2026-05-03'
 summary: '记录 macOS 下刷新 DNS 缓存的常用命令与应用场景。'
 tags: ['macOS', 'network', 'dns']
 category: '技巧'
