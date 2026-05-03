@@ -10,24 +10,87 @@ const { post, Content } = Astro.props as {
       category: string;
       importance: number;
       tags: string[];
+      type: string;
     };
   };
+  headings: Array<{ text: string; depth: number; slug: string }>;
+  readingTime: number;
   Content: any;
 };
+
+const hasToc = headings.length > 0;
+const tocEntries = headings.filter((item) => item.depth > 0 && item.slug);
 ---
 
 <BaseLayout title={post.data.title} description={post.data.summary}>
-  <article class="prose prose-slate dark:prose-invert max-w-none">
-    <header class="not-prose mb-8">
-      <p class="mb-2 text-sm text-slate-500 dark:text-slate-300">
-        {post.data.updated.toLocaleDateString('zh-CN')} 更新 ·
-        {post.data.category} ·
-        重要性 {post.data.importance}
-      </p>
-      <h1>{post.data.title}</h1>
-      <p class="text-slate-600 dark:text-slate-300">{post.data.summary}</p>
-      <p class="text-sm text-slate-500 dark:text-slate-300">标签：{post.data.tags.join(' · ') || '未标注'}</p>
-    </header>
-    <Content />
-  </article>
+  <section class="grid gap-8 lg:grid-cols-[220px_minmax(0,1fr)] lg:items-start">
+    {
+      hasToc && (
+        <aside class="rounded-xl border border-slate-200 p-4 dark:border-slate-700">
+          <h2 class="text-sm font-semibold">目录</h2>
+          <ul class="mt-3 space-y-2 text-sm">
+            {tocEntries.map((item) => (
+              <li
+                class={`${
+                  item.depth >= 3 ? 'ml-4 text-slate-500' : ''
+                }`}
+              >
+                <a href={`#${item.slug}`} class="hover:text-blue-600 dark:hover:text-blue-300">
+                  {item.text}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </aside>
+      )
+    }
+
+    <article class="prose prose-slate dark:prose-invert max-w-none">
+      <header class="not-prose mb-8">
+        <p class="mb-2 text-sm text-slate-500 dark:text-slate-300">
+          {post.data.updated.toLocaleDateString('zh-CN')} 更新 ·
+          {post.data.category} ·
+          {post.data.type} ·
+          重要性 {post.data.importance} ·
+          预计 {readingTime} 分钟阅读
+        </p>
+        <h1>{post.data.title}</h1>
+        <p class="text-slate-600 dark:text-slate-300">{post.data.summary}</p>
+        <p class="text-sm text-slate-500 dark:text-slate-300">标签：{post.data.tags.join(' · ') || '未标注'}</p>
+      </header>
+      <div id="post-content" class="relative">
+        <Content />
+      </div>
+    </article>
+  </section>
 </BaseLayout>
+
+<script is:inline>
+  (function () {
+    const root = document.querySelector('#post-content');
+    if (!root) return;
+
+    root.querySelectorAll('pre').forEach((pre) => {
+      pre.classList.add('relative');
+      if (pre.querySelector('.copy-code-btn')) return;
+
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.textContent = '复制';
+      btn.className = 'copy-code-btn absolute right-2 top-2 rounded border border-slate-600 px-2 py-1 text-xs text-slate-200 bg-slate-700';
+      btn.addEventListener('click', async () => {
+        const code = pre.textContent || '';
+        try {
+          await navigator.clipboard.writeText(code);
+          btn.textContent = '已复制';
+          window.setTimeout(() => (btn.textContent = '复制'), 1100);
+        } catch (err) {
+          btn.textContent = '复制失败';
+          window.setTimeout(() => (btn.textContent = '复制'), 1100);
+        }
+      });
+
+      pre.appendChild(btn);
+    });
+  })();
+</script>
