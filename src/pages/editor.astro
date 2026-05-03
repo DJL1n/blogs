@@ -7,7 +7,12 @@ const TYPES = [
   { value: 'important', label: 'important（重要记录）' },
 ];
 
-const LS_KEY = 'kb-editor-draft-clean-v1';
+    const LS_KEY = 'kb-editor-draft-clean-v1';
+    const TYPE_DIR_MAP = {
+      note: 'notes',
+      blog: 'blog',
+      important: 'important'
+    };
 ---
 
 <BaseLayout title="写作助手（重构版）" description="简化稳定的本地写作页：可视化编辑、源码编辑、元数据与 Markdown 导出。">
@@ -461,6 +466,118 @@ const LS_KEY = 'kb-editor-draft-clean-v1';
       return front.join('\n');
     }
 
+    let projectRootHandle = null;
+
+    function saveAsMarkdown(content) {
+      const filenameBase = slugify(stripText(titleInput.value) || '无标题');
+      const filename = `${filenameBase}.md`;
+      const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      requestAnimationFrame(() => {
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      });
+    }
+
+    function getCollectionDirName(type) {
+      return TYPE_DIR_MAP[type] || 'notes';
+    }
+
+    function buildFileName() {
+      const title = stripText(titleInput.value) || '无标题';
+      const date = nowDate();
+      return `${date}-${slugify(title)}.md`;
+    }
+
+    async function ensureDirectoryPermission(handle) {
+      if (!handle || typeof handle.queryPermission !== 'function') return true;
+      let status = await handle.queryPermission({ mode: 'readwrite' });
+      if (status === 'granted') return true;
+      if (status === 'prompt') {
+        status = await handle.requestPermission({ mode: 'readwrite' });
+      }
+      return status === 'granted';
+    }
+
+    async function resolveProjectRoot(force = false) {
+      if (!projectRootHandle || force) {
+        if (!window.showDirectoryPicker) {
+          return null;
+        }
+        projectRootHandle = await window.showDirectoryPicker({
+          mode: 'readwrite',
+          startIn: 'documents'
+        });
+      }
+      const accepted = await ensureDirectoryPermission(projectRootHandle);
+      return accepted ? projectRootHandle : null;
+    }
+
+    async function ensureCollectionDirectory(type, force = false) {
+      const root = await resolveProjectRoot(force);
+      if (!root) return { ok: false, reason: 'permission-denied' };
+
+      const collection = getCollectionDirName(type);
+      try {
+        const srcHandle = await root.getDirectoryHandle('src', { create: false });
+        const contentHandle = await srcHandle.getDirectoryHandle('content', { create: false });
+        const targetHandle = await contentHandle.getDirectoryHandle(collection, { create: false });
+        return { ok: true, handle: targetHandle, collection };
+      } catch (_err) {
+        try {
+          const srcHandle = await root.getDirectoryHandle('src', { create: true });
+          const contentHandle = await srcHandle.getDirectoryHandle('content', { create: true });
+          const targetHandle = await contentHandle.getDirectoryHandle(collection, { create: true });
+          return { ok: true, handle: targetHandle, collection };
+        } catch (_innerErr) {
+          return { ok: false, reason: 'invalid-root' };
+        }
+      }
+    }
+
+    async function saveToProjectMarkdown(content) {
+      if (!('showDirectoryPicker' in window)) {
+        return { ok: false, reason: 'api-missing' };
+      }
+
+      const type = typeInput.value || 'note';
+      let result = await ensureCollectionDirectory(type);
+      if (!result.ok) {
+        if (result.reason === 'permission-denied' && projectRootHandle) {
+          try {
+            const retry = await ensureCollectionDirectory(type, true);
+            if (retry.ok) {
+              result = retry;
+            }
+          } catch (_retryErr) {
+            // continue to fallback
+          }
+        }
+        if (!result.ok) {
+          return { ok: false, reason: result.reason || 'permission-denied' };
+        }
+      }
+
+      try {
+        const filename = buildFileName();
+        const fileHandle = await result.handle.getFileHandle(filename, { create: true });
+        const writable = await fileHandle.createWritable();
+        await writable.write(content);
+        await writable.close();
+        return {
+          ok: true,
+          path: `src/content/${result.collection}/${filename}`
+        };
+      } catch (_err) {
+        return { ok: false, reason: 'write-failed' };
+      }
+    }
+
     function saveDraft() {
       const payload = {
         title: stripText(titleInput.value),
@@ -721,16 +838,31 @@ const LS_KEY = 'kb-editor-draft-clean-v1';
       stateTip.textContent = '已切换到源码模式。';
     });
 
-    buildBtn.addEventListener('click', () => {
+    buildBtn.addEventListener('click', async () => {
       const body = getBodyMarkdown();
       if (!body) {
         stateTip.textContent = '正文为空，先写一些内容。';
         return;
       }
-      buildMarkdown();
+      const markdown = buildMarkdown();
       setDraftDate();
       saveDraft();
-      stateTip.textContent = '已保存到本地草稿。';
+      const saved = await saveToProjectMarkdown(markdown);
+      if (saved.ok) {
+        stateTip.textContent = `已写入本地文件：${saved.path}，并更新草稿。`;
+      } else {
+        saveAsMarkdown(markdown);
+        if (saved.reason === 'api-missing') {
+          stateTip.textContent = '当前环境不支持文件系统直写，已转为下载，你可以把文件放到对应 src/content 目录。';
+        } else if (saved.reason === 'invalid-root') {
+          stateTip.textContent = '未检测到项目路径，请允许选择项目目录后重试；已转为下载。';
+          projectRootHandle = null;
+        } else if (saved.reason === 'permission-denied') {
+          stateTip.textContent = '未获得写入权限，已转为下载。';
+        } else {
+          stateTip.textContent = '写入失败，已转为下载。';
+        }
+      }
       const now = nowDate();
       updatedInput.value = now;
     });
