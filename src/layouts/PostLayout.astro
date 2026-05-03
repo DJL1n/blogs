@@ -1,7 +1,7 @@
 ---
 import BaseLayout from './BaseLayout.astro';
 
-const { post, Content } = Astro.props as {
+const { post, headings = [], readingTime = 0, Content } = Astro.props as {
   post: {
     data: {
       title: string;
