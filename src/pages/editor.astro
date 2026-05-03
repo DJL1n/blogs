@@ -358,7 +358,34 @@ const TYPES = [
     }
 
     function isEditorEmpty() {
-      return (editor.textContent || '').replace(/\u200b/g, '').trim().length === 0;
+      if (!editor) return true;
+      if (!editor.hasChildNodes()) return true;
+
+      const hasMeaningfulNode = (node) => {
+        if (!node) return false;
+        if (node.nodeType === Node.TEXT_NODE || node.nodeType === Node.CDATA_SECTION_NODE) {
+          return (node.textContent || '').replace(/\u200b/g, '').trim().length > 0;
+        }
+
+        if (node.nodeType !== Node.ELEMENT_NODE) return false;
+
+        const tag = (node.tagName || '').toLowerCase();
+        if (['img', 'pre', 'hr', 'table', 'blockquote', 'ul', 'ol', 'li'].includes(tag)) {
+          return true;
+        }
+
+        if (/^h[1-6]$/.test(tag) && (node.textContent || '').replace(/\u200b/g, '').trim().length > 0) {
+          return true;
+        }
+
+        if (tag === 'a') {
+          return (node.textContent || '').replace(/\u200b/g, '').trim().length > 0;
+        }
+
+        return Array.from(node.childNodes || []).some((item) => hasMeaningfulNode(item));
+      };
+
+      return !Array.from(editor.childNodes).some((node) => hasMeaningfulNode(node));
     }
 
     function updateEmptyState() {
@@ -677,6 +704,7 @@ const TYPES = [
       br.innerHTML = '&nbsp;';
       hr.after(br);
       setCaretToEnd(hr);
+      updateEmptyState();
       saveDraft();
     }
 
@@ -1584,8 +1612,12 @@ const TYPES = [
       user-select: none;
       font-size: 0.95rem;
     }
-    .writer-canvas.is-empty:focus::before,
-    .writer-canvas:focus::before {
+    .writer-canvas:not(.is-empty)::before {
+      display: none;
+      content: none;
+    }
+
+    .writer-canvas.is-empty:focus::before {
       color: rgb(148 163 184 / 85%);
     }
     .writer-canvas h1,
