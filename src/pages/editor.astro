@@ -6,17 +6,19 @@ const TYPES = [
   { value: 'blog', label: 'blog（长文）' },
   { value: 'important', label: 'important（重要记录）' },
 ];
+
+const LS_KEY = 'kb-editor-draft-clean-v1';
 ---
 
-<BaseLayout title="写作助手" description="像 Obsidian 一样的本地写作入口，导出标准 Markdown 保存到 src/content/*">
+<BaseLayout title="写作助手（重构版）" description="简化稳定的本地写作页：可视化编辑、源码编辑、元数据与 Markdown 导出。">
   <section class="space-y-6">
     <header>
       <p class="inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 dark:border-emerald-700 dark:bg-slate-800 dark:text-emerald-200">
-        写作工作流 · 可视化模式
+        重构版编辑器
       </p>
       <h1 class="mt-3 text-4xl font-bold">写作助手</h1>
       <p class="mt-2 text-slate-600 dark:text-slate-300">
-        你直接在页面里像编辑文档一样写，支持标题、列表、引用、代码块、图片粘贴，并生成可提交的 Markdown 文件。
+        以本地 draft 为主，支持文档模式和源码模式。你可以直接在正文写作并生成 frontmatter + Markdown。
       </p>
     </header>
 
@@ -27,44 +29,24 @@ const TYPES = [
           <div class="grid gap-3 md:grid-cols-2">
             <label class="space-y-2">
               <span class="text-sm font-medium">标题</span>
-              <input
-                id="title"
-                type="text"
-                class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-800"
-                placeholder="输入标题"
-              />
+              <input id="title" type="text" class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-800" placeholder="输入标题" value="" />
             </label>
 
             <label class="space-y-2">
               <span class="text-sm font-medium">类型</span>
-              <select
-                id="type"
-                class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-800"
-              >
+              <select id="type" class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-800">
                 {TYPES.map((item) => <option value={item.value}>{item.label}</option>)}
               </select>
             </label>
 
             <label class="space-y-2">
               <span class="text-sm font-medium">分类</span>
-              <input
-                id="category"
-                type="text"
-                class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-800"
-                value="技巧"
-              />
+              <input id="category" type="text" class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-800" value="技巧" />
             </label>
 
             <label class="space-y-2">
               <span class="text-sm font-medium">重要性（1-5）</span>
-              <input
-                id="importance"
-                type="number"
-                min="1"
-                max="5"
-                value="2"
-                class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-800"
-              />
+              <input id="importance" type="number" min="1" max="5" value="2" class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-800" />
             </label>
 
             <input id="date" type="hidden" />
@@ -72,70 +54,54 @@ const TYPES = [
 
             <label class="space-y-2 md:col-span-2">
               <span class="text-sm font-medium">标签（英文逗号分隔）</span>
-              <input
-                id="tags"
-                type="text"
-                class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-800"
-                placeholder="macOS, dns, network"
-              />
+              <input id="tags" type="text" class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-800" placeholder="macOS, dns, network" />
             </label>
 
             <label class="space-y-2 md:col-span-2">
               <span class="text-sm font-medium">摘要</span>
-              <textarea
-                id="summary"
-                rows="2"
-                class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-800"
-                placeholder="一句话说明这篇内容"
-              ></textarea>
+              <textarea id="summary" rows="2" class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-800" placeholder="一句话说明这篇内容"></textarea>
             </label>
           </div>
         </div>
 
         <div class="surface-card">
-        <div class="mb-3 flex flex-wrap gap-2 border-b border-slate-200 pb-3 dark:border-slate-700">
+          <div class="mb-3 flex flex-wrap items-center gap-2 border-b border-slate-200 pb-3 dark:border-slate-700">
             <button type="button" id="mode-visual" class="btn-tool btn-tool-active">文档模式</button>
             <button type="button" id="mode-source" class="btn-tool">源码模式</button>
-            <span class="w-px bg-slate-300 dark:bg-slate-600"></span>
-            <button type="button" data-command="bold" class="btn-tool" title="加粗 (Ctrl/Cmd+B)">B</button>
-            <button type="button" data-command="italic" class="btn-tool" title="斜体 (Ctrl/Cmd+I)">I</button>
-            <button type="button" data-command="underline" class="btn-tool" title="下划线">U</button>
-            <button type="button" data-command="strikeThrough" class="btn-tool" title="删除线">S</button>
-            <button type="button" data-command="insertUnorderedList" class="btn-tool" title="无序列表">• 列表</button>
-            <button type="button" data-command="insertOrderedList" class="btn-tool" title="有序列表">1. 列表</button>
-            <button type="button" data-command="quote" class="btn-tool" title="引用">引用</button>
-            <button type="button" data-command="codeBlock" class="btn-tool" title="代码块">代码块</button>
+            <span class="h-4 w-px bg-slate-300 dark:bg-slate-600"></span>
+            <button type="button" data-command="bold" class="btn-tool" title="加粗 (Cmd/Ctrl+B)">B</button>
+            <button type="button" data-command="italic" class="btn-tool" title="斜体 (Cmd/Ctrl+I)">I</button>
+            <button type="button" data-command="underline" class="btn-tool">U</button>
+            <button type="button" data-command="foreColor" data-color="#ef4444" class="btn-tool" title="红色" style="color:#ef4444;font-weight:700;">A</button>
+            <button type="button" data-command="foreColor" data-color="#f59e0b" class="btn-tool" title="橙色" style="color:#f59e0b;font-weight:700;">A</button>
+            <button type="button" data-command="foreColor" data-color="#eab308" class="btn-tool" title="黄色" style="color:#eab308;font-weight:700;">A</button>
+            <button type="button" data-command="foreColor" data-color="#22c55e" class="btn-tool" title="绿色" style="color:#22c55e;font-weight:700;">A</button>
+            <button type="button" data-command="foreColor" data-color="#0ea5e9" class="btn-tool" title="蓝色" style="color:#0ea5e9;font-weight:700;">A</button>
+            <button type="button" data-command="foreColor" data-color="#a855f7" class="btn-tool" title="紫色" style="color:#a855f7;font-weight:700;">A</button>
+            <button type="button" data-command="foreColor" data-color="#64748b" class="btn-tool" title="灰色" style="color:#64748b;font-weight:700;">A</button>
+            <button type="button" data-command="insertOrderedList" class="btn-tool">有序列表</button>
+            <button type="button" data-command="insertUnorderedList" class="btn-tool">无序列表</button>
+            <button type="button" data-command="blockquote" class="btn-tool">引用</button>
             <button type="button" data-command="h1" class="btn-tool">H1</button>
             <button type="button" data-command="h2" class="btn-tool">H2</button>
             <button type="button" data-command="h3" class="btn-tool">H3</button>
-            <button type="button" data-command="removeFormat" class="btn-tool" title="清空格式">清空格式</button>
-            <button type="button" id="link-btn" class="btn-tool" title="插入链接">🔗 链接</button>
-            <button type="button" id="hr-btn" class="btn-tool" title="分割线">—</button>
-            <label class="inline-flex items-center rounded-md border border-slate-300 px-3 py-1.5 text-sm dark:border-slate-700">
-              <input id="color-picker" type="color" value="#0f172a" class="h-5 w-7 border-none bg-transparent p-0" title="字体颜色" />
-              <span class="ml-2 text-xs">颜色</span>
-            </label>
-            <button type="button" id="image-btn" class="btn-tool" title="插入图片">图片</button>
-            <button type="button" id="undo-btn" class="btn-tool" title="撤销">↶</button>
-            <button type="button" id="redo-btn" class="btn-tool" title="重做">↷</button>
-            <button type="button" id="open-command" class="btn-tool btn-tool-strong" title="命令面板 (Ctrl/Cmd+P)">命令盘</button>
-            <input id="image-input" type="file" accept="image/*" multiple class="hidden" />
+            <button type="button" data-command="h4" class="btn-tool">H4</button>
+            <button type="button" data-command="h5" class="btn-tool">H5</button>
+            <button type="button" data-command="h6" class="btn-tool">H6</button>
           </div>
 
           <div id="editor-shell" class="editor-shell">
-            <div id="editor-placeholder" class="writer-placeholder"></div>
+            <div id="editor-placeholder" class="writer-placeholder">在这里开始写作（支持标题、列表、引用、代码块、图片粘贴）。例如：输入 / 调出块级命令，或 Ctrl/Cmd+P 打开命令盘。</div>
             <div
               id="editor"
-              class="writer-canvas is-empty"
+              class="writer-canvas w-full"
               contenteditable="true"
-              spellcheck="true"
               aria-label="正文编辑区"
-              data-placeholder="在这里开始写作（支持标题、列表、引用、代码块、图片粘贴）。例如：输入 / 调出块级命令，或 Ctrl/Cmd+P 打开命令面板。"
             ></div>
 
             <textarea
               id="source-editor"
-              class="writer-canvas h-[56vh] font-mono hidden"
+              class="writer-canvas h-[56vh] w-full font-mono hidden"
               placeholder="在这里直接写 Markdown，例如：# 标题"
               aria-label="Markdown 源码编辑"
             ></textarea>
@@ -143,57 +109,16 @@ const TYPES = [
         </div>
 
         <div class="flex flex-wrap gap-3">
-          <button type="button" id="build-btn" class="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500">
-            生成 Markdown
-          </button>
-          <button type="button" id="copy-btn" class="rounded-md border border-slate-300 px-4 py-2 text-sm dark:border-slate-700">
-            复制内容
-          </button>
-          <button type="button" id="download-btn" class="rounded-md border border-slate-300 px-4 py-2 text-sm dark:border-slate-700">
-            下载 .md
-          </button>
-          <button type="button" id="clear-btn" class="rounded-md border border-rose-300 px-4 py-2 text-sm text-rose-600 dark:border-rose-700 dark:text-rose-300">
-            清空草稿
-          </button>
+          <button type="button" id="build-btn" class="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500">保存</button>
+          <button type="button" id="clear-btn" class="rounded-md border border-rose-300 px-4 py-2 text-sm text-rose-600 dark:border-rose-700 dark:text-rose-300">清空草稿</button>
         </div>
-        <p id="state-tip" class="text-sm text-slate-500 dark:text-slate-300">支持像文档一样编辑；命令盘会给你推荐操作，效果直接可见。</p>
-      </form>
 
-      <div id="output-section" class="surface-card">
-        <div class="mb-2 flex items-center justify-between gap-3">
-          <h2 class="text-lg font-semibold">生成结果（Markdown）</h2>
-          <button type="button" id="toggle-output" class="rounded-md border border-slate-300 px-2.5 py-1 text-xs dark:border-slate-700">展开查看 Markdown</button>
-        </div>
-        <p class="mb-3 text-sm text-slate-500 dark:text-slate-300">会自动生成 frontmatter + 正文 Markdown。默认折叠，可手动展开查看。</p>
-        <div id="output-pane" class="hidden">
-          <pre class="rounded-xl bg-slate-900 text-slate-100"><code id="output" class="block min-h-[22rem] overflow-x-auto p-4 text-xs">（点击「生成 Markdown」后自动输出）</code></pre>
-        </div>
-      </div>
+        <p id="state-tip" class="text-sm text-slate-500 dark:text-slate-300">欢迎使用重构版编辑器，先填正文再切换源码/保存。</p>
+      </form>
     </section>
   </section>
 
-  <div id="command-palette" class="command-palette hidden" role="dialog" aria-hidden="true">
-    <div class="command-palette__backdrop"></div>
-    <div class="command-palette__panel">
-      <p class="mb-2 text-xs uppercase tracking-wide text-slate-500">命令面板</p>
-      <input
-        id="command-search"
-        type="text"
-        class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-900"
-        placeholder="搜索命令，例如：标题、列表、引用"
-        autocomplete="off"
-      />
-      <div id="command-list" class="mt-2 max-h-72 space-y-2 overflow-auto"></div>
-      <p id="command-empty" class="mt-2 text-sm text-slate-500 hidden">未找到匹配命令。</p>
-    </div>
-  </div>
-
-  <div id="slash-menu" class="slash-menu hidden">
-    <div id="slash-list" class="space-y-1"></div>
-  </div>
-
   <script is:inline>
-    const LS_KEY = 'kb-editor-draft-v3';
     const titleInput = document.getElementById('title');
     const typeInput = document.getElementById('type');
     const categoryInput = document.getElementById('category');
@@ -205,120 +130,75 @@ const TYPES = [
     const editor = document.getElementById('editor');
     const sourceEditor = document.getElementById('source-editor');
     const editorPlaceholder = document.getElementById('editor-placeholder');
-    const buildBtn = document.getElementById('build-btn');
-    const outputToggleBtn = document.getElementById('toggle-output');
-    const outputPane = document.getElementById('output-pane');
-    const copyBtn = document.getElementById('copy-btn');
-    const downloadBtn = document.getElementById('download-btn');
-    const clearBtn = document.getElementById('clear-btn');
-    const output = document.getElementById('output');
-    const stateTip = document.getElementById('state-tip');
-    const linkBtn = document.getElementById('link-btn');
-    const colorPicker = document.getElementById('color-picker');
-    const undoBtn = document.getElementById('undo-btn');
-    const redoBtn = document.getElementById('redo-btn');
-    const hrBtn = document.getElementById('hr-btn');
-    const imageBtn = document.getElementById('image-btn');
-    const imageInput = document.getElementById('image-input');
     const modeVisualBtn = document.getElementById('mode-visual');
     const modeSourceBtn = document.getElementById('mode-source');
-    const commandPalette = document.getElementById('command-palette');
-    const commandSearch = document.getElementById('command-search');
-    const commandList = document.getElementById('command-list');
-    const commandEmpty = document.getElementById('command-empty');
-    const openCommand = document.getElementById('open-command');
-    const slashMenu = document.getElementById('slash-menu');
-    const slashList = document.getElementById('slash-list');
-    const query = new URL(window.location.href).searchParams;
+    const buildBtn = document.getElementById('build-btn');
+    const clearBtn = document.getElementById('clear-btn');
+    const stateTip = document.getElementById('state-tip');
+
+    const commands = document.querySelectorAll('[data-command]');
 
     let currentMode = 'visual';
-    let outputVisible = false;
 
-    const COMMANDS = [
-      { id: 'bold', label: '加粗', description: '将选中文本设为加粗', group: '文本样式', keywords: ['bold', '加粗', 'B'] },
-      { id: 'italic', label: '斜体', description: '将选中文本设为斜体', group: '文本样式', keywords: ['italic', '斜体', 'I'] },
-      { id: 'underline', label: '下划线', description: '将选中文本加下划线', group: '文本样式', keywords: ['underline', '下划线'] },
-      { id: 'strikeThrough', label: '删除线', description: '将选中文本加删除线', group: '文本样式', keywords: ['strike', '删除线'] },
-      { id: 'h1', label: 'H1', description: '当前块转为一级标题', group: '标题', keywords: ['标题', '一级标题', 'H1', 'heading 1'] },
-      { id: 'h2', label: 'H2', description: '当前块转为二级标题', group: '标题', keywords: ['标题', '二级标题', 'H2', 'heading 2'] },
-      { id: 'h3', label: 'H3', description: '当前块转为三级标题', group: '标题', keywords: ['标题', '三级标题', 'H3', 'heading 3'] },
-      { id: 'p', label: '正文', description: '当前块转为普通段落', group: '段落', keywords: ['paragraph', '正文', '段落', 'P'] },
-      { id: 'quote', label: '引用', description: '插入引用块', group: '段落', keywords: ['quote', '引用', 'blockquote', '>'] },
-      { id: 'ul', label: '无序列表', description: '插入 / 转换为无序列表项', group: '列表', keywords: ['list', '无序列表', 'bullet'] },
-      { id: 'ol', label: '有序列表', description: '插入 / 转换为有序列表项', group: '列表', keywords: ['有序列表', 'ordered', '1.'] },
-      { id: 'codeBlock', label: '代码块', description: '插入代码块', group: '块', keywords: ['代码块', 'code', '```'] },
-      { id: 'hr', label: '分割线', description: '插入分隔线', group: '块', keywords: ['分隔线', '---', 'hr'] },
-      { id: 'link', label: '插入链接', description: '给选中文本添加链接', group: '段落', keywords: ['link', '链接', 'url'] },
-      { id: 'colorPicker', label: '字体颜色', description: '通过颜色面板设置文本颜色', group: '文本样式', keywords: ['color', '颜色', 'foreColor'] },
-      { id: 'removeFormat', label: '清除格式', description: '清空选中文本的直接格式', group: '文本样式', keywords: ['清除格式', 'remove format'] },
-      { id: 'undo', label: '撤销', description: '撤销上一步', group: '编辑', keywords: ['undo', '撤销'] },
-      { id: 'redo', label: '重做', description: '恢复上一步', group: '编辑', keywords: ['redo', '重做'] },
-    ];
-
-    const SLASH_COMMANDS = [
-      { id: 'h1', label: '标题 1', description: '转成 H1', run: () => applyHeading(1) },
-      { id: 'h2', label: '标题 2', description: '转成 H2', run: () => applyHeading(2) },
-      { id: 'h3', label: '标题 3', description: '转成 H3', run: () => applyHeading(3) },
-      { id: 'quote', label: '引用', description: '转成引用段落', run: () => applyBlock('blockquote') },
-      { id: 'ul', label: '无序列表', description: '转成无序列表', run: () => toggleList('ul') },
-      { id: 'ol', label: '有序列表', description: '转成有序列表', run: () => toggleList('ol') },
-      { id: 'codeBlock', label: '代码块', description: '插入代码块', run: () => applyCodeBlock() },
-      { id: 'p', label: '正文', description: '转成普通段落', run: () => applyBlock('p') },
-      { id: 'hr', label: '分割线', description: '插入分割线', run: () => insertHorizontalRule() },
-    ];
-
-    const BROWSER_COMMAND_KEYS = ['bold', 'italic', 'underline', 'strikeThrough', 'insertUnorderedList', 'insertOrderedList'];
-
-    function toDateString(date = new Date()) {
-      return date.toISOString().slice(0, 10);
-    }
-
-    function toYamlString(value) {
-      return JSON.stringify(String(value));
+    function nowDate() {
+      return new Date().toISOString().slice(0, 10);
     }
 
     function clampImportance(value) {
-      const num = Number(value || 2);
-      if (Number.isNaN(num)) return 2;
-      return Math.min(Math.max(Math.round(num), 1), 5);
+      const n = Number(value);
+      if (Number.isNaN(n)) return 2;
+      return Math.min(Math.max(Math.round(n), 1), 5);
     }
 
-    function normalizeLanguageLabel(value) {
-      const label = String(value || '').trim().toLowerCase();
-      if (!label) return '';
-      return label.replace(/[^a-z0-9+#-]/g, '').replace(/^[^a-z0-9]+|[^a-z0-9]+$/g, '');
-    }
-
-    function setOutputVisible(visible) {
-      if (!outputPane || !outputToggleBtn) return;
-      outputVisible = visible;
-      outputPane.classList.toggle('hidden', !outputVisible);
-      outputToggleBtn.textContent = outputVisible ? '收起' : '展开查看 Markdown';
-      outputToggleBtn.setAttribute('aria-expanded', outputVisible ? 'true' : 'false');
-    }
-
-    function toggleOutputVisibility() {
-      setOutputVisible(!outputVisible);
-    }
-
-    function cleanText(value) {
+    function stripText(value) {
       return String(value || '').replace(/\s+/g, ' ').trim();
     }
 
-    function slugify(value) {
-      return String(value || '')
-        .trim()
+    function isEditorEmpty() {
+      const txt = (editor.textContent || '').replace(/[\u200b\u00a0\n\r\t]/g, '').trim();
+      if (txt.length > 0) return false;
+      const hasBlock = editor.querySelector('img, pre, blockquote, ul, ol, table, hr, li');
+      if (hasBlock) return false;
+      const html = (editor.innerHTML || '')
         .toLowerCase()
-        .replace(/\s+/g, '-')
-        .replace(/[^a-z0-9\u4e00-\u9fff_-]/g, '')
-        .replace(/-+/g, '-')
-        .replace(/(^-|-$)/g, '')
-        .slice(0, 80) || `post-${toDateString()}`;
+        .replace(/\s+/g, '')
+        .replace(/&nbsp;/g, '')
+        .replace(/<\/?(div|p|span|article|section)[^>]*>/g, '')
+        .replace(/<br\s*\/?>/g, '');
+      return html.length === 0;
     }
 
-    function syncDateMeta(now = toDateString()) {
-      if (!dateInput.value) dateInput.value = now;
-      updatedInput.value = now;
+    function updatePlaceholder() {
+      const empty = isEditorEmpty() && currentMode === 'visual';
+      if (!editorPlaceholder) return;
+      editorPlaceholder.style.display = empty ? '' : 'none';
+    }
+
+    function setMode(mode, sync = true) {
+      currentMode = mode === 'source' ? 'source' : 'visual';
+      if (currentMode === 'visual') {
+        sourceEditor.classList.add('hidden');
+        editor.classList.remove('hidden');
+        editorPlaceholder.style.display = isEditorEmpty() ? '' : 'none';
+      } else {
+        editorPlaceholder.style.display = 'none';
+        editor.classList.add('hidden');
+        sourceEditor.classList.remove('hidden');
+      }
+      updateModeUI();
+      if (sync) {
+        syncState();
+      }
+    }
+
+    function syncState() {
+      if (currentMode === 'source') {
+        sourceEditor.value = editorToMarkdown() || sourceEditor.value;
+      } else {
+        editor.innerHTML = sourceToHtml(sourceEditor.value);
+      }
+      updatePlaceholder();
+      saveDraft();
     }
 
     function updateModeUI() {
@@ -331,558 +211,26 @@ const TYPES = [
       }
     }
 
-    function getSelectionRange() {
-      const sel = window.getSelection();
-      if (!sel || sel.rangeCount === 0) return null;
-      return sel.getRangeAt(0);
+    function toYamlString(value) {
+      return JSON.stringify(String(value));
     }
 
-    function getSelectionText() {
-      const sel = window.getSelection();
-      if (!sel) return '';
-      return sel.toString();
+    function slugify(value) {
+      return String(value || '')
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, '-')
+        .replace(/[^a-z0-9\u4e00-\u9fff_-]/g, '')
+        .replace(/-+/g, '-')
+        .replace(/(^-|-$)/g, '')
+        .slice(0, 80) || `post-${nowDate()}`;
     }
 
-    function focusEditor(forceEnd = false) {
-      if (currentMode !== 'visual') {
-        setMode('visual', true);
-      }
-      editor.focus();
-      const sel = window.getSelection();
-      if (!sel || sel.rangeCount === 0 || forceEnd) {
-        const range = document.createRange();
-        range.selectNodeContents(editor);
-        range.collapse(false);
-        sel?.removeAllRanges();
-        if (sel) sel.addRange(range);
-      }
-      updateEmptyState();
-    }
-
-    function isEditorEmpty() {
-      if (!editor) return true;
-      if (!editor.hasChildNodes()) return true;
-
-      const rawText = (editor.textContent || '').replace(/[\u200b\u00a0]/g, '').trim();
-      if (rawText.length > 0) return false;
-      return !editor.querySelector('img,pre,hr,table,blockquote,ul,ol,li');
-    }
-
-    function updateEmptyState() {
-      const isEmpty = isEditorEmpty();
-      const visualMode = currentMode === 'visual';
-      if (editor) {
-        editor.classList.toggle('is-empty', isEmpty && visualMode);
-      }
-      if (editorPlaceholder) {
-        if (isEmpty && visualMode) {
-          editorPlaceholder.classList.remove('writer-placeholder-hidden');
-          editorPlaceholder.textContent = editor?.getAttribute('data-placeholder') || '';
-        } else {
-          editorPlaceholder.classList.add('writer-placeholder-hidden');
-        }
-      }
-    }
-
-    function setMode(mode, keepFocus = false) {
-      currentMode = mode === 'source' ? 'source' : 'visual';
-      if (currentMode === 'visual') {
-        editor.classList.remove('hidden');
-        sourceEditor.classList.add('hidden');
-        sourceEditor.classList.remove('ring-2', 'ring-blue-500', 'ring-opacity-60');
-        editor.classList.add('ring-2', 'ring-blue-500', 'ring-opacity-0');
-        editor.innerHTML = markdownToHtml(sourceEditor.value) || '';
-        updateEmptyState();
-        if (keepFocus) focusEditor();
-      } else {
-        sourceEditor.value = editorToMarkdown();
-        sourceEditor.classList.remove('hidden');
-        editor.classList.add('hidden');
-        editor.classList.remove('ring-2', 'ring-blue-500', 'ring-opacity-0');
-        sourceEditor.classList.add('ring-2', 'ring-blue-500', 'ring-opacity-60');
-        editorPlaceholder?.classList.add('writer-placeholder-hidden');
-      }
-      updateModeUI();
-      saveDraft();
-    }
-
-    function commandMatches(command, keyword) {
-      const target = keyword.trim().toLowerCase();
-      if (!target) return true;
-      const all = [command.id, command.label, command.description, command.group, ...(command.keywords || [])]
-        .filter(Boolean)
-        .join(' ')
-        .toLowerCase();
-      return all.includes(target);
-    }
-
-    function renderCommandList(raw = '') {
-      const keyword = String(raw || '').trim().toLowerCase();
-      const items = COMMANDS.filter((cmd) => commandMatches(cmd, keyword));
-      commandList.innerHTML = '';
-      if (items.length === 0) {
-        commandEmpty.classList.remove('hidden');
-        return;
-      }
-      commandEmpty.classList.add('hidden');
-      items.forEach((item) => {
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.className = 'w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-left text-sm hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900';
-        button.dataset.command = item.id;
-        button.innerHTML = `<div class="font-medium">${item.label}</div><div class="text-xs text-slate-500">${item.description}</div>`;
-        button.addEventListener('click', () => {
-          runCommandById(item.id);
-          closeCommandPalette();
-        });
-        commandList.appendChild(button);
-      });
-    }
-
-    function openCommandPalette() {
-      commandPalette.classList.remove('hidden');
-      commandSearch.value = '';
-      renderCommandList('');
-      commandSearch.focus();
-      commandPalette.setAttribute('aria-hidden', 'false');
-    }
-
-    function closeCommandPalette() {
-      commandPalette.classList.add('hidden');
-      commandPalette.setAttribute('aria-hidden', 'true');
-    }
-
-    function isBlockTag(name) {
-      const key = (name || '').toLowerCase();
-      return [
-        'p',
-        'div',
-        'h1',
-        'h2',
-        'h3',
-        'h4',
-        'h5',
-        'h6',
-        'blockquote',
-        'pre',
-        'ul',
-        'ol',
-        'li'
-      ].includes(key);
-    }
-
-    function getCurrentBlockElement() {
-      const sel = window.getSelection();
-      if (!sel || sel.rangeCount === 0) return null;
-      let node = sel.anchorNode;
-      if (!node) return null;
-
-      if (node.nodeType === 3) {
-        node = node.parentElement;
-      }
-
-      while (node && node !== editor && node.parentElement) {
-        if (node.parentElement === editor) {
-          return node;
-        }
-        if (isBlockTag(node.tagName) && node.parentElement === editor) {
-          return node;
-        }
-        node = node.parentElement;
-      }
-      return null;
-    }
-
-    function getActiveBlockElement() {
-      const block = getCurrentBlockElement();
-      if (block) return block;
-
-      if (editor.children.length > 0) {
-        const firstBlock = editor.querySelector(':scope > *');
-        if (firstBlock) return firstBlock;
-      }
-
-      if (editor.textContent && editor.textContent.trim()) {
-        const raw = editor.textContent;
-        const p = document.createElement('p');
-        p.textContent = raw;
-        editor.textContent = '';
-        editor.appendChild(p);
-        return p;
-      }
-
-      const fallback = document.createElement('p');
-      fallback.textContent = '';
-      editor.appendChild(fallback);
-      return fallback;
-    }
-
-    function setCaretToEnd(node) {
-      if (!node) return;
-      const range = document.createRange();
-      range.selectNodeContents(node);
-      range.collapse(false);
-      const sel = window.getSelection();
-      if (!sel) return;
-      sel.removeAllRanges();
-      sel.addRange(range);
-    }
-
-    function setCaretToStart(node) {
-      if (!node) return;
-      const range = document.createRange();
-      range.selectNodeContents(node);
-      range.collapse(true);
-      const sel = window.getSelection();
-      if (!sel) return;
-      sel.removeAllRanges();
-      sel.addRange(range);
-    }
-
-    function applyCommand(cmd, value) {
-      if (currentMode !== 'visual') return;
-      focusEditor();
-      if (BROWSER_COMMAND_KEYS.includes(cmd) || cmd === 'foreColor') {
-        document.execCommand(cmd, false, value || null);
-      } else {
-        switch (cmd) {
-          case 'quote':
-            applyBlock('blockquote');
-            break;
-          case 'codeBlock':
-            applyCodeBlock();
-            break;
-          case 'h1':
-            applyHeading(1);
-            break;
-          case 'h2':
-            applyHeading(2);
-            break;
-          case 'h3':
-            applyHeading(3);
-            break;
-          case 'removeFormat':
-            document.execCommand('removeFormat', false, null);
-            break;
-        }
-      }
-      updateEmptyState();
-      saveDraft();
-    }
-
-    function applyHeading(level) {
-      if (currentMode !== 'visual') return;
-      focusEditor(true);
-      const block = getActiveBlockElement();
-      const tag = `h${level}`;
-      if (block.tagName && block.tagName.toLowerCase() === tag) {
-        return;
-      }
-      const rawHtml = block.innerHTML || '';
-      const fallbackText = block.textContent?.trim();
-      const newBlock = document.createElement(tag);
-      newBlock.innerHTML = rawHtml || (fallbackText ? fallbackText : `标题 ${level}`);
-      block.replaceWith(newBlock);
-      setCaretToEnd(newBlock);
-      updateEmptyState();
-      saveDraft();
-    }
-
-    function applyCodeBlock() {
-      if (currentMode !== 'visual') return;
-      const language = normalizeLanguageLabel(window.prompt('代码块语言（可空：bash、ts、terminal）', 'bash'));
-      focusEditor(true);
-      const block = getActiveBlockElement();
-      const codeText = (block && (block.textContent || block.innerText)) ? (block.textContent || '').replace(/\n+$/g, '') : '';
-      const pre = document.createElement('pre');
-      if (language) {
-        pre.setAttribute('data-language', language);
-      }
-      const code = document.createElement('code');
-      if (language) {
-        code.className = `language-${language}`;
-      }
-      code.textContent = codeText;
-      pre.appendChild(code);
-      if (block) {
-        block.replaceWith(pre);
-      } else {
-        editor.appendChild(pre);
-      }
-      setCaretToEnd(pre);
-      updateEmptyState();
-      saveDraft();
-    }
-
-    function applyBlock(tagName) {
-      if (currentMode !== 'visual') return;
-      focusEditor(true);
-      const block = getActiveBlockElement();
-      if (!block) return;
-      const target = tagName.toLowerCase();
-      const newBlock = document.createElement(target);
-      newBlock.innerHTML = block.innerHTML || '';
-      block.parentElement?.replaceChild(newBlock, block);
-      setCaretToEnd(newBlock);
-      updateEmptyState();
-      saveDraft();
-    }
-
-    function applyOrWrapTag(block, tagName) {
-      if (!block || block === editor) return;
-      const target = tagName.toLowerCase();
-      const currentName = block.tagName ? block.tagName.toLowerCase() : '';
-
-      if (currentName === 'li' && block.parentElement) {
-        const list = block.parentElement;
-        if (list.tagName.toLowerCase() === target) {
-          const p = document.createElement('p');
-          p.innerHTML = block.innerHTML;
-          list.replaceWith(p);
-          setCaretToEnd(p);
-          return;
-        }
-        const nextList = document.createElement(target);
-        const nextItem = document.createElement('li');
-        nextItem.innerHTML = block.innerHTML || '';
-        nextList.appendChild(nextItem);
-        list.replaceWith(nextList);
-        setCaretToEnd(nextItem);
-        return;
-      }
-
-      const wrapped = document.createElement(target);
-      wrapped.innerHTML = block.innerHTML || '';
-      block.replaceWith(wrapped);
-      setCaretToEnd(wrapped);
-    }
-
-    function toggleList(listType) {
-      if (currentMode !== 'visual') return;
-      focusEditor(true);
-      const block = getActiveBlockElement();
-      if (!block) return;
-      const target = listType.toLowerCase();
-
-      if (block.tagName && block.tagName.toLowerCase() === 'li') {
-        applyOrWrapTag(block, target);
-        updateEmptyState();
-        saveDraft();
-        return;
-      }
-
-      const list = document.createElement(target);
-      const item = document.createElement('li');
-      item.innerHTML = block.innerHTML || '';
-      list.appendChild(item);
-      block.parentElement?.replaceChild(list, block);
-      setCaretToEnd(item);
-      updateEmptyState();
-      saveDraft();
-    }
-
-    function insertHorizontalRule() {
-      if (currentMode !== 'visual') return;
-      focusEditor(true);
-      const hr = document.createElement('hr');
-      const range = getSelectionRange();
-      if (!range) return;
-      range.collapse(false);
-      range.insertNode(hr);
-      const br = document.createElement('div');
-      br.innerHTML = '&nbsp;';
-      hr.after(br);
-      setCaretToEnd(hr);
-      updateEmptyState();
-      saveDraft();
-    }
-
-    function insertAtCursorHtml(html) {
-      if (currentMode !== 'visual') return;
-      focusEditor();
-      const sel = window.getSelection();
-      if (!sel || sel.rangeCount === 0) return;
-      const range = sel.getRangeAt(0);
-      range.deleteContents();
-      const holder = document.createElement('div');
-      holder.innerHTML = html;
-      const frag = document.createDocumentFragment();
-      while (holder.firstChild) frag.appendChild(holder.firstChild);
-      range.insertNode(frag);
-      range.collapse(false);
-      sel.removeAllRanges();
-      sel.addRange(range);
-      updateEmptyState();
-      saveDraft();
-    }
-
-    function addLink() {
-      if (currentMode !== 'visual') return;
-      const selection = window.getSelection();
-      const selectedText = selection ? selection.toString().trim() : '';
-      const text = window.prompt('链接文字', selectedText || '链接');
-      const url = window.prompt('链接地址', 'https://');
-      if (!text || !url || !url.trim()) {
-        stateTip.textContent = '已取消插入链接。';
-        return;
-      }
-      if (!selectedText) {
-        stateTip.textContent = '请先选中要加链接的文字。';
-        return;
-      }
-      if (!selection || selection.rangeCount === 0) return;
-      const anchor = document.createElement('a');
-      anchor.href = url.trim();
-      anchor.textContent = text;
-      const range = selection.getRangeAt(0);
-      range.deleteContents();
-      range.insertNode(anchor);
-      range.collapse(false);
-      selection.removeAllRanges();
-      selection.addRange(range);
-      editor.focus();
-      saveDraft();
-    }
-
-    function runCommandById(id) {
-      if (currentMode === 'source' && !['openCommand','colorPicker'].includes(id)) {
-        stateTip.textContent = '当前为源码模式，先切到文档模式执行可视化命令。';
-        return;
-      }
-
-      switch (id) {
-        case 'bold':
-        case 'italic':
-        case 'underline':
-        case 'strikeThrough':
-        case 'insertUnorderedList':
-        case 'insertOrderedList':
-          applyCommand(id);
-          break;
-        case 'h1':
-          applyHeading(1);
-          break;
-        case 'h2':
-          applyHeading(2);
-          break;
-        case 'h3':
-          applyHeading(3);
-          break;
-        case 'quote':
-          applyBlock('blockquote');
-          break;
-        case 'codeBlock':
-          applyCodeBlock();
-          break;
-        case 'ul':
-          toggleList('ul');
-          break;
-        case 'ol':
-          toggleList('ol');
-          break;
-        case 'p':
-          applyBlock('p');
-          break;
-        case 'hr':
-          insertHorizontalRule();
-          break;
-        case 'link':
-          addLink();
-          break;
-        case 'colorPicker':
-          colorPicker.click();
-          break;
-        case 'removeFormat':
-          applyCommand('removeFormat');
-          break;
-        case 'undo':
-          document.execCommand('undo');
-          saveDraft();
-          break;
-        case 'redo':
-          document.execCommand('redo');
-          saveDraft();
-          break;
-        default:
-          break;
-      }
-      stateTip.textContent = `已执行：${id}`;
-    }
-
-    function serializeNode(node) {
-      if (!node) return '';
-      if (node.nodeType === 3) return String(node.textContent || '').replace(/\\u0000/g, '');
-      if (node.nodeType === 8) return '';
-      if (node.nodeType === 11) {
-        return Array.from(node.childNodes).map((child) => serializeNode(child)).join('');
-      }
-
-      const tag = (node.nodeName || '').toLowerCase();
-      const rawChildren = Array.from(node.childNodes).map((child) => serializeNode(child)).join('');
-      const children = rawChildren.replace(/\\s+$/g, '');
-
-      if (tag === 'br') return '\\n';
-      if (tag === 'strong' || tag === 'b') return `**${children}**`;
-      if (tag === 'em' || tag === 'i') return `*${children}*`;
-      if (tag === 'u') return `<u>${children}</u>`;
-      if (tag === 's' || tag === 'del' || tag === 'strike') return `~~${children}~~`;
-      if (tag === 'code') return `\\`${children}\\``;
-      if (tag === 'a') return `[${children}](${node.href || '#'})`;
-      if (tag === 'img') return `![${node.alt || 'image'}](${node.src || ''})`;
-      if (tag === 'h1' || tag === 'h2' || tag === 'h3' || tag === 'h4' || tag === 'h5' || tag === 'h6') {
-        const level = Number(tag.replace('h', '')) || 1;
-        return `${'\\n'}${'#'.repeat(level)} ${children.trim()}${'\\n'}${'\\n'}`;
-      }
-      if (tag === 'blockquote') return `> ${children.trim()}\\n\\n`;
-      if (tag === 'pre') {
-        const codeNode = node.querySelector('code');
-        const langMatch = (codeNode?.className || node.getAttribute('data-language') || '').match(/language-([\\w+#+-]+)/);
-        const lang = langMatch ? langMatch[1] : '';
-        const codeText = (codeNode ? codeNode.textContent : children).replace(/^\\n+|\\n+$/g, '');
-        return `\\n\\n\`\`\`${lang ? `${lang}` : ''}\\n${codeText}\\n\`\`\`\\n\\n`;
-      }
-      if (tag === 'hr') return `---\\n\\n`;
-      if (tag === 'p') return `${children.trim()}\\n\\n`;
-      if (tag === 'li') {
-        return `- ${children.trim()}\\n`;
-      }
-      if (tag === 'table') {
-        const thead = node.querySelectorAll('thead tr')[0];
-        const rows = Array.from(node.querySelectorAll('tbody tr'));
-        if (!thead) return children;
-        const headCols = Array.from(thead.children)
-          .map((item) => item.textContent?.trim() || '');
-        const bodyLines = rows.map((row) =>
-          `| ${Array.from(row.children).map((cell) => cell.textContent?.trim() || '').join(' | ')} |`
-        );
-        const alignLine = `| ${headCols.map(() => '---').join(' | ')} |`;
-        return `${'\\n'}| ${headCols.join(' | ')} |\\n${alignLine}${bodyLines.length ? `\\n${bodyLines.join('\\n')}` : ''}\\n\\n`;
-      }
-      if (tag === 'ul' || tag === 'ol') {
-        return `${Array.from(node.children)
-          .filter((item) => (item.tagName || '').toLowerCase() === 'li')
-          .map((item, index) => {
-            const marker = tag === 'ol' ? `${index + 1}.` : '-';
-            return `${marker} ${serializeNode(item).replace(/^[-*]\\s*/, '').trim()}`;
-          })
-          .join('\\n')}\\n\\n`;
-      }
-      if (tag === 'span' && node.style && node.style.color) {
-        return `<span style=\"color:${node.style.color}\">${children}</span>`;
-      }
-      return children;
-    }
-
-    function editorToMarkdown() {
-      const html = editor.innerHTML;
-      if (!html) return '';
-      const wrapper = document.createElement('div');
-      wrapper.innerHTML = html;
-      return Array.from(wrapper.childNodes)
-        .map((node) => serializeNode(node))
-        .join('')
-        .replace(/\\n{3,}/g, '\\n\\n')
-        .trim();
+    function cleanTags() {
+      return stripText(tagsInput.value)
+        .split(',')
+        .map((item) => stripText(item))
+        .filter(Boolean);
     }
 
     function escapeHtml(value) {
@@ -893,629 +241,498 @@ const TYPES = [
         .replace(/"/g, '&quot;');
     }
 
-    function isExternalUrl(url) {
-      return /^https?:\\/\\//i.test(String(url || '').trim());
-    }
-
-    function makeLinkTag(text, url) {
-      const href = encodeURI(String(url || '').trim());
-      if (!href) return escapeHtml(text);
-      const attrs = isExternalUrl(href)
-        ? ` href="${href}" target="_blank" rel="noopener noreferrer"`
-        : ` href="${href}"`;
-      return `<a${attrs}>${escapeHtml(text)}</a>`;
-    }
-
-    function isHorizontalRule(line) {
-      return /^(\\s*-{3,}\\s*)$/.test(line) || /^(\\s*_{3,}\\s*)$/.test(line) || /^(\\s*\\*{3,}\\s*)$/.test(line);
-    }
-
-    function isTableRow(line) {
-      return /^\\s*\\|?\\s*[^|]+\\s*\\|\\s*[^|]+\\s*(\\|\\s*[^|]+\\s*)*\\|?\\s*$/.test(line.trim());
-    }
-
-    function isTableSeparator(line) {
-      return /^\\s*\\|?(\\s*:?[-]{3,}:?\\s*\\|)+\\s*$/.test(line.trim());
-    }
-
-    function splitMarkdownRow(line) {
-      return line
-        .replace(/^\\s*\\|/, '')
-        .replace(/\\|\\s*$/, '')
-        .split('|')
-        .map((cell) => cell.trim());
-    }
-
-    function inlineMarkdownToHtml(text, refLinks = new Map()) {
-      let out = escapeHtml(text);
-      out = out.replace(/!\\[([^\\]]*)\\]\\(([^)]+)\\)/g, (_, alt, href) => {
-        const src = encodeURI(String(href || '').trim());
-        return `<img src="${src}" alt="${escapeHtml(alt || '')}" />`;
+    function inlineMarkdownToHtml(text) {
+      let out = String(text || '');
+      const colorSpans = [];
+      out = out.replace(/<span\b[^>]*\bstyle\s*=\s*(["'])([\s\S]*?)\1[^>]*>([\s\S]*?)<\/span>/gi, (_match, _quote, styleText, body) => {
+        const style = (styleText || '').toLowerCase().trim();
+        const safeStyle = style.includes('color') ? ` style=\"${escapeHtml(style)}\"` : '';
+        const safeBody = body || '';
+        if (!safeStyle) return '';
+        const index = colorSpans.length;
+        colorSpans.push(`<span${safeStyle}>${escapeHtml(safeBody)}</span>`);
+        return `__COLOR_SPAN_${index}__`;
       });
-      out = out.replace(/\\[([^\\]]+)\\]\\(([^)]+)\\)/g, (_, label, href) => makeLinkTag(label, href));
-      out = out.replace(
-        /\\[([^\\]]+)\\]\\[([^\\]]+)\\]/g,
-        (_, label, ref) => makeLinkTag(label, refLinks.get(String(ref).trim().toLowerCase()) || '#')
-      );
-      out = out
-        .replace(/\\*\\*([^*]+)\\*\\*/g, '<strong>$1</strong>')
-        .replace(/__([^_]+)__/g, '<strong>$1</strong>')
-        .replace(/\\*([^*]+)\\*/g, '<em>$1</em>')
-        .replace(/_([^_]+)_/g, '<em>$1</em>')
-        .replace(/~~([^~]+)~~/g, '<del>$1</del>')
-        .replace(/`([^`]+)`/g, '<code>$1</code>');
+      out = escapeHtml(out);
+
+      out = out.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_, alt, src) => {
+        const safeAlt = (alt || '').trim() || 'image';
+        return `<img src="${escapeHtml(src.trim())}" alt="${escapeHtml(safeAlt)}" />`;
+      });
+
+      out = out.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, label, href) => {
+        return `<a href="${encodeURI((href || '').trim())}">${escapeHtml(label)}</a>`;
+      });
+
+      out = out.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+      out = out.replace(/__([^_]+)__/g, '<strong>$1</strong>');
+      out = out.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+      out = out.replace(/_([^_]+)_/g, '<em>$1</em>');
+      out = out.replace(/~~([^~]+)~~/g, '<del>$1</del>');
+      out = out.replace(/`([^`]+)`/g, '<code>$1</code>');
+      out = out.replace(/__COLOR_SPAN_(\d+)__/g, (_, idx) => colorSpans[Number(idx)] || '');
+
       return out;
     }
 
-    function markdownToHtml(md) {
-      const source = String(md || '').replace(/\\r\\n/g, '\\n');
-      const rawLines = source.split('\\n');
-      const refLinks = new Map();
-      const lines = [];
-
-      for (const line of rawLines) {
-        const ref = line.match(/^\\s*\\[([^\\]]+)\\]:\\s*(\\S+)(?:\\s+["'][^"']*["'])?\\s*$/);
-        if (ref) {
-          refLinks.set(ref[1].trim().toLowerCase(), ref[2].trim());
-          continue;
-        }
-        lines.push(line);
-      }
-
-      const htmlParts = [];
+    function sourceToHtml(md) {
+      const text = String(md || '').replace(/\r\n/g, '\n').trim();
+      if (!text) return '';
+      const lines = text.split('\n');
+      const html = [];
       let i = 0;
 
       while (i < lines.length) {
-        const current = (lines[i] || '').replace(/\t/g, '  ');
-        const trimmed = current.trim();
-        if (!trimmed) {
+        const line = (lines[i] || '').trim();
+        if (!line) {
           i += 1;
           continue;
         }
 
-        if (/^```/.test(trimmed)) {
-          const language = (trimmed.match(/^```(.*)$/)?.[1] || '').trim();
-          const codeLines = [];
+        const heading = line.match(/^(#{1,6})\s+(.*)$/);
+        if (heading) {
+          const level = Math.min(6, heading[1].length);
+          html.push(`<h${level}>${inlineMarkdownToHtml(heading[2])}</h${level}>`);
           i += 1;
+          continue;
+        }
+
+        if (/^```/.test(line)) {
+          const language = line.replace(/^```/, '').trim();
+          i += 1;
+          const code = [];
           while (i < lines.length && !/^```/.test((lines[i] || '').trim())) {
-            codeLines.push(lines[i]);
+            code.push(lines[i]);
             i += 1;
           }
           if (i < lines.length) i += 1;
-          const escapedCode = escapeHtml(codeLines.join('\\n'));
-          const lang = normalizeLanguageLabel(language);
-          const cls = lang ? ` class=\"language-${lang}\"` : '';
-          const meta = lang ? ` data-language=\"${lang}\"` : '';
-          htmlParts.push(`<pre${meta}><code${cls}>${escapedCode}</code></pre>`);
+          const codeText = escapeHtml(code.join('\n'));
+          const lang = language ? ` data-language="${escapeHtml(language)}"` : '';
+          const cls = language ? ` class="language-${escapeHtml(language)}"` : '';
+          html.push(`<pre${lang}><code${cls}>${codeText}</code></pre>`);
           continue;
         }
 
-        if (/^#{1,6}\\s+/.test(trimmed)) {
-          const level = trimmed.match(/^(#{1,6})\\s+/)?.[1]?.length || 1;
-          const title = trimmed.replace(/^#{1,6}\\s+/, '');
-          htmlParts.push(`<h${level}>${escapeHtml(title)}</h${level}>`);
-          i += 1;
-          continue;
-        }
-
-        if (/^>/.test(trimmed)) {
-          const quoteLines = [];
+        if (/^>/.test(line)) {
+          let quote = [];
           while (i < lines.length && /^>/.test((lines[i] || '').trim())) {
-            quoteLines.push((lines[i] || '').replace(/^> ?/, ''));
+            quote.push((lines[i] || '').replace(/^>\s?/, ''));
             i += 1;
           }
-          htmlParts.push(`<blockquote>${inlineMarkdownToHtml(quoteLines.join('\\n'), refLinks).replace(/\\n/g, '<br/>')}</blockquote>`);
+          const quoteHtml = quote.map((item) => inlineMarkdownToHtml(item)).join('<br/>');
+          html.push(`<blockquote>${quoteHtml}</blockquote>`);
           continue;
         }
 
-        if (isTableRow(trimmed) && isTableSeparator(lines[i + 1]?.trim() || '')) {
-          const headCells = splitMarkdownRow(trimmed);
-          const alignLine = lines[i + 1] || '';
-          i += 2;
-          const rows = [];
-          while (i < lines.length && isTableRow(lines[i].trim())) {
-            rows.push(splitMarkdownRow(lines[i]));
-            i += 1;
-          }
-
-          const alignDefs = alignLine
-            .replace(/^\\s*\\|?/, '')
-            .replace(/\\|\\s*$/, '')
-            .split('|')
-            .map((item) => item.trim());
-
-          const alignAttrs = alignDefs.map((item) => {
-            if (item.startsWith(':') && item.endsWith(':')) return ' style=\"text-align:center\"';
-            if (item.endsWith(':')) return ' style=\"text-align:right\"';
-            if (item.startsWith(':')) return ' style=\"text-align:left\"';
-            return '';
-          });
-
-          const thead = `<thead><tr>${headCells
-            .map((cell, idx) => `<th${alignAttrs[idx] || ''}>${inlineMarkdownToHtml(cell, refLinks)}</th>`)
-            .join('')}</tr></thead>`;
-          const body = rows
-            .map(
-              (rowCells) =>
-                `<tr>${rowCells
-                  .map((cell, idx) => `<td${alignAttrs[idx] || ''}>${inlineMarkdownToHtml(cell, refLinks)}</td>`)
-                  .join('')}</tr>`
-            )
-            .join('');
-          htmlParts.push(`<table>${thead}<tbody>${body}</tbody></table>`);
-          continue;
-        }
-
-        if (/^-\\s+/.test(trimmed) || /^\\*\\s+/.test(trimmed)) {
+        if (/^[-*]\s+/.test(line)) {
           const items = [];
-          while (i < lines.length && (/^-\\s+/.test((lines[i] || '').trim()) || /^\\*\\s+/.test((lines[i] || '').trim()))) {
-            items.push((lines[i] || '').trim().replace(/^[-*]\\s+/, ''));
+          while (i < lines.length && /^[-*]\s+/.test((lines[i] || '').trim())) {
+            items.push((lines[i] || '').replace(/^[-*]\s+/, ''));
             i += 1;
           }
-          const content = items.map((item) => `<li>${inlineMarkdownToHtml(item, refLinks)}</li>`).join('');
-          htmlParts.push(`<ul>${content}</ul>`);
+          html.push(`<ul>${items.map((item) => `<li>${inlineMarkdownToHtml(item)}</li>`).join('')}</ul>`);
           continue;
         }
 
-        if (/^\\d+\\.\\s+/.test(trimmed)) {
+        if (/^\d+\.\s+/.test(line)) {
           const items = [];
-          while (i < lines.length && /^\\d+\\.\\s+/.test((lines[i] || '').trim())) {
-            items.push((lines[i] || '').trim().replace(/^\\d+\\.\\s+/, ''));
+          while (i < lines.length && /^\d+\.\s+/.test((lines[i] || '').trim())) {
+            items.push((lines[i] || '').replace(/^\d+\.\s+/, ''));
             i += 1;
           }
-          const content = items.map((item, index) => `<li>${inlineMarkdownToHtml(item, refLinks)}</li>`).join('');
-          htmlParts.push(`<ol>${content}</ol>`);
+          html.push(`<ol>${items.map((item) => `<li>${inlineMarkdownToHtml(item)}</li>`).join('')}</ol>`);
           continue;
         }
 
-        if (isHorizontalRule(trimmed)) {
-          htmlParts.push('<hr />');
-          i += 1;
-          continue;
-        }
-
-        const paragraphLines = [lines[i]];
+        html.push(`<p>${inlineMarkdownToHtml(line)}</p>`);
         i += 1;
-        while (i < lines.length) {
-          const next = (lines[i] || '').trim();
-          const nextIsBlock =
-            !next ||
-            /^#{1,6}\\s+/.test(next) ||
-            /^>/.test(next) ||
-            /^```/.test(next) ||
-            /^\\d+\\.\\s+/.test(next) ||
-            /^[-*]\\s+/.test(next) ||
-            isHorizontalRule(next) ||
-            (isTableRow(next) && isTableSeparator(lines[i + 1]?.trim() || ''));
-          if (nextIsBlock) break;
-          paragraphLines.push(lines[i]);
-          i += 1;
-        }
-        htmlParts.push(`<p>${inlineMarkdownToHtml(paragraphLines.join('\\n'), refLinks).replace(/\\n/g, '<br/>')}</p>`);
       }
 
-      return htmlParts.filter(Boolean).join('\\n');
+      return html.join('');
     }
 
-    function getActiveBodyMarkdown() {
-      return currentMode === 'source' ? (sourceEditor.value || '').trim() : editorToMarkdown();
+    function serializeNode(node) {
+      if (!node) return '';
+      if (node.nodeType === Node.TEXT_NODE) return (node.textContent || '').replace(/\u0000/g, '');
+      if (node.nodeType === Node.ELEMENT_NODE) {
+        const tag = (node.tagName || '').toLowerCase();
+        const style = (node.getAttribute('style') || '').toLowerCase();
+        const raw = Array.from(node.childNodes).map(serializeNode).join('');
+        const content = raw.replace(/\s+$/, '');
+        if (tag === 'strong' || tag === 'b') return `**${content.trim()}**`;
+        if (tag === 'em' || tag === 'i') return `*${content.trim()}*`;
+        if (tag === 'del' || tag === 'strike' || tag === 's') return `~~${content.trim()}~~`;
+        if (tag === 'u') return `_${content.trim()}_`;
+        if (tag === 'span' && /font-weight:\s*(bold|[7-9]00|bolder|[1-9][0-9]{2})/.test(style)) {
+          return `**${content.trim()}**`;
+        }
+        if (tag === 'span' && /font-style:\s*italic/.test(style)) {
+          return `*${content.trim()}*`;
+        }
+        if (tag === 'span' && /text-decoration:\s*[^;]*underline/.test(style)) {
+          return `_${content.trim()}_`;
+        }
+        if (tag === 'span' && /text-decoration:\s*[^;]*line-through/.test(style)) {
+          return `~~${content.trim()}~~`;
+        }
+        if (tag === 'span' && /color:\s*[^;]+/.test(style)) {
+          const safeStyle = (node.getAttribute('style') || '').replace(/["']/g, '');
+          return `<span style="${safeStyle}">${content}</span>`;
+        }
+        if (tag === 'code') return `\`${content}\``;
+        if (tag === 'h1') return `# ${content.trim()}\n\n`;
+        if (tag === 'h2') return `## ${content.trim()}\n\n`;
+        if (tag === 'h3') return `### ${content.trim()}\n\n`;
+        if (tag === 'h4') return `#### ${content.trim()}\n\n`;
+        if (tag === 'h5') return `##### ${content.trim()}\n\n`;
+        if (tag === 'h6') return `###### ${content.trim()}\n\n`;
+        if (tag === 'blockquote') return `> ${content.trim()}\n\n`;
+        if (tag === 'pre') {
+          const codeNode = node.querySelector('code');
+          const code = (node.textContent || '').replace(/^\n+|\n+$/g, '');
+          const lang = (node.getAttribute('data-language') || codeNode?.getAttribute('class') || '').match(/language-([\w-]+)/)?.[1] || '';
+          const info = lang ? `${lang}` : '';
+          return `\n\n\`\`\`${info}\n${code}\n\`\`\`\n\n`;
+        }
+        if (tag === 'ul' || tag === 'ol') {
+          return Array.from(node.querySelectorAll(':scope > li'))
+            .map((li, idx) => {
+              const prefix = tag === 'ol' ? `${idx + 1}. ` : '- ';
+              const row = Array.from(li.childNodes).map((child) => serializeNode(child)).join('').replace(/\n+/g, ' ').trim();
+              return `${prefix}${row}`;
+            })
+            .join('\n') + '\n\n';
+        }
+        if (tag === 'a') {
+          const href = (node.getAttribute('href') || '').trim() || '#';
+          return `[${content.trim()}](${href})`;
+        }
+        if (tag === 'li') return `- ${content.trim()}\n`;
+        if (tag === 'img') return `![${node.alt || 'image'}](${(node.getAttribute('src') || '').trim() || ''})\n\n`;
+        if (tag === 'hr') return '---\n\n';
+        if (tag === 'p') return `${content.trim()}\n\n`;
+        if (tag === 'br') return '\n';
+        return content;
+      }
+      return '';
     }
 
-    function getDraftData() {
-      return {
-        title: cleanText(titleInput.value),
+    function editorToMarkdown() {
+      const container = document.createElement('div');
+      container.innerHTML = editor.innerHTML || '';
+      return Array.from(container.childNodes)
+        .map(serializeNode)
+        .join('')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
+    }
+
+    function getBodyMarkdown() {
+      if (currentMode === 'source') {
+        return (sourceEditor.value || '').trim();
+      }
+      return editorToMarkdown() || '';
+    }
+
+    function buildMarkdown() {
+      const title = stripText(titleInput.value) || '无标题';
+      const tags = cleanTags();
+      const date = dateInput.value || nowDate();
+      const updated = updatedInput.value || nowDate();
+      const summary = stripText(summaryInput.value) || '待补充';
+      const body = getBodyMarkdown();
+
+      const front = [
+        '---',
+        `title: ${toYamlString(title)}`,
+        `date: ${date}`,
+        `updated: ${updated}`,
+        `summary: ${toYamlString(summary)}`,
+        `tags: [${tags.map((item) => toYamlString(item)).join(', ')}]`,
+        `category: ${toYamlString(stripText(categoryInput.value) || '技巧')}`,
+        `type: ${toYamlString(typeInput.value || 'note')}`,
+        `importance: ${clampImportance(importanceInput.value)}`,
+        'draft: false',
+        '---',
+        '',
+        body || '请在正文中填写内容。',
+        '',
+      ];
+      return front.join('\n');
+    }
+
+    function saveDraft() {
+      const payload = {
+        title: stripText(titleInput.value),
         type: typeInput.value || 'note',
-        category: cleanText(categoryInput.value) || '技巧',
+        category: stripText(categoryInput.value) || '技巧',
         importance: clampImportance(importanceInput.value),
-        date: dateInput.value || toDateString(),
-        updated: updatedInput.value || toDateString(),
-        tags: cleanText(tagsInput.value)
-          .split(',')
-          .map((tag) => cleanText(tag))
-          .filter(Boolean),
-        summary: summaryInput.value.trim(),
+        date: dateInput.value || nowDate(),
+        updated: updatedInput.value || nowDate(),
+        tags: cleanTags(),
+        summary: stripText(summaryInput.value),
         contentHtml: editor.innerHTML || '',
         contentSource: sourceEditor.value || '',
         mode: currentMode,
       };
+      localStorage.setItem(LS_KEY, JSON.stringify(payload));
     }
 
-    function buildMarkdown(data) {
-      const now = toDateString();
-      data.date = data.date || now;
-      data.updated = data.updated || now;
-      const tags = data.tags.length > 0 ? `[${data.tags.map((item) => toYamlString(item)).join(', ')}]` : '[]';
-      return `---\\n` +
-        `title: ${toYamlString(data.title || '无标题')}\\n` +
-        `date: ${data.date}\\n` +
-        `updated: ${data.updated}\\n` +
-        `summary: ${toYamlString(data.summary || '待补充')}\\n` +
-        `tags: ${tags}\\n` +
-        `category: ${toYamlString(data.category || '技巧')}\\n` +
-        `type: ${toYamlString(data.type)}\\n` +
-        `importance: ${Number(data.importance)}\\n` +
-        `draft: false\\n` +
-        `---\\n\\n` +
-        `${getActiveBodyMarkdown() || '请在正文中填写内容。'}\\n`;
-    }
-
-    function saveDraft() {
-      localStorage.setItem(LS_KEY, JSON.stringify(getDraftData()));
-    }
-
-    function hydrateDraft() {
+    function loadDraft() {
       const raw = localStorage.getItem(LS_KEY);
-      if (!raw) return;
+      if (!raw) {
+        dateInput.value = nowDate();
+        updatedInput.value = nowDate();
+        return;
+      }
+
       try {
-        const saved = JSON.parse(raw);
-        titleInput.value = saved.title || '';
-        typeInput.value = saved.type || 'note';
-        categoryInput.value = saved.category || '技巧';
-        importanceInput.value = String(saved.importance || 2);
-        dateInput.value = saved.date || '';
-        updatedInput.value = saved.updated || '';
-        tagsInput.value = (saved.tags || []).join(', ');
-        summaryInput.value = saved.summary || '';
-        if (saved.contentSource) {
-          sourceEditor.value = saved.contentSource;
-        }
-        if (saved.contentHtml) {
-          editor.innerHTML = saved.contentHtml;
-        }
-        currentMode = saved.mode === 'source' ? 'source' : 'visual';
-        if (currentMode === 'source') {
-          sourceEditor.classList.remove('hidden');
-          editor.classList.add('hidden');
+        const data = JSON.parse(raw);
+        titleInput.value = data.title || '';
+        typeInput.value = data.type || 'note';
+        categoryInput.value = data.category || '技巧';
+        importanceInput.value = String(data.importance || 2);
+        dateInput.value = data.date || nowDate();
+        updatedInput.value = data.updated || nowDate();
+        tagsInput.value = Array.isArray(data.tags) ? data.tags.join(', ') : '';
+        summaryInput.value = data.summary || '';
+
+        if (data.mode === 'source') {
+          sourceEditor.value = data.contentSource || '';
+          editor.innerHTML = sourceEditor.value ? sourceToHtml(sourceEditor.value) : (data.contentHtml || '');
+          currentMode = 'source';
+          setMode('source', false);
+        } else {
+          editor.innerHTML = data.contentHtml || '';
+          if (!editor.innerHTML && data.contentSource) {
+            editor.innerHTML = sourceToHtml(data.contentSource);
+          }
+          currentMode = 'visual';
+          setMode('visual', false);
         }
         updateModeUI();
-        updateEmptyState();
-        syncDateMeta();
-      } catch (err) {
-        console.error(err);
+        updatePlaceholder();
+      } catch (_err) {
+        // ignore corrupted data
       }
     }
 
-    let slashState = {
-      open: false,
-      node: null,
-      offset: -1,
-    };
-
-    function getSlashContext() {
-      const sel = window.getSelection();
-      if (!sel || sel.rangeCount === 0) return null;
-      const node = sel.anchorNode;
-      if (!node || node.nodeType !== 3) return null;
-      const pos = sel.anchorOffset;
-      const text = node.textContent || '';
-      if (pos <= 0) return null;
-      const before = text.slice(0, pos);
-      const last = before.lastIndexOf('/');
-      if (last === -1) return null;
-      if (last !== before.length - 1) return null;
-      if (last > 0 && !/\\s/.test(before.charAt(last - 1))) return null;
-      return { node, offset: last };
+    function setDraftDate() {
+      const now = nowDate();
+      if (!dateInput.value) dateInput.value = now;
+      updatedInput.value = now;
     }
 
-    function renderSlashMenu() {
-      slashList.innerHTML = '';
-      SLASH_COMMANDS.forEach((item) => {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'w-full rounded-md border border-slate-200 px-2 py-2 text-left text-sm hover:bg-blue-50 dark:border-slate-700 dark:hover:bg-slate-800';
-        btn.innerHTML = `<div class="font-medium">${item.label}</div><div class="text-xs text-slate-500">${item.description}</div>`;
-        btn.addEventListener('click', () => {
-          applySlash(item.run);
-        });
-        slashList.appendChild(btn);
+    function getCurrentBlockElement(range) {
+      if (!range) return null;
+      let node = range.startContainer?.nodeType === Node.TEXT_NODE ? range.startContainer.parentElement : range.startContainer;
+      while (node && node !== editor) {
+        const tag = (node.tagName || '').toUpperCase();
+        if (!tag) break;
+        if (['P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'BLOCKQUOTE', 'UL', 'OL', 'LI', 'DIV'].includes(tag)) {
+          return node;
+        }
+        node = node.parentElement;
+      }
+      return node === editor ? editor : null;
+    }
+
+    function replaceWithBlock(node, tagName) {
+      if (!node || node === editor || !node.parentElement) return null;
+      const wrapper = document.createElement(tagName);
+      Array.from(node.childNodes).forEach((child) => {
+        wrapper.appendChild(child);
       });
-      const rect = getSelectionRange()?.getBoundingClientRect();
-      if (!rect) {
-        slashMenu.style.left = '24px';
-        slashMenu.style.top = '24px';
-      } else {
-        slashMenu.style.left = `${rect.left + window.scrollX}px`;
-        slashMenu.style.top = `${rect.bottom + 6 + window.scrollY}px`;
-      }
-      slashMenu.classList.remove('hidden');
+      node.parentElement.replaceChild(wrapper, node);
+      return wrapper;
     }
 
-    function hideSlashMenu() {
-      slashMenu.classList.add('hidden');
-      slashState.open = false;
+    function normalizeColor(value) {
+      if (!value) return '';
+      return String(value).toLowerCase().trim();
     }
 
-    function applySlash(commandRunner) {
-      if (!slashState.node || slashState.offset < 0) {
-        hideSlashMenu();
-        return;
-      }
-      const sel = window.getSelection();
-      const range = document.createRange();
-      range.setStart(slashState.node, slashState.offset);
-      range.setEnd(slashState.node, slashState.offset + 1);
-      sel.removeAllRanges();
-      sel.addRange(range);
+    function applyTextColor(color) {
+      if (!color) return;
+      const ok = document.execCommand('foreColor', false, color);
+      if (ok) return;
+      const selection = window.getSelection();
+      if (!selection?.rangeCount) return;
+      const range = selection.getRangeAt(0);
+      const text = range.toString();
+      if (!text) return;
+      const span = document.createElement('span');
+      span.style.color = color;
+      span.textContent = text;
       range.deleteContents();
-      setTimeout(() => {
-        commandRunner();
-        hideSlashMenu();
-        saveDraft();
-        updateEmptyState();
-      }, 0);
+      range.insertNode(span);
+      const newRange = document.createRange();
+      newRange.setStartAfter(span);
+      newRange.setEndAfter(span);
+      selection.removeAllRanges();
+      selection.addRange(newRange);
     }
 
-    function openSlashIfNeeded() {
-      if (currentMode !== 'visual') {
-        hideSlashMenu();
+    function applyHeading(level) {
+      const selection = window.getSelection();
+      if (!selection?.rangeCount) return;
+      const range = selection.getRangeAt(0);
+      const before = editor.innerHTML;
+      const ok = document.execCommand('formatBlock', false, `<h${level}>`);
+      const after = editor.innerHTML;
+      if (ok && before !== after) return;
+      const block = getCurrentBlockElement(range);
+      if (!block || block === editor) return;
+      const headingNode = replaceWithBlock(block, `H${level}`);
+      if (headingNode && headingNode !== editor) {
+        const newRange = document.createRange();
+        newRange.selectNodeContents(headingNode);
+        selection.removeAllRanges();
+        selection.addRange(newRange);
+      }
+    }
+
+    function applyList(command) {
+      const tagName = command === 'insertOrderedList' ? 'OL' : 'UL';
+      const selection = window.getSelection();
+      if (!selection?.rangeCount) return;
+      const range = selection.getRangeAt(0);
+      const before = editor.innerHTML;
+      const ok = document.execCommand(command, false, null);
+      const after = editor.innerHTML;
+      if (ok && before !== after) return;
+      const block = getCurrentBlockElement(range);
+      if (!block || block === editor) return;
+
+      if (block.tagName === 'UL' || block.tagName === 'OL') {
+        if (block.tagName !== tagName) {
+          const parent = block.parentElement;
+          if (!parent) return;
+          const list = document.createElement(tagName);
+          Array.from(block.childNodes).forEach((child) => list.appendChild(child));
+          parent.replaceChild(list, block);
+        }
         return;
       }
-      const context = getSlashContext();
-      if (!context) {
-        hideSlashMenu();
+
+      if (block.tagName === 'LI') {
+        const parent = block.parentElement;
+        if (!parent) return;
+        if (parent.tagName !== tagName) {
+          const list = document.createElement(tagName);
+          Array.from(parent.children).forEach((item) => {
+            list.appendChild(item);
+          });
+          parent.replaceWith(list);
+        }
         return;
       }
-      slashState = {
-        open: true,
-        node: context.node,
-        offset: context.offset,
-      };
-      renderSlashMenu();
+
+      const list = document.createElement(tagName);
+      const li = document.createElement('li');
+      Array.from(block.childNodes).forEach((child) => li.appendChild(child));
+      list.appendChild(li);
+      if (block.parentElement) {
+        block.parentElement.replaceChild(list, block);
+      }
+      const newRange = document.createRange();
+      newRange.selectNodeContents(li);
+      selection.removeAllRanges();
+      selection.addRange(newRange);
     }
 
-    function restoreQuery() {
-      let used = false;
-
-      const queryType = query.get('type');
-      if (queryType === 'note' || queryType === 'blog' || queryType === 'important') {
-        typeInput.value = queryType;
-        used = true;
-      }
-
-      if (query.get('title')) {
-        titleInput.value = query.get('title');
-        used = true;
-      }
-      if (query.get('summary')) {
-        summaryInput.value = query.get('summary');
-        used = true;
-      }
-      if (query.get('category')) {
-        categoryInput.value = query.get('category');
-        used = true;
-      }
-      if (query.get('tags')) {
-        tagsInput.value = query.get('tags');
-        used = true;
-      }
-      if (query.get('importance')) {
-        importanceInput.value = String(clampImportance(query.get('importance')));
-        used = true;
-      }
-      if (query.get('body')) {
-        const body = query.get('body');
-        if (body) {
-          currentMode = query.get('bodyMode') === 'source' ? 'source' : currentMode;
-          sourceEditor.value = body;
-          editor.innerHTML = markdownToHtml(body);
-          updateEmptyState();
-          used = true;
+    function applyBlockquote() {
+      const selection = window.getSelection();
+      if (!selection?.rangeCount) return;
+      const range = selection.getRangeAt(0);
+      const before = editor.innerHTML;
+      const ok = document.execCommand('formatBlock', false, '<blockquote>');
+      const after = editor.innerHTML;
+      if (ok && before !== after) return;
+      const block = getCurrentBlockElement(range);
+      if (!block || block === editor) return;
+      if (block.tagName === 'BLOCKQUOTE') {
+        const firstChild = block.firstElementChild;
+        if (firstChild) {
+          block.parentElement?.replaceChild(firstChild, block);
         }
+        return;
       }
-
-      return used;
+      replaceWithBlock(block, 'BLOCKQUOTE');
     }
 
-    modeVisualBtn.addEventListener('click', () => setMode('visual', true));
-    modeSourceBtn.addEventListener('click', () => setMode('source'));
-
-    openCommand.addEventListener('click', () => openCommandPalette());
-    commandPalette.querySelector('.command-palette__backdrop').addEventListener('click', closeCommandPalette);
-    commandSearch.addEventListener('input', () => renderCommandList(commandSearch.value));
-    commandPalette.addEventListener('click', (event) => {
-      if (event.target.closest('.command-palette__panel')) return;
-      closeCommandPalette();
-    });
-
-    commandList.addEventListener('click', (event) => {
-      const target = event.target.closest('button');
-      if (target && target.dataset?.command) {
-        runCommandById(target.dataset.command);
-        closeCommandPalette();
-      }
-    });
-
-    commandPalette.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape') {
-        closeCommandPalette();
-        commandSearch.value = '';
-        commandSearch.blur();
-      }
-      if (event.key === 'ArrowDown') {
-        event.preventDefault();
-        const buttons = Array.from(commandList.querySelectorAll('button'));
-        if (buttons.length === 0) return;
-        const active = buttons.findIndex((btn) => btn === document.activeElement);
-        const next = active === -1 ? 0 : Math.min(active + 1, buttons.length - 1);
-        buttons[next].focus();
-      }
-      if (event.key === 'ArrowUp') {
-        event.preventDefault();
-        const buttons = Array.from(commandList.querySelectorAll('button'));
-        if (buttons.length === 0) return;
-        const active = buttons.findIndex((btn) => btn === document.activeElement);
-        const next = active <= 0 ? buttons.length - 1 : active - 1;
-        buttons[next].focus();
-      }
-      if (event.key === 'Enter') {
-        if (document.activeElement instanceof HTMLButtonElement && document.activeElement.dataset?.command) {
-          document.activeElement.click();
-        }
-      }
-    });
-
-    document.querySelectorAll('[data-command]').forEach((button) => {
-      button.addEventListener('click', () => {
-        const command = button.getAttribute('data-command');
-        if (!command) return;
-        if (['h1', 'h2', 'h3', 'quote', 'codeBlock', 'ul', 'ol', 'p'].includes(command)) {
-          runCommandById(command);
-          return;
-        }
-        applyCommand(command);
-      });
-    });
-
-    linkBtn.addEventListener('click', () => runCommandById('link'));
-    colorPicker.addEventListener('input', () => {
+    function runCommand(command, colorValue) {
       if (currentMode !== 'visual') {
-        setMode('visual', true);
+        stateTip.textContent = '先切到文档模式再执行命令。';
+        return;
       }
-      applyCommand('foreColor', colorPicker.value);
-      stateTip.textContent = `文字颜色设置为 ${colorPicker.value}`;
-    });
-    undoBtn.addEventListener('click', () => runCommandById('undo'));
-    redoBtn.addEventListener('click', () => runCommandById('redo'));
-    hrBtn.addEventListener('click', () => runCommandById('hr'));
-    if (imageBtn && imageInput) {
-      imageBtn.addEventListener('click', () => imageInput.click());
-      imageInput.addEventListener('change', async () => {
-        const files = Array.from(imageInput.files || []).filter((file) => file.type.startsWith('image/'));
-        if (files.length === 0) return;
-        for (const file of files) {
-          await insertClipboardImage(file);
-        }
-        imageInput.value = '';
-      });
+
+      if (['bold', 'italic', 'underline'].includes(command)) {
+        document.execCommand(command, false, null);
+      }
+
+      if (command === 'blockquote') {
+        applyBlockquote();
+      }
+      if (command === 'insertOrderedList' || command === 'insertUnorderedList') {
+        applyList(command);
+      }
+
+      if (command === 'h1') {
+        applyHeading(1);
+      }
+      if (command === 'h2') {
+        applyHeading(2);
+      }
+      if (command === 'h3') {
+        applyHeading(3);
+      }
+      if (command === 'h4') {
+        applyHeading(4);
+      }
+      if (command === 'h5') {
+        applyHeading(5);
+      }
+      if (command === 'h6') {
+        applyHeading(6);
+      }
+      if (command === 'foreColor') {
+        applyTextColor(normalizeColor(colorValue));
+      }
+      editor.focus();
+      updatePlaceholder();
+      saveDraft();
     }
 
-    editor.addEventListener('keydown', (event) => {
-      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'b') {
-        event.preventDefault();
-        runCommandById('bold');
-      } else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'i') {
-        event.preventDefault();
-        runCommandById('italic');
-      } else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'u') {
-        event.preventDefault();
-        runCommandById('underline');
-      } else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z') {
-        runCommandById('undo');
-      } else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'p') {
-        event.preventDefault();
-        openCommandPalette();
-      } else if (event.key === '/' && !event.metaKey && !event.ctrlKey) {
-        window.setTimeout(() => {
-          openSlashIfNeeded();
-        }, 0);
+    modeVisualBtn.addEventListener('click', () => {
+      if (currentMode === 'source') {
+        editor.innerHTML = sourceToHtml(sourceEditor.value);
       }
-    });
-    editor.addEventListener('beforeinput', () => {
-      requestAnimationFrame(updateEmptyState);
+      setMode('visual');
+      stateTip.textContent = '已切换到文档模式。';
     });
 
-    editor.addEventListener('keyup', openSlashIfNeeded);
-    editor.addEventListener('focus', () => {
-      updateEmptyState();
-      openSlashIfNeeded();
-    });
-    editor.addEventListener('blur', () => {
-      updateEmptyState();
-    });
-    editor.addEventListener('compositionend', () => {
-      updateEmptyState();
-      saveDraft();
-    });
-    editor.addEventListener('input', () => {
-      updateEmptyState();
-      openSlashIfNeeded();
-      saveDraft();
-    });
-    editor.addEventListener('paste', async (event) => {
-      const clipboard = event.clipboardData;
-      if (!clipboard) return;
-      const files = Array.from(clipboard.files || []);
-      const imageFiles = files.filter((file) => file && file.type.startsWith('image/'));
-      if (imageFiles.length === 0) return;
-      event.preventDefault();
-      for (const file of imageFiles) {
-        await insertClipboardImage(file);
+    modeSourceBtn.addEventListener('click', () => {
+      if (currentMode === 'visual') {
+        sourceEditor.value = editorToMarkdown();
       }
-      updateEmptyState();
-    });
-    editor.addEventListener('dragover', (event) => event.preventDefault());
-    editor.addEventListener('drop', async (event) => {
-      event.preventDefault();
-      if (!event.dataTransfer) return;
-      const files = Array.from(event.dataTransfer.files || []);
-      const imageFiles = files.filter((file) => file && file.type.startsWith('image/'));
-      if (imageFiles.length === 0) return;
-      for (const file of imageFiles) {
-        await insertClipboardImage(file);
-      }
-      updateEmptyState();
-    });
-
-    if (editor) {
-      const editorObserver = new MutationObserver(() => {
-        requestAnimationFrame(updateEmptyState);
-      });
-      editorObserver.observe(editor, { childList: true, subtree: true, characterData: true });
-    }
-
-    sourceEditor.addEventListener('input', () => {
-      saveDraft();
+      setMode('source');
+      editorPlaceholder.style.display = 'none';
+      stateTip.textContent = '已切换到源码模式。';
     });
 
     buildBtn.addEventListener('click', () => {
-      const now = toDateString();
-      const body = getActiveBodyMarkdown();
-      const data = getDraftData();
+      const body = getBodyMarkdown();
       if (!body) {
-        stateTip.textContent = '先在正文写些内容再生成。';
+        stateTip.textContent = '正文为空，先写一些内容。';
         return;
       }
-      data.date = data.date || now;
-      data.updated = now;
-      updatedInput.value = now;
-      syncDateMeta(now);
-      const markdown = buildMarkdown(data);
-      output.textContent = markdown;
-      stateTip.textContent = '已生成 Markdown，可复制或下载为 .md 文件；如需查看可点击“展开查看 Markdown”。';
+      buildMarkdown();
+      setDraftDate();
       saveDraft();
-    });
-
-    copyBtn.addEventListener('click', async () => {
-      if (!output.textContent.trim() || output.textContent.startsWith('（点击')) {
-        stateTip.textContent = '先点击「生成 Markdown」后再复制。';
-        return;
-      }
-      try {
-        await navigator.clipboard.writeText(output.textContent);
-        copyBtn.textContent = '已复制';
-        stateTip.textContent = 'Markdown 已复制到剪贴板。';
-        window.setTimeout(() => (copyBtn.textContent = '复制内容'), 1100);
-      } catch (err) {
-        stateTip.textContent = '复制失败，请手动选择代码块内容复制。';
-      }
-    });
-
-    downloadBtn.addEventListener('click', () => {
-      if (!output.textContent.trim() || output.textContent.startsWith('（点击')) {
-        stateTip.textContent = '先点击「生成 Markdown」再下载。';
-        return;
-      }
-      const data = getDraftData();
-      const slug = slugify(data.title);
-      const folder = data.type === 'note' ? 'notes' : data.type;
-      const blob = new Blob([output.textContent], { type: 'text/markdown;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${slug}.md`;
-      link.click();
-      URL.revokeObjectURL(url);
-      stateTip.textContent = `已下载 ${slug}.md（建议保存到 src/content/${folder}/ 下）`;
+      stateTip.textContent = '已保存到本地草稿。';
+      const now = nowDate();
+      updatedInput.value = now;
     });
 
     clearBtn.addEventListener('click', () => {
@@ -1526,90 +743,73 @@ const TYPES = [
       summaryInput.value = '';
       editor.innerHTML = '';
       sourceEditor.value = '';
-      output.textContent = '（点击「生成 Markdown」后自动输出）';
-      setOutputVisible(false);
       localStorage.removeItem(LS_KEY);
-      const now = toDateString();
-      dateInput.value = now;
-      updatedInput.value = now;
-      syncDateMeta(now);
-      updateEmptyState();
+      dateInput.value = nowDate();
+      updatedInput.value = nowDate();
+      updatePlaceholder();
+      currentMode = 'visual';
+      setMode('visual');
+      updateModeUI();
       stateTip.textContent = '草稿已清空。';
     });
 
-    if (outputToggleBtn) {
-      outputToggleBtn.addEventListener('click', toggleOutputVisibility);
-    }
-
-    function insertClipboardImage(file) {
-      return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-          const imageUrl = String(reader.result);
-          const safe = file.name ? file.name.replace(/\\.[^.]+$/, '') : 'image';
-          const alt = safe.replace(/[^a-zA-Z0-9\\-_\\u4e00-\\u9fff]/g, '_') || 'image';
-          if (currentMode === 'visual') {
-            insertAtCursorHtml(`<img src="${imageUrl}" alt="${alt}" />`);
-          } else {
-            const insertAt = `![${alt}](${imageUrl})`;
-            const start = sourceEditor.selectionStart || 0;
-            const end = sourceEditor.selectionEnd || 0;
-            const before = sourceEditor.value.slice(0, start);
-            const after = sourceEditor.value.slice(end);
-            sourceEditor.value = `${before}\\n${insertAt}\\n${after}`;
-            sourceEditor.focus();
-            sourceEditor.selectionStart = sourceEditor.selectionEnd = before.length + insertAt.length + 2;
-          }
-          saveDraft();
-          updateEmptyState();
-          resolve();
-        };
-        reader.onerror = () => resolve();
-        reader.readAsDataURL(file);
+    commands.forEach((button) => {
+      button.addEventListener('click', () => {
+        const command = button.getAttribute('data-command');
+        if (!command) return;
+        const colorValue = button.getAttribute('data-color');
+        runCommand(command, colorValue);
       });
-    }
+    });
+
+    editor.addEventListener('input', () => {
+      updatePlaceholder();
+      saveDraft();
+    });
+
+    editor.addEventListener('keydown', (event) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'b') {
+        event.preventDefault();
+        runCommand('bold');
+      }
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'i') {
+        event.preventDefault();
+        runCommand('italic');
+      }
+    });
+
+    sourceEditor.addEventListener('input', () => {
+      saveDraft();
+    });
+
+    [titleInput, categoryInput, tagsInput, summaryInput, importanceInput, typeInput].forEach((input) => {
+      if (!input) return;
+      input.addEventListener('input', () => {
+        setDraftDate();
+        saveDraft();
+      });
+    });
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') {
+        saveDraft();
+      }
+    });
 
     function init() {
-      const now = toDateString();
-      dateInput.value = now;
-      updatedInput.value = now;
-      syncDateMeta(now);
-      if (editorPlaceholder && editor?.dataset?.placeholder) {
-        editorPlaceholder.textContent = editor.dataset.placeholder;
-      }
-      setOutputVisible(false);
+      loadDraft();
+      setDraftDate();
       updateModeUI();
-      const hasQuery = restoreQuery();
-      if (!hasQuery) hydrateDraft();
-      const data = getDraftData();
-      if (currentMode === 'source') {
-        sourceEditor.classList.remove('hidden');
-        editor.classList.add('hidden');
-        sourceEditor.value = data.contentSource || '';
+      if (!currentMode || currentMode === 'visual') {
+        setMode('visual', false);
       } else {
-        editor.classList.remove('hidden');
-        sourceEditor.classList.add('hidden');
-        if (!editor.innerHTML) editor.innerHTML = '';
+        setMode('source', false);
       }
-
-      const rawSourceText = String(sourceEditor.value || '').trim();
-      const rawVisualText = (editor.textContent || '').replace(/[\u200b\u00a0]/g, '').trim();
-      const hasVisualMedia = Boolean(editor.querySelector('img,pre,hr,table,blockquote,ul,ol,li'));
-      if (currentMode === 'source' && !rawSourceText && !rawVisualText && !hasVisualMedia) {
-        currentMode = 'visual';
-        editor.classList.remove('hidden');
-        sourceEditor.classList.add('hidden');
-        editor.classList.add('ring-2', 'ring-blue-500', 'ring-opacity-0');
-        sourceEditor.classList.remove('ring-2', 'ring-blue-500', 'ring-opacity-60');
-        updateModeUI();
-      }
-
-      updateEmptyState();
-      syncDateMeta(now);
-      if (!hasQuery && !data.title) {
-        stateTip.textContent = '欢迎使用 Obsidian 风格写作模式，命令盘可用 Ctrl/Cmd+P 打开。';
-      }
-      requestAnimationFrame(updateEmptyState);
+      editorPlaceholder.textContent = '在这里开始写作（支持标题、列表、引用、代码块、图片粘贴）。例如：输入 / 调出块级命令，或 Ctrl/Cmd+P 打开命令盘。';
+      updatePlaceholder();
+      requestAnimationFrame(() => {
+        updatePlaceholder();
+      });
     }
 
     init();
@@ -1620,24 +820,22 @@ const TYPES = [
       position: relative;
       min-height: 56vh;
     }
+
     .writer-placeholder {
       position: absolute;
       inset: 0.9rem 1rem auto 1rem;
       color: rgb(148 163 184);
-      pointer-events: none;
       white-space: pre-wrap;
+      pointer-events: none;
       user-select: none;
       font-size: 0.95rem;
       line-height: 1.7;
       z-index: 3;
-      transition: opacity 0.15s ease;
     }
-    .writer-placeholder.writer-placeholder-hidden {
-      opacity: 0;
-      display: none;
-    }
+
     .writer-canvas {
       min-height: 56vh;
+      width: 100%;
       border: 1px solid rgb(226 232 240);
       border-radius: 0.7rem;
       background-color: rgb(255, 255, 255);
@@ -1645,48 +843,51 @@ const TYPES = [
       color: #0f172a;
       outline: none;
       line-height: 1.7;
+      box-sizing: border-box;
+      overflow: auto;
       position: relative;
       z-index: 1;
-      box-sizing: border-box;
-      transition: border-color 0.2s ease, box-shadow 0.2s ease;
     }
+
+    .writer-canvas:focus-within,
+    .writer-canvas:focus {
+      border-color: rgb(59 130 246);
+      box-shadow: 0 0 0 3px rgb(59 130 246 / 10%);
+    }
+
     .writer-canvas.h-\[56vh\] {
       min-height: 56vh;
     }
-    .dark .writer-placeholder {
-      color: rgb(148 163 184 / 80%);
-    }
+
     .writer-canvas h1,
     .writer-canvas h2,
-    .writer-canvas h3 {
+    .writer-canvas h3,
+    .writer-canvas h4,
+    .writer-canvas h5,
+    .writer-canvas h6 {
       font-weight: 700;
-      line-height: 1.24;
-      margin-top: 1.2rem;
+      margin-top: 1rem;
       margin-bottom: 0.5rem;
+      line-height: 1.3;
     }
-    .writer-canvas h1 {
-      font-size: 1.95rem;
+
+    .writer-canvas p {
+      margin: 0.45rem 0;
     }
-    .writer-canvas h2 {
-      font-size: 1.5rem;
-    }
-    .writer-canvas h3 {
-      font-size: 1.3rem;
-    }
+
     .writer-canvas ul,
     .writer-canvas ol {
       padding-left: 1.4rem;
       margin: 0.7rem 0;
     }
-    .writer-canvas p {
-      margin: 0.4rem 0;
-    }
+
     .writer-canvas blockquote {
       margin: 0.75rem 0;
       padding-left: 0.9rem;
       border-left: 3px solid rgb(148 163 184);
       color: rgb(71 85 105);
     }
+
     .writer-canvas pre {
       margin: 0.8rem 0;
       padding: 0.8rem;
@@ -1695,148 +896,31 @@ const TYPES = [
       background: rgb(241 245 249);
       overflow-x: auto;
       white-space: pre-wrap;
-      position: relative;
     }
-    .writer-canvas pre::before {
-      content: attr(data-language);
-      position: absolute;
-      top: 0.35rem;
-      right: 0.6rem;
-      font-size: 0.7rem;
-      color: rgb(100 116 139);
-      background: rgb(248 250 252);
-      border: 1px solid rgb(226 232 240);
-      border-radius: 999px;
-      padding: 0.03rem 0.35rem;
-      text-transform: uppercase;
-    }
-    .writer-canvas table {
-      width: 100%;
-      border-collapse: collapse;
-      margin: 1rem 0;
-      font-size: 0.95rem;
-    }
-    .writer-canvas th,
-    .writer-canvas td {
-      border: 1px solid rgb(226 232 240);
-      padding: 0.45rem 0.55rem;
-      text-align: left;
-      vertical-align: top;
-    }
-    .writer-canvas th {
-      background: rgb(248 250 252);
-      font-weight: 600;
-    }
+
     .writer-canvas img {
       max-width: 100%;
-      border-radius: 0.4rem;
-      margin: 0.35rem 0;
-      display: block;
     }
+
     .writer-canvas hr {
       border: none;
       border-top: 1px solid rgb(226 232 240);
       margin: 1rem 0;
     }
-    .writer-canvas a {
-      color: rgb(37 99 235);
-      text-decoration: underline;
-      text-underline-offset: 2px;
-    }
-    .writer-canvas a:hover {
-      color: rgb(29 78 216);
-    }
-    .writer-canvas:focus-within,
-    .writer-canvas:focus {
-      border-color: rgb(59 130 246);
-      box-shadow: 0 0 0 3px rgb(59 130 246 / 10%);
-    }
+
     .btn-tool {
       border: 1px solid rgb(203 213 225);
       border-radius: 0.45rem;
       padding: 0.25rem 0.58rem;
       font-size: 0.8rem;
-      line-height: 1.1;
       color: rgb(15 23 42);
-      background: #fff;
-      transition:
-        background-color 0.2s ease,
-        border-color 0.2s ease;
-      box-shadow: 0 1px 0 rgb(0 0 0 / 0.02);
+      background: white;
     }
-    .dark .btn-tool {
-      background: rgb(30 41 59);
-      color: rgb(226 232 240);
-      border-color: rgb(71 85 105);
-    }
-    .btn-tool:hover {
-      background: rgb(241 245 249);
-    }
-    .dark .btn-tool:hover {
-      background: rgb(51 65 85);
-    }
+
     .btn-tool-active {
+      background: rgb(219 234 254);
       border-color: rgb(59 130 246);
-      background: rgb(239 246 255);
-      color: rgb(37 99 235);
-    }
-    .btn-tool-strong {
-      font-weight: 600;
-      border-color: rgb(59 130 246);
-    }
-    .command-palette {
-      position: fixed;
-      inset: 0;
-      z-index: 50;
-      display: flex;
-      align-items: flex-start;
-      justify-content: center;
-      padding-top: 10vh;
-      pointer-events: auto;
-    }
-    .command-palette.hidden {
-      display: none;
-    }
-    .command-palette__backdrop {
-      position: absolute;
-      inset: 0;
-      background: rgb(15 23 42 / 45%);
-    }
-    .command-palette__panel {
-      position: relative;
-      width: min(680px, 95vw);
-      border-radius: 0.75rem;
-      border: 1px solid rgb(226 232 240);
-      background: rgb(255 255 255);
-      padding: 1rem;
-      z-index: 1;
-    }
-    .slash-menu {
-      position: absolute;
-      z-index: 40;
-      width: 240px;
-      max-width: 60vw;
-      border: 1px solid rgb(203 213 225);
-      border-radius: 0.6rem;
-      background: rgb(255 255 255);
-      box-shadow: 0 12px 30px rgb(15 23 42 / 16%);
-      padding: 0.45rem;
-    }
-    .slash-menu.hidden {
-      display: none;
-    }
-    .dark .command-palette__panel,
-    .dark .slash-menu {
-      background: rgb(15 23 42);
-      border-color: rgb(71 85 105);
-    }
-    .command-palette__panel p,
-    .command-palette__panel button {
-      color: #0f172a;
-    }
-    .dark .command-palette__panel p,
-    .dark .command-palette__panel button {
-      color: rgb(226 232 240);
+      color: rgb(29 78 216);
     }
   </style>
 </BaseLayout>
