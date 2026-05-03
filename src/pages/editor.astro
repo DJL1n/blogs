@@ -365,7 +365,7 @@ const TYPES = [
 
       const rawText = (editor.textContent || '').replace(/[\u200b\u00a0]/g, '').trim();
       if (rawText.length > 0) return false;
-      return !editor.querySelector('img,pre,hr,table,blockquote,ul,ol,li,p,h1,h2,h3,h4,h5,h6,a');
+      return !editor.querySelector('img,pre,hr,table,blockquote,ul,ol,li');
     }
 
     function updateEmptyState() {
@@ -1390,6 +1390,12 @@ const TYPES = [
     }
 
     editor.addEventListener('keydown', (event) => {
+      const canHoldContent = event.key.length === 1 || event.key === 'Enter' || event.key === 'Backspace' || event.key === 'Delete';
+      if (canHoldContent && !event.metaKey && !event.ctrlKey && !event.altKey) {
+        editor.classList.remove('is-empty');
+        editorPlaceholder?.classList.add('writer-placeholder-hidden');
+      }
+
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'b') {
         event.preventDefault();
         runCommandById('bold');
@@ -1409,6 +1415,9 @@ const TYPES = [
           openSlashIfNeeded();
         }, 0);
       }
+    });
+    editor.addEventListener('beforeinput', () => {
+      requestAnimationFrame(updateEmptyState);
     });
 
     editor.addEventListener('keyup', openSlashIfNeeded);
