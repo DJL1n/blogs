@@ -1390,12 +1390,6 @@ const TYPES = [
     }
 
     editor.addEventListener('keydown', (event) => {
-      const canHoldContent = event.key.length === 1 || event.key === 'Enter' || event.key === 'Backspace' || event.key === 'Delete';
-      if (canHoldContent && !event.metaKey && !event.ctrlKey && !event.altKey) {
-        editor.classList.remove('is-empty');
-        editorPlaceholder?.classList.add('writer-placeholder-hidden');
-      }
-
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'b') {
         event.preventDefault();
         runCommandById('bold');
