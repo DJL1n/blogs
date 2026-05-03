@@ -4,104 +4,180 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 const TYPES = [
   { value: 'note', label: 'note（短笔记）' },
   { value: 'blog', label: 'blog（长文）' },
-  { value: 'important', label: 'important（重要记录）' }
+  { value: 'important', label: 'important（重要记录）' },
 ];
 ---
 
-<BaseLayout title="写作助手" description="本地写作模板，生成 Markdown 内容文件">
+<BaseLayout title="写作助手" description="本地可视化写作模板，导出 Markdown 并保存到 src/content/* 下">
   <section class="space-y-6">
     <header>
-      <p class="inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 dark:border-emerald-700 dark:bg-slate-800 dark:text-emerald-200">写作工作流</p>
+      <p class="inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 dark:border-emerald-700 dark:bg-slate-800 dark:text-emerald-200">
+        写作工作流
+      </p>
       <h1 class="mt-3 text-4xl font-bold">写作助手</h1>
-      <p class="mt-2 text-slate-600 dark:text-slate-300">推荐在这里写作，提交时直接输出标准 Markdown 文件，保存在 <code>src/content/*</code> 下。</p>
+      <p class="mt-2 text-slate-600 dark:text-slate-300">
+        用文档方式创作，底层仍输出 Markdown，后续只需要把文件拷贝到对应的
+        <code>src/content/{'{'}blog | notes | important{'}'}</code>
+        目录即可。
+      </p>
     </header>
 
-    <section class="grid gap-4 lg:grid-cols-[2fr_1fr]">
-      <form id="writer-form" class="surface-card space-y-4" autocomplete="off">
-        <div class="grid gap-3 md:grid-cols-2">
-          <label class="space-y-2">
-            <span class="text-sm font-medium">标题</span>
-            <input id="title" type="text" class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-800" placeholder="输入标题" />
-          </label>
+    <section class="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
+      <form id="writer-form" class="space-y-4" autocomplete="off">
+        <div class="surface-card space-y-4">
+          <h2 class="text-lg font-semibold">元数据</h2>
+          <div class="grid gap-3 md:grid-cols-2">
+            <label class="space-y-2">
+              <span class="text-sm font-medium">标题</span>
+              <input
+                id="title"
+                type="text"
+                class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-800"
+                placeholder="输入标题"
+              />
+            </label>
 
-          <label class="space-y-2">
-            <span class="text-sm font-medium">类型</span>
-            <select id="type" class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-800">
-              {TYPES.map((item) => (
-                <option value={item.value}>{item.label}</option>
-              ))}
-            </select>
-          </label>
+            <label class="space-y-2">
+              <span class="text-sm font-medium">类型</span>
+              <select
+                id="type"
+                class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-800"
+              >
+                {TYPES.map((item) => <option value={item.value}>{item.label}</option>)}
+              </select>
+            </label>
 
-          <label class="space-y-2">
-            <span class="text-sm font-medium">分类</span>
-            <input id="category" type="text" class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-800" value="技巧" />
-          </label>
+            <label class="space-y-2">
+              <span class="text-sm font-medium">分类</span>
+              <input
+                id="category"
+                type="text"
+                class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-800"
+                value="技巧"
+              />
+            </label>
 
-          <label class="space-y-2">
-            <span class="text-sm font-medium">重要性（1-5）</span>
-            <input id="importance" type="number" min="1" max="5" value="2" class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-800" />
-          </label>
+            <label class="space-y-2">
+              <span class="text-sm font-medium">重要性（1-5）</span>
+              <input
+                id="importance"
+                type="number"
+                min="1"
+                max="5"
+                value="2"
+                class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-800"
+              />
+            </label>
 
-          <label class="space-y-2 md:col-span-2">
-            <span class="text-sm font-medium">标签</span>
-            <input id="tags" type="text" class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-800" placeholder="macOS, dns, network" />
-            <span class="text-xs text-slate-500">用英文逗号分隔</span>
-          </label>
+            <label class="space-y-2">
+              <span class="text-sm font-medium">创建日期</span>
+              <input id="date" type="date" class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-800" />
+            </label>
 
-          <label class="space-y-2 md:col-span-2">
-            <span class="text-sm font-medium">摘要</span>
-            <textarea id="summary" rows="2" class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-800" placeholder="一句话说明这篇内容"></textarea>
-          </label>
+            <label class="space-y-2">
+              <span class="text-sm font-medium">更新日期</span>
+              <input id="updated" type="date" class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-800" />
+            </label>
 
-          <label class="space-y-2 md:col-span-2">
-            <span class="text-sm font-medium">正文（Markdown）</span>
-            <textarea id="body" rows="18" class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 font-mono text-sm dark:border-slate-600 dark:bg-slate-800"></textarea>
-          </label>
+            <label class="space-y-2 md:col-span-2">
+              <span class="text-sm font-medium">标签（英文逗号分隔）</span>
+              <input
+                id="tags"
+                type="text"
+                class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-800"
+                placeholder="macOS, dns, network"
+              />
+            </label>
 
-          <label class="space-y-2 md:col-span-2">
-            <span class="text-sm font-medium">图片（可选）</span>
-            <input id="images" type="file" accept="image/*" multiple class="block w-full text-sm text-slate-600 dark:text-slate-300" />
-            <p id="image-hint" class="text-xs text-slate-500">支持直接插入 base64 图片，适合小图演示；大图建议放 <code>public/images</code> 后再引用相对路径。</p>
-          </label>
+            <label class="space-y-2 md:col-span-2">
+              <span class="text-sm font-medium">摘要</span>
+              <textarea
+                id="summary"
+                rows="2"
+                class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-800"
+                placeholder="一句话说明这篇内容"
+              ></textarea>
+            </label>
+          </div>
+        </div>
+
+        <div class="surface-card">
+          <div class="mb-3 flex flex-wrap gap-2 border-b border-slate-200 pb-3 dark:border-slate-700">
+            <button type="button" data-command="bold" class="btn-tool" title="加粗 (Ctrl/Cmd+B)">B</button>
+            <button type="button" data-command="italic" class="btn-tool" title="斜体 (Ctrl/Cmd+I)">I</button>
+            <button type="button" data-command="underline" class="btn-tool" title="下划线">U</button>
+            <span class="w-px bg-slate-300 dark:bg-slate-600"></span>
+            <button type="button" data-block="h1" class="btn-tool" title="标题 1">H1</button>
+            <button type="button" data-block="h2" class="btn-tool" title="标题 2">H2</button>
+            <button type="button" data-block="h3" class="btn-tool" title="标题 3">H3</button>
+            <button type="button" data-command="insertUnorderedList" class="btn-tool" title="无序列表">• 列表</button>
+            <button type="button" data-command="insertOrderedList" class="btn-tool" title="有序列表">1. 列表</button>
+            <button type="button" data-command="formatBlock" data-value="BLOCKQUOTE" class="btn-tool" title="引用">引用</button>
+            <button type="button" data-command="formatBlock" data-value="PRE" class="btn-tool" title="代码块">代码块</button>
+            <button type="button" id="link-btn" class="btn-tool" title="插入链接">🔗</button>
+            <button type="button" id="undo-btn" data-command="undo" class="btn-tool" title="撤销">↶</button>
+            <button type="button" id="redo-btn" data-command="redo" class="btn-tool" title="重做">↷</button>
+            <label class="inline-flex items-center rounded-md border border-slate-300 px-3 py-1.5 text-sm dark:border-slate-700">
+              <input id="color-picker" type="color" value="#0f172a" class="h-5 w-7 border-none bg-transparent p-0" title="字体颜色" />
+              <span class="ml-2 text-xs">颜色</span>
+            </label>
+            <button type="button" id="clear-format-btn" class="btn-tool" title="清除格式">清空格式</button>
+          </div>
+
+          <div id="editor" class="writer-canvas" contenteditable="true" spellcheck="true" aria-label="正文编辑区">
+            <p>在这里开始写作，支持：标题、列表、引用、代码块、图片粘贴。<br />
+            例如：按 <span class="inline-code">Ctrl/Cmd + B</span> 直接加粗，<span class="inline-code">Ctrl/Cmd + V</span> 粘贴图片会自动转成可提交的 md 图片。</p>
+          </div>
         </div>
 
         <div class="flex flex-wrap gap-3">
-          <button type="button" id="build-btn" class="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500">生成 Markdown</button>
-          <button type="button" id="copy-btn" class="rounded-md border border-slate-300 px-4 py-2 text-sm dark:border-slate-700">复制内容</button>
-          <button type="button" id="download-btn" class="rounded-md border border-slate-300 px-4 py-2 text-sm dark:border-slate-700">下载 .md</button>
-          <button type="button" id="clear-btn" class="rounded-md border border-rose-300 px-4 py-2 text-sm text-rose-600 dark:border-rose-700 dark:text-rose-300">清空草稿</button>
+          <button type="button" id="build-btn" class="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500">
+            生成 Markdown
+          </button>
+          <button type="button" id="copy-btn" class="rounded-md border border-slate-300 px-4 py-2 text-sm dark:border-slate-700">
+            复制内容
+          </button>
+          <button type="button" id="download-btn" class="rounded-md border border-slate-300 px-4 py-2 text-sm dark:border-slate-700">
+            下载 .md
+          </button>
+          <button type="button" id="clear-btn" class="rounded-md border border-rose-300 px-4 py-2 text-sm text-rose-600 dark:border-rose-700 dark:text-rose-300">
+            清空草稿
+          </button>
         </div>
-
-        <p id="state-tip" class="text-sm text-slate-500 dark:text-slate-300">点击「生成 Markdown」后查看可直接提交的文件内容。</p>
+        <p id="state-tip" class="text-sm text-slate-500 dark:text-slate-300">支持像写文档一样编辑；生成后可直接复制或下载。</p>
       </form>
 
       <aside class="surface-card">
         <h2 class="mb-2 text-lg font-semibold">生成结果</h2>
-        <p class="mb-3 text-sm text-slate-500 dark:text-slate-300">会自动生成 frontmatter + 正文。</p>
-        <pre class="rounded-xl bg-slate-900 text-slate-100"><code id="output" class="block min-h-[22rem] overflow-x-auto p-4 text-xs">（先填写并点击「生成 Markdown」）</code></pre>
+        <p class="mb-3 text-sm text-slate-500 dark:text-slate-300">会自动生成 frontmatter + 正文 Markdown。</p>
+        <pre class="rounded-xl bg-slate-900 text-slate-100"><code id="output" class="block min-h-[22rem] overflow-x-auto p-4 text-xs">（点击「生成 Markdown」后自动输出）</code></pre>
       </aside>
     </section>
   </section>
 
   <script is:inline>
-    const LS_KEY = 'kb-editor-draft-v1';
+    const LS_KEY = 'kb-editor-draft-v2';
     const form = document.getElementById('writer-form');
     const titleInput = document.getElementById('title');
     const typeInput = document.getElementById('type');
     const categoryInput = document.getElementById('category');
     const importanceInput = document.getElementById('importance');
+    const dateInput = document.getElementById('date');
+    const updatedInput = document.getElementById('updated');
     const tagsInput = document.getElementById('tags');
     const summaryInput = document.getElementById('summary');
-    const bodyInput = document.getElementById('body');
-    const imagesInput = document.getElementById('images');
-    const imageHint = document.getElementById('image-hint');
+    const editor = document.getElementById('editor');
     const buildBtn = document.getElementById('build-btn');
     const copyBtn = document.getElementById('copy-btn');
     const downloadBtn = document.getElementById('download-btn');
     const clearBtn = document.getElementById('clear-btn');
     const output = document.getElementById('output');
     const stateTip = document.getElementById('state-tip');
+    const linkBtn = document.getElementById('link-btn');
+    const undoBtn = document.getElementById('undo-btn');
+    const redoBtn = document.getElementById('redo-btn');
+    const colorPicker = document.getElementById('color-picker');
+    const clearFormatBtn = document.getElementById('clear-format-btn');
     const query = new URL(window.location.href).searchParams;
 
     function toDateString(date = new Date()) {
@@ -123,183 +199,537 @@ const TYPES = [
         .slice(0, 80) || `post-${toDateString()}`;
     }
 
-    function readMarkdownData() {
+    function clampImportance(value) {
+      const num = Number(value || 2);
+      if (Number.isNaN(num)) return 2;
+      return Math.min(Math.max(Math.round(num), 1), 5);
+    }
+
+    function querySafeString(key) {
+      const value = query.get(key);
+      return value ? decodeURIComponent(value) : '';
+    }
+
+    function htmlEscape(value) {
+      return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+    }
+
+    function cleanText(value) {
+      return String(value || '').replace(/\s+/g, ' ').trim();
+    }
+
+    function serializeNode(node, depth = 0) {
+      if (!node) return '';
+      if (node.nodeType === 3) {
+        return cleanText(node.textContent || '');
+      }
+
+      if (node.nodeType === 8) {
+        return '';
+      }
+
+      if (node.nodeType === 11) {
+        return Array.from(node.childNodes)
+          .map((child) => serializeNode(child, depth))
+          .join('');
+      }
+
+      const tag = (node.nodeName || '').toLowerCase();
+      const children = Array.from(node.childNodes).map((child) => serializeNode(child, depth));
+      const text = children.join('').replace(/\s+$/g, '');
+      const withNoExtra = text.trim();
+
+      if (tag === 'br') return '\\n';
+      if (tag === 'strong' || tag === 'b') return `**${withNoExtra}**`;
+      if (tag === 'em' || tag === 'i') return `*${withNoExtra}*`;
+      if (tag === 'u') return `<u>${withNoExtra}</u>`;
+      if (tag === 'code') return `\`${withNoExtra}\``;
+      if (tag === 'a') {
+        const href = node.href || '#';
+        return `[${withNoExtra}](${href})`;
+      }
+      if (tag === 'img') {
+        const alt = (node.getAttribute && node.getAttribute('alt')) || 'image';
+        const src = node.getAttribute && node.getAttribute('src') ? node.getAttribute('src') : '';
+        return `![${alt}](${src})`;
+      }
+      if (tag === 'h1' || tag === 'h2' || tag === 'h3' || tag === 'h4' || tag === 'h5' || tag === 'h6') {
+        const level = Number(tag.replace('h', '')) || 1;
+        return `\\n${'#'.repeat(level)} ${withNoExtra}\\n\\n`;
+      }
+      if (tag === 'blockquote') {
+        return `\\n> ${withNoExtra}\\n\\n`;
+      }
+      if (tag === 'pre') {
+        const code = node.textContent || '';
+        return `\\n\\n\`\`\`\\n${code}\\n\`\`\`\\n\\n`;
+      }
+      if (tag === 'li') {
+        const marker = depth > 0 ? `${'  '.repeat(depth)}- ` : '- ';
+        const bullet = marker + withNoExtra;
+        const nested = Array.from(node.childNodes)
+          .filter((child) => child.nodeType === 1 && ['ul', 'ol'].includes((child.nodeName || '').toLowerCase()))
+          .map((child) => serializeNode(child, depth + 1))
+          .join('');
+        return `${bullet}\\n${nested}`;
+      }
+      if (tag === 'ul' || tag === 'ol') {
+        const listItems = Array.from(node.children).filter((child) => (child.nodeName || '').toLowerCase() === 'li');
+        return `${listItems
+          .map((item, index) => {
+            const content = Array.from(item.childNodes)
+              .map((child) => serializeNode(child, depth + 1))
+              .join('')
+              .trim()
+              .replace(/^\\s*/, '');
+            const marker = tag === 'ol' ? `${index + 1}.` : '-';
+            const indent = '  '.repeat(depth);
+            return `${indent}${marker} ${content}`;
+          })
+          .join('\\n')}\\n\\n`;
+      }
+      if (tag === 'p') {
+        return `${withNoExtra}\\n\\n`;
+      }
+      if (tag === 'span') {
+        const style = (node.getAttribute && node.getAttribute('style')) || '';
+        if (/color\\s*:/i.test(style)) {
+          return `<span style=\"${style}\">${withNoExtra}</span>`;
+        }
+        return withNoExtra;
+      }
+      if (tag === 'div') {
+        const style = (node.getAttribute && node.getAttribute('style')) || '';
+        if (/page-break-before/i.test(style)) {
+          return '';
+        }
+        return `${withNoExtra}\\n`;
+      }
+      return withNoExtra;
+    }
+
+    function editorToMarkdown() {
+      const html = editor.innerHTML;
+      if (!html) return '';
+      const wrapper = document.createElement('div');
+      wrapper.innerHTML = html;
+      const md = Array.from(wrapper.childNodes)
+        .map((node) => serializeNode(node, 0))
+        .join('')
+        .replace(/\\n{3,}/g, '\\n\\n')
+        .trim();
+      return md || '请先填写正文内容。';
+    }
+
+    function readDraftData() {
       return {
-        title: titleInput.value.trim(),
-        type: typeInput.value,
-        category: categoryInput.value.trim() || '技巧',
-        importance: Math.min(Math.max(Number(importanceInput.value || 2), 1), 5),
-        tags: tagsInput.value
+        title: cleanText(titleInput.value),
+        type: typeInput.value || 'note',
+        category: cleanText(categoryInput.value) || '技巧',
+        importance: clampImportance(importanceInput.value),
+        date: dateInput.value || toDateString(),
+        updated: updatedInput.value || toDateString(),
+        tags: cleanText(tagsInput.value)
           .split(',')
-          .map((tag) => tag.trim())
+          .map((tag) => cleanText(tag))
           .filter(Boolean),
         summary: summaryInput.value.trim(),
-        body: bodyInput.value.replace(/\n+$/g, ''),
+        contentHtml: editor.innerHTML || '',
+      };
+    }
+
+    function readMarkdownData() {
+      const raw = readDraftData();
+      const body = editorToMarkdown();
+      return {
+        ...raw,
+        body,
       };
     }
 
     function buildMarkdown(data) {
-      const now = toDateString();
+      const tags = data.tags.length > 0 ? `[${data.tags.map((item) => toYamlString(item)).join(', ')}]` : '[]';
       const slug = slugify(data.title || 'untitled');
-      const tags = data.tags.length > 0 ? `[${data.tags.map((item) => JSON.stringify(item)).join(', ')}]` : '[]';
-      const metaType = data.type === 'notes' ? 'note' : data.type;
       const folder = data.type === 'note' ? 'notes' : data.type;
+      const comment = `<!-- 文件建议路径：src/content/${folder}/${slug}.md -->`;
 
-      return `---\n` +
+      return (
+        `---\n` +
         `title: ${toYamlString(data.title || '无标题')}\n` +
-        `date: ${now}\n` +
-        `updated: ${now}\n` +
+        `date: ${data.date}\n` +
+        `updated: ${data.updated || data.date}\n` +
         `summary: ${toYamlString(data.summary || '待补充')}\n` +
         `tags: ${tags}\n` +
-        `category: ${toYamlString(data.category)}\n` +
-        `type: ${toYamlString(metaType)}\n` +
+        `category: ${toYamlString(data.category || '技巧')}\n` +
+        `type: ${toYamlString(data.type)}\n` +
         `importance: ${Number(data.importance)}\n` +
         `draft: false\n` +
         `---\n\n` +
-        `${data.body || '请在此补充正文内容。'}\n\n` +
-        `<!-- 文件建议路径 -->\n` +
-        `<!-- src/content/${folder}/${slug}.md -->\n`;
+        `${data.body}\n\n` +
+        `${comment}\n`
+      );
     }
 
     function saveDraft() {
-      const draft = readMarkdownData();
-      localStorage.setItem(LS_KEY, JSON.stringify(draft));
+      localStorage.setItem(LS_KEY, JSON.stringify(readDraftData()));
     }
 
     function hydrateDraft() {
       const raw = localStorage.getItem(LS_KEY);
       if (!raw) return;
-
       try {
         const saved = JSON.parse(raw);
         titleInput.value = saved.title || '';
         typeInput.value = saved.type || 'note';
         categoryInput.value = saved.category || '技巧';
         importanceInput.value = String(saved.importance || 2);
+        dateInput.value = saved.date || toDateString();
+        updatedInput.value = saved.updated || toDateString();
         tagsInput.value = (saved.tags || []).join(', ');
         summaryInput.value = saved.summary || '';
-        bodyInput.value = saved.body || '';
-        stateTip.textContent = '已恢复上次本地草稿。你可以继续编辑后重新生成。';
+        if (saved.contentHtml) editor.innerHTML = saved.contentHtml;
+        stateTip.textContent = '已恢复上次本地草稿。';
       } catch (err) {
         console.error(err);
       }
     }
 
-    const queryType = query.get('type');
-    if (queryType === 'note' || queryType === 'blog' || queryType === 'important') {
-      typeInput.value = queryType;
+    function getSelectionNode() {
+      const sel = window.getSelection();
+      if (!sel || sel.rangeCount === 0) return null;
+      return sel.getRangeAt(0).commonAncestorContainer;
     }
 
-    const queryTitle = query.get('title');
-    if (queryTitle) {
-      titleInput.value = queryTitle;
-    }
-
-    const querySummary = query.get('summary');
-    if (querySummary) {
-      summaryInput.value = querySummary;
-    }
-
-    async function insertImage(fileList) {
-      const files = Array.from(fileList || []);
-      if (!files.length) return;
-
-      const promises = files.map((file) => {
-        if (!file.type.startsWith('image/')) return null;
-        return new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve({ name: file.name, data: String(reader.result) });
-          reader.onerror = reject;
-          reader.readAsDataURL(file);
-        });
-      });
-
-      const ready = (await Promise.all(promises)).filter(Boolean);
-      if (!ready.length) return;
-
-      const start = bodyInput.selectionStart || bodyInput.value.length;
-      const end = bodyInput.selectionEnd || bodyInput.value.length;
-      const before = bodyInput.value.slice(0, start);
-      const after = bodyInput.value.slice(end);
-      const mdSnippets = ready.map(({ name, data }) => {
-        const base = name.replace(/\.[^.]+$/, '') || 'image';
-        const safe = base.replace(/[^a-zA-Z0-9-_\u4e00-\u9fff]/g, '_');
-        return `![${safe}](${data})`;
-      });
-
-      const inserted = `${before}\n\n${mdSnippets.join('\n\n')}\n\n${after}`;
-      bodyInput.value = inserted;
+    function applyCommand(cmd, value) {
+      document.execCommand(cmd, false, value || null);
+      editor.focus();
       saveDraft();
-      imageHint.textContent = `已插入 ${ready.length} 张图片（base64）。若有大图请改用 public/images 引用。`;
     }
 
-    form.addEventListener('input', saveDraft);
+    function insertAtCursor(html) {
+      const selection = window.getSelection();
+      if (!selection || selection.rangeCount === 0) {
+        editor.focus();
+        const range = document.createRange();
+        range.selectNodeContents(editor);
+        range.collapse(false);
+        selection?.removeAllRanges();
+        selection?.addRange(range);
+      }
 
-    buildBtn.addEventListener('click', () => {
-      const data = readMarkdownData();
-      const result = buildMarkdown(data);
-      output.textContent = result;
-      stateTip.textContent = '已生成 Markdown，可复制或下载为 .md 文件。';
+      const sel = window.getSelection();
+      if (!sel || sel.rangeCount === 0) return;
+      const range = sel.getRangeAt(0);
+      range.deleteContents();
+      const container = document.createElement('div');
+      container.innerHTML = html;
+      const frag = document.createDocumentFragment();
+      while (container.firstChild) {
+        frag.appendChild(container.firstChild);
+      }
+      range.insertNode(frag);
+      range.collapse(false);
+      sel.removeAllRanges();
+      sel.addRange(range);
+      editor.focus();
+      saveDraft();
+    }
+
+    async function insertImageFromClipboard(file) {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const imageUrl = String(reader.result);
+          const safe = file.name ? file.name.replace(/\\.[^.]+$/, '') : 'image';
+          const alt = safe.replace(/[^a-zA-Z0-9\\-_\\u4e00-\\u9fff]/g, '_') || 'image';
+          insertAtCursor(`<img src="${imageUrl}" alt="${alt}" />`);
+          stateTip.textContent = '已粘贴图片，导出时会转为 markdown 图片语法。';
+          resolve();
+        };
+        reader.onerror = () => resolve();
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function toClipboardHtml(htmlText) {
+      const parser = new DOMParser();
+      const parsed = parser.parseFromString(htmlText, 'text/html');
+      return parsed.body ? parsed.body.textContent || '' : '';
+    }
+
+    function restoreQuery() {
+      const queryType = query.get('type');
+      if (queryType === 'note' || queryType === 'blog' || queryType === 'important') {
+        typeInput.value = queryType;
+      }
+
+      const queryTitle = querySafeString('title');
+      if (queryTitle) titleInput.value = queryTitle;
+
+      const querySummary = querySafeString('summary');
+      if (querySummary) summaryInput.value = querySummary;
+
+      const queryCategory = querySafeString('category');
+      if (queryCategory) categoryInput.value = queryCategory;
+
+      const queryTags = querySafeString('tags');
+      if (queryTags) tagsInput.value = queryTags;
+
+      const queryImportance = query.get('importance');
+      if (queryImportance) importanceInput.value = String(clampImportance(queryImportance));
+
+      const queryDate = query.get('date');
+      if (queryDate) dateInput.value = queryDate;
+
+      const queryUpdated = query.get('updated');
+      if (queryUpdated) updatedInput.value = queryUpdated;
+
+      const queryBody = querySafeString('body');
+      if (queryBody) {
+        const html = toClipboardHtml(decodeURIComponent(queryBody));
+        if (html) editor.innerHTML = html;
+      }
+    }
+
+    editor.addEventListener('keydown', (event) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'b') {
+        event.preventDefault();
+        applyCommand('bold');
+      } else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'i') {
+        event.preventDefault();
+        applyCommand('italic');
+      }
+    });
+
+    editor.addEventListener('input', saveDraft);
+
+    editor.addEventListener('paste', async (event) => {
+      const clipboard = event.clipboardData;
+      if (!clipboard) return;
+
+      const files = Array.from(clipboard.files || []);
+      const imageFiles = files.filter((file) => file && file.type.startsWith('image/'));
+      if (imageFiles.length === 0) return;
+
+      event.preventDefault();
+      for (const file of imageFiles) {
+        await insertImageFromClipboard(file);
+      }
+    });
+
+    document.querySelectorAll('[data-command]').forEach((button) => {
+      button.addEventListener('click', (event) => {
+        const target = event.currentTarget;
+        const command = target.getAttribute('data-command');
+        if (!command) return;
+        const value = target.getAttribute('data-value') || null;
+        applyCommand(command, value);
+      });
+    });
+
+    document.querySelectorAll('[data-block]').forEach((button) => {
+      button.addEventListener('click', (event) => {
+        const target = event.currentTarget;
+        const block = target.getAttribute('data-block');
+        if (!block) return;
+        if (block === 'h1' || block === 'h2' || block === 'h3') {
+          applyCommand('formatBlock', `<${block}>`);
+        }
+      });
+    });
+
+    colorPicker.addEventListener('input', () => {
+      applyCommand('foreColor', colorPicker.value);
+    });
+
+    clearFormatBtn.addEventListener('click', () => {
+      applyCommand('removeFormat');
+      stateTip.textContent = '已清除选区格式。';
+    });
+
+    linkBtn.addEventListener('click', () => {
+      const selection = window.getSelection();
+      const selectedText = selection ? selection.toString().trim() : '';
+      const text = window.prompt('链接文字', selectedText || '链接');
+      const url = window.prompt('链接地址', 'https://');
+      if (!text || !url || !url.trim()) return;
+      const selected = window.getSelection();
+      if (!selected || selected.toString().trim().length === 0) {
+        stateTip.textContent = '请先选中文本再插入链接。';
+        return;
+      }
+      applyCommand('createLink', url.trim());
+      const range = selected.getRangeAt(0);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.textContent = text;
+      range.deleteContents();
+      range.insertNode(anchor);
+      range.collapse(false);
+      selected.removeAllRanges();
+      const freshRange = document.createRange();
+      freshRange.setStartAfter(anchor);
+      freshRange.collapse(true);
+      selected.addRange(freshRange);
+      editor.focus();
+      stateTip.textContent = '已插入链接。';
       saveDraft();
     });
 
+    undoBtn.addEventListener('click', () => applyCommand('undo'));
+    redoBtn.addEventListener('click', () => applyCommand('redo'));
+
+    buildBtn.addEventListener('click', () => {
+      const now = toDateString();
+      const data = readMarkdownData();
+      if (!data.date) data.date = now;
+      data.updated = updatedInput.value || now;
+      const markdown = buildMarkdown(data);
+      output.textContent = markdown;
+      saveDraft();
+      stateTip.textContent = '已生成 Markdown，可复制或下载为 .md 文件。';
+    });
+
     copyBtn.addEventListener('click', async () => {
-      if (!output.textContent.trim()) {
-        stateTip.textContent = '先点击「生成 Markdown」再复制。';
+      if (!output.textContent.trim() || output.textContent.startsWith('（点击')) {
+        stateTip.textContent = '先点击「生成 Markdown」后再复制。';
         return;
       }
-
       try {
         await navigator.clipboard.writeText(output.textContent);
         copyBtn.textContent = '已复制';
         stateTip.textContent = 'Markdown 已复制到剪贴板。';
         window.setTimeout(() => {
           copyBtn.textContent = '复制内容';
-        }, 1100);
+        }, 1200);
       } catch (err) {
         stateTip.textContent = '复制失败，请手动选择代码块内容复制。';
       }
     });
 
     downloadBtn.addEventListener('click', () => {
-      if (!output.textContent.trim()) {
+      if (!output.textContent.trim() || output.textContent.startsWith('（点击')) {
         stateTip.textContent = '先点击「生成 Markdown」再下载。';
         return;
       }
 
-      const title = titleInput.value.trim() || 'untitled';
-      const fileName = `${slugify(title)}.md`;
+      const now = toDateString();
+      const data = readMarkdownData();
+      const slug = slugify(data.title);
+      const folder = data.type === 'note' ? 'notes' : data.type;
+      const filename = `${slug}.md`;
       const blob = new Blob([output.textContent], { type: 'text/markdown;charset=utf-8' });
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = fileName;
-      a.click();
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      link.click();
       URL.revokeObjectURL(url);
-      const targetFolder = typeInput.value === 'note' ? 'notes' : typeInput.value;
-      stateTip.textContent = `已下载 ${fileName}，建议放到 src/content/${targetFolder}/ 下。`;
+      stateTip.textContent = `已下载 ${filename}，建议保存到 src/content/${folder}/。`;
     });
 
     clearBtn.addEventListener('click', () => {
       titleInput.value = '';
       categoryInput.value = '技巧';
       importanceInput.value = '2';
+      dateInput.value = toDateString();
+      updatedInput.value = toDateString();
       tagsInput.value = '';
       summaryInput.value = '';
-      bodyInput.value = '';
-      imagesInput.value = '';
-      output.textContent = '（先填写并点击「生成 Markdown」）';
-      stateTip.textContent = '草稿已清空。';
+      editor.innerHTML = '';
+      output.textContent = '（点击「生成 Markdown」后自动输出）';
       localStorage.removeItem(LS_KEY);
+      stateTip.textContent = '草稿已清空。';
     });
 
-    imagesInput.addEventListener('change', (event) => {
-      const target = event.target;
-      if (!target.files || target.files.length === 0) return;
-      insertImage(target.files);
-      target.value = '';
-    });
-
+    dateInput.value = toDateString();
+    updatedInput.value = toDateString();
+    restoreQuery();
     hydrateDraft();
+    const html = readDraftData();
+    if (!querySafeString('title') && !html.title) {
+      stateTip.textContent = '欢迎使用，请开始填写内容；支持快捷键与工具栏排版。';
+    }
   </script>
+
+  <style>
+    .writer-canvas {
+      min-height: 56vh;
+      border: 1px solid rgb(226 232 240);
+      border-radius: 0.7rem;
+      background-color: rgb(255, 255, 255);
+      padding: 0.9rem 1rem;
+      color: #0f172a;
+      outline: none;
+      line-height: 1.7;
+    }
+    .writer-canvas :where(h1, h2, h3, h4, h5, h6) {
+      margin-top: 1.2rem;
+      margin-bottom: 0.6rem;
+      line-height: 1.35;
+    }
+    .writer-canvas ul,
+    .writer-canvas ol {
+      padding-left: 1.4rem;
+      margin: 0.7rem 0;
+    }
+    .writer-canvas p {
+      margin: 0.4rem 0;
+    }
+    .writer-canvas blockquote {
+      margin: 0.75rem 0;
+      padding-left: 0.9rem;
+      border-left: 3px solid rgb(148 163 184);
+      color: rgb(71 85 105);
+    }
+    .writer-canvas pre {
+      margin: 0.8rem 0;
+      padding: 0.8rem;
+      border: 1px solid rgb(226 232 240);
+      border-radius: 0.5rem;
+      background: rgb(241 245 249);
+      overflow-x: auto;
+    }
+    .writer-canvas img {
+      max-width: 100%;
+      border-radius: 0.4rem;
+      margin: 0.35rem 0;
+      display: block;
+    }
+    .writer-canvas:focus-within,
+    .writer-canvas:focus {
+      border-color: rgb(59 130 246);
+      box-shadow: 0 0 0 3px rgb(59 130 246 / 10%);
+    }
+    .inline-code {
+      border-radius: 0.25rem;
+      background: rgb(243 244 246);
+      padding: 0 0.35rem;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+      font-size: 0.82em;
+    }
+    .btn-tool {
+      border: 1px solid rgb(203 213 225);
+      border-radius: 0.45rem;
+      padding: 0.25rem 0.58rem;
+      font-size: 0.8rem;
+      line-height: 1.1;
+      color: rgb(15 23 42);
+      background: #fff;
+    }
+    .dark .btn-tool {
+      background: rgb(30 41 59);
+      color: rgb(226 232 240);
+      border-color: rgb(71 85 105);
+    }
+    .btn-tool:hover {
+      background: rgb(241 245 249);
+    }
+    .dark .btn-tool:hover {
+      background: rgb(51 65 85);
+    }
+  </style>
 </BaseLayout>
