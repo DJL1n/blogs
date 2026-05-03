@@ -114,5 +114,5 @@ Proposed `src` layout:
 - After each meaningful modification, run:
   - `git add .`
   - `git commit -m "<type>: <summary>"`
-  - `git push` (or `git push origin main`)
+- Push is optional and should be done only when requested.
 - For local work that is not finalized, prefer a temporary WIP commit and squash/pick later.
