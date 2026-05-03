@@ -1591,11 +1591,25 @@ const TYPES = [
         sourceEditor.classList.add('hidden');
         if (!editor.innerHTML) editor.innerHTML = '';
       }
+
+      const rawSourceText = String(sourceEditor.value || '').trim();
+      const rawVisualText = (editor.textContent || '').replace(/[\u200b\u00a0]/g, '').trim();
+      const hasVisualMedia = Boolean(editor.querySelector('img,pre,hr,table,blockquote,ul,ol,li'));
+      if (currentMode === 'source' && !rawSourceText && !rawVisualText && !hasVisualMedia) {
+        currentMode = 'visual';
+        editor.classList.remove('hidden');
+        sourceEditor.classList.add('hidden');
+        editor.classList.add('ring-2', 'ring-blue-500', 'ring-opacity-0');
+        sourceEditor.classList.remove('ring-2', 'ring-blue-500', 'ring-opacity-60');
+        updateModeUI();
+      }
+
       updateEmptyState();
       syncDateMeta(now);
       if (!hasQuery && !data.title) {
         stateTip.textContent = '欢迎使用 Obsidian 风格写作模式，命令盘可用 Ctrl/Cmd+P 打开。';
       }
+      requestAnimationFrame(updateEmptyState);
     }
 
     init();
