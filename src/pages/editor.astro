@@ -1082,15 +1082,13 @@ const TYPES = [
         updatedInput.value = query.get('updated');
         used = true;
       }
-      if (query.get('body')) {
+    if (query.get('body')) {
         const body = query.get('body');
         if (body) {
-          if (currentMode === 'source') {
-            sourceEditor.value = body;
-          } else {
-            editor.innerHTML = markdownToHtml(body);
-            updateEmptyState();
-          }
+          currentMode = query.get('bodyMode') === 'source' ? 'source' : currentMode;
+          sourceEditor.value = body;
+          editor.innerHTML = markdownToHtml(body);
+          updateEmptyState();
           used = true;
         }
       }

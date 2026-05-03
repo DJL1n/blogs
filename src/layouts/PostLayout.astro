@@ -12,6 +12,7 @@ const { post, headings = [], readingTime = 0, Content } = Astro.props as {
       tags: string[];
       type: string;
     };
+    body: string;
   };
   headings: Array<{ text: string; depth: number; slug: string }>;
   readingTime: number;
@@ -20,6 +21,11 @@ const { post, headings = [], readingTime = 0, Content } = Astro.props as {
 
 const hasToc = headings.length > 0;
 const tocEntries = headings.filter((item) => item.depth > 0 && item.slug);
+const bodyForEditor =
+  (post.body || '').length > 6000 ? '' : encodeURIComponent(post.body || '');
+const editorQuery = bodyForEditor
+  ? `&body=${bodyForEditor}&bodyMode=source`
+  : '';
 ---
 
 <BaseLayout title={post.data.title} description={post.data.summary}>
@@ -40,7 +46,7 @@ const tocEntries = headings.filter((item) => item.depth > 0 && item.slug);
         <p class="text-slate-600 dark:text-slate-300">{post.data.summary}</p>
         <div class="mt-4">
           <a
-            href={`/editor?type=${post.data.type === 'note' ? 'note' : post.data.type}&title=${encodeURIComponent(post.data.title)}&summary=${encodeURIComponent(post.data.summary)}`}
+            href={`/editor?type=${post.data.type === 'note' ? 'note' : post.data.type}&title=${encodeURIComponent(post.data.title)}&summary=${encodeURIComponent(post.data.summary)}&category=${encodeURIComponent(post.data.category)}&tags=${encodeURIComponent(post.data.tags.join(', '))}&importance=${encodeURIComponent(String(post.data.importance))}${editorQuery}`}
             class="inline-flex rounded-md border border-blue-200 bg-blue-50 px-3 py-1.5 text-sm font-medium text-blue-700 transition hover:bg-blue-100 dark:border-blue-700 dark:bg-slate-800 dark:text-blue-200"
           >
             进入编辑模式
