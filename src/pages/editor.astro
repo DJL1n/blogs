@@ -8,17 +8,15 @@ const TYPES = [
 ];
 ---
 
-<BaseLayout title="写作助手" description="本地可视化写作模板，导出 Markdown 并保存到 src/content/* 下">
+<BaseLayout title="写作助手" description="像 Obsidian 一样的本地写作入口，导出标准 Markdown 保存到 src/content/*">
   <section class="space-y-6">
     <header>
       <p class="inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 dark:border-emerald-700 dark:bg-slate-800 dark:text-emerald-200">
-        写作工作流
+        写作工作流 · 可视化模式
       </p>
       <h1 class="mt-3 text-4xl font-bold">写作助手</h1>
       <p class="mt-2 text-slate-600 dark:text-slate-300">
-        用文档方式创作，底层仍输出 Markdown，后续只需要把文件拷贝到对应的
-        <code>src/content/{'{'}blog | notes | important{'}'}</code>
-        目录即可。
+        你直接在页面里像编辑文档一样写，支持标题、列表、引用、代码块、图片粘贴，并生成可提交的 Markdown 文件。
       </p>
     </header>
 
@@ -105,35 +103,51 @@ const TYPES = [
 
         <div class="surface-card">
           <div class="mb-3 flex flex-wrap gap-2 border-b border-slate-200 pb-3 dark:border-slate-700">
+            <button type="button" id="mode-visual" class="btn-tool btn-tool-active">文档模式</button>
+            <button type="button" id="mode-source" class="btn-tool">源码模式</button>
+            <span class="w-px bg-slate-300 dark:bg-slate-600"></span>
             <button type="button" data-command="bold" class="btn-tool" title="加粗 (Ctrl/Cmd+B)">B</button>
             <button type="button" data-command="italic" class="btn-tool" title="斜体 (Ctrl/Cmd+I)">I</button>
             <button type="button" data-command="underline" class="btn-tool" title="下划线">U</button>
-            <span class="w-px bg-slate-300 dark:bg-slate-600"></span>
-            <button type="button" data-block="h1" class="btn-tool" title="标题 1">H1</button>
-            <button type="button" data-block="h2" class="btn-tool" title="标题 2">H2</button>
-            <button type="button" data-block="h3" class="btn-tool" title="标题 3">H3</button>
+            <button type="button" data-command="strikeThrough" class="btn-tool" title="删除线">S</button>
             <button type="button" data-command="insertUnorderedList" class="btn-tool" title="无序列表">• 列表</button>
             <button type="button" data-command="insertOrderedList" class="btn-tool" title="有序列表">1. 列表</button>
-            <button type="button" data-command="formatBlock" data-value="BLOCKQUOTE" class="btn-tool" title="引用">引用</button>
-            <button type="button" data-command="formatBlock" data-value="PRE" class="btn-tool" title="代码块">代码块</button>
-            <button type="button" id="link-btn" class="btn-tool" title="插入链接">🔗</button>
-            <button type="button" id="undo-btn" data-command="undo" class="btn-tool" title="撤销">↶</button>
-            <button type="button" id="redo-btn" data-command="redo" class="btn-tool" title="重做">↷</button>
+            <button type="button" data-command="quote" class="btn-tool" title="引用">引用</button>
+            <button type="button" data-command="codeBlock" class="btn-tool" title="代码块">代码块</button>
+            <button type="button" data-command="h1" class="btn-tool">H1</button>
+            <button type="button" data-command="h2" class="btn-tool">H2</button>
+            <button type="button" data-command="h3" class="btn-tool">H3</button>
+            <button type="button" data-command="removeFormat" class="btn-tool" title="清空格式">清空格式</button>
+            <button type="button" id="link-btn" class="btn-tool" title="插入链接">🔗 链接</button>
+            <button type="button" id="hr-btn" class="btn-tool" title="分割线">—</button>
             <label class="inline-flex items-center rounded-md border border-slate-300 px-3 py-1.5 text-sm dark:border-slate-700">
               <input id="color-picker" type="color" value="#0f172a" class="h-5 w-7 border-none bg-transparent p-0" title="字体颜色" />
               <span class="ml-2 text-xs">颜色</span>
             </label>
-            <button type="button" id="clear-format-btn" class="btn-tool" title="清除格式">清空格式</button>
+            <button type="button" id="image-btn" class="btn-tool" title="插入图片">图片</button>
+            <button type="button" id="undo-btn" class="btn-tool" title="撤销">↶</button>
+            <button type="button" id="redo-btn" class="btn-tool" title="重做">↷</button>
+            <button type="button" id="open-command" class="btn-tool btn-tool-strong" title="命令面板 (Ctrl/Cmd+P)">命令盘</button>
+            <input id="image-input" type="file" accept="image/*" multiple class="hidden" />
           </div>
 
-          <div
-            id="editor"
-            class="writer-canvas is-empty"
-            contenteditable="true"
-            spellcheck="true"
-            aria-label="正文编辑区"
-            data-placeholder="在这里开始写作（支持标题、列表、引用、代码块、图片粘贴）。例如：Ctrl/Cmd + B 加粗，Ctrl/Cmd + V 粘贴图片。"
-          ></div>
+          <div id="editor-shell" class="editor-shell">
+            <div
+              id="editor"
+              class="writer-canvas is-empty"
+              contenteditable="true"
+              spellcheck="true"
+              aria-label="正文编辑区"
+              data-placeholder="在这里开始写作（支持标题、列表、引用、代码块、图片粘贴）。例如：输入 / 调出块级命令，或 Ctrl/Cmd+P 打开命令面板。"
+            ></div>
+
+            <textarea
+              id="source-editor"
+              class="writer-canvas h-[56vh] font-mono hidden"
+              placeholder="在这里直接写 Markdown，例如：# 标题"
+              aria-label="Markdown 源码编辑"
+            ></textarea>
+          </div>
         </div>
 
         <div class="flex flex-wrap gap-3">
@@ -150,7 +164,7 @@ const TYPES = [
             清空草稿
           </button>
         </div>
-        <p id="state-tip" class="text-sm text-slate-500 dark:text-slate-300">支持像写文档一样编辑；生成后可直接复制或下载。</p>
+        <p id="state-tip" class="text-sm text-slate-500 dark:text-slate-300">支持像文档一样编辑；命令盘会给你推荐操作，效果直接可见。</p>
       </form>
 
       <aside class="surface-card">
@@ -161,8 +175,28 @@ const TYPES = [
     </section>
   </section>
 
+  <div id="command-palette" class="command-palette hidden" role="dialog" aria-hidden="true">
+    <div class="command-palette__backdrop"></div>
+    <div class="command-palette__panel">
+      <p class="mb-2 text-xs uppercase tracking-wide text-slate-500">命令面板</p>
+      <input
+        id="command-search"
+        type="text"
+        class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-900"
+        placeholder="搜索命令，例如：标题、列表、引用"
+        autocomplete="off"
+      />
+      <div id="command-list" class="mt-2 max-h-72 space-y-2 overflow-auto"></div>
+      <p id="command-empty" class="mt-2 text-sm text-slate-500 hidden">未找到匹配命令。</p>
+    </div>
+  </div>
+
+  <div id="slash-menu" class="slash-menu hidden">
+    <div id="slash-list" class="space-y-1"></div>
+  </div>
+
   <script is:inline>
-    const LS_KEY = 'kb-editor-draft-v2';
+    const LS_KEY = 'kb-editor-draft-v3';
     const form = document.getElementById('writer-form');
     const titleInput = document.getElementById('title');
     const typeInput = document.getElementById('type');
@@ -170,9 +204,12 @@ const TYPES = [
     const importanceInput = document.getElementById('importance');
     const dateInput = document.getElementById('date');
     const updatedInput = document.getElementById('updated');
+    const dateText = document.getElementById('date-text');
+    const updatedText = document.getElementById('updated-text');
     const tagsInput = document.getElementById('tags');
     const summaryInput = document.getElementById('summary');
     const editor = document.getElementById('editor');
+    const sourceEditor = document.getElementById('source-editor');
     const buildBtn = document.getElementById('build-btn');
     const copyBtn = document.getElementById('copy-btn');
     const downloadBtn = document.getElementById('download-btn');
@@ -180,13 +217,59 @@ const TYPES = [
     const output = document.getElementById('output');
     const stateTip = document.getElementById('state-tip');
     const linkBtn = document.getElementById('link-btn');
+    const colorPicker = document.getElementById('color-picker');
     const undoBtn = document.getElementById('undo-btn');
     const redoBtn = document.getElementById('redo-btn');
-    const colorPicker = document.getElementById('color-picker');
-    const clearFormatBtn = document.getElementById('clear-format-btn');
+    const hrBtn = document.getElementById('hr-btn');
+    const imageBtn = document.getElementById('image-btn');
+    const imageInput = document.getElementById('image-input');
+    const modeVisualBtn = document.getElementById('mode-visual');
+    const modeSourceBtn = document.getElementById('mode-source');
+    const commandPalette = document.getElementById('command-palette');
+    const commandSearch = document.getElementById('command-search');
+    const commandList = document.getElementById('command-list');
+    const commandEmpty = document.getElementById('command-empty');
+    const openCommand = document.getElementById('open-command');
+    const slashMenu = document.getElementById('slash-menu');
+    const slashList = document.getElementById('slash-list');
     const query = new URL(window.location.href).searchParams;
-    const dateText = document.getElementById('date-text');
-    const updatedText = document.getElementById('updated-text');
+
+    let currentMode = 'visual';
+
+    const COMMANDS = [
+      { id: 'bold', label: '加粗', description: '将选中文本设为加粗', group: '文本样式', keywords: ['bold', '加粗', 'B'] },
+      { id: 'italic', label: '斜体', description: '将选中文本设为斜体', group: '文本样式', keywords: ['italic', '斜体', 'I'] },
+      { id: 'underline', label: '下划线', description: '将选中文本加下划线', group: '文本样式', keywords: ['underline', '下划线'] },
+      { id: 'strikeThrough', label: '删除线', description: '将选中文本加删除线', group: '文本样式', keywords: ['strike', '删除线'] },
+      { id: 'h1', label: 'H1', description: '当前块转为一级标题', group: '标题', keywords: ['标题', '一级标题', 'H1', 'heading 1'] },
+      { id: 'h2', label: 'H2', description: '当前块转为二级标题', group: '标题', keywords: ['标题', '二级标题', 'H2', 'heading 2'] },
+      { id: 'h3', label: 'H3', description: '当前块转为三级标题', group: '标题', keywords: ['标题', '三级标题', 'H3', 'heading 3'] },
+      { id: 'p', label: '正文', description: '当前块转为普通段落', group: '段落', keywords: ['paragraph', '正文', '段落', 'P'] },
+      { id: 'quote', label: '引用', description: '插入引用块', group: '段落', keywords: ['quote', '引用', 'blockquote', '>'] },
+      { id: 'ul', label: '无序列表', description: '插入 / 转换为无序列表项', group: '列表', keywords: ['list', '无序列表', 'bullet'] },
+      { id: 'ol', label: '有序列表', description: '插入 / 转换为有序列表项', group: '列表', keywords: ['有序列表', 'ordered', '1.'] },
+      { id: 'codeBlock', label: '代码块', description: '插入代码块', group: '块', keywords: ['代码块', 'code', '```'] },
+      { id: 'hr', label: '分割线', description: '插入分隔线', group: '块', keywords: ['分隔线', '---', 'hr'] },
+      { id: 'link', label: '插入链接', description: '给选中文本添加链接', group: '段落', keywords: ['link', '链接', 'url'] },
+      { id: 'colorPicker', label: '字体颜色', description: '通过颜色面板设置文本颜色', group: '文本样式', keywords: ['color', '颜色', 'foreColor'] },
+      { id: 'removeFormat', label: '清除格式', description: '清空选中文本的直接格式', group: '文本样式', keywords: ['清除格式', 'remove format'] },
+      { id: 'undo', label: '撤销', description: '撤销上一步', group: '编辑', keywords: ['undo', '撤销'] },
+      { id: 'redo', label: '重做', description: '恢复上一步', group: '编辑', keywords: ['redo', '重做'] },
+    ];
+
+    const SLASH_COMMANDS = [
+      { id: 'h1', label: '标题 1', description: '转成 H1', run: () => applyHeading(1) },
+      { id: 'h2', label: '标题 2', description: '转成 H2', run: () => applyHeading(2) },
+      { id: 'h3', label: '标题 3', description: '转成 H3', run: () => applyHeading(3) },
+      { id: 'quote', label: '引用', description: '转成引用段落', run: () => applyBlock('blockquote') },
+      { id: 'ul', label: '无序列表', description: '转成无序列表', run: () => toggleList('ul') },
+      { id: 'ol', label: '有序列表', description: '转成有序列表', run: () => toggleList('ol') },
+      { id: 'codeBlock', label: '代码块', description: '插入代码块', run: () => applyBlock('pre') },
+      { id: 'p', label: '正文', description: '转成普通段落', run: () => applyBlock('p') },
+      { id: 'hr', label: '分割线', description: '插入分割线', run: () => insertHorizontalRule() },
+    ];
+
+    const BROWSER_COMMAND_KEYS = ['bold', 'italic', 'underline', 'strikeThrough', 'insertUnorderedList', 'insertOrderedList'];
 
     function toDateString(date = new Date()) {
       return date.toISOString().slice(0, 10);
@@ -194,6 +277,16 @@ const TYPES = [
 
     function toYamlString(value) {
       return JSON.stringify(String(value));
+    }
+
+    function clampImportance(value) {
+      const num = Number(value || 2);
+      if (Number.isNaN(num)) return 2;
+      return Math.min(Math.max(Math.round(num), 1), 5);
+    }
+
+    function cleanText(value) {
+      return String(value || '').replace(/\s+/g, ' ').trim();
     }
 
     function slugify(value) {
@@ -207,40 +300,56 @@ const TYPES = [
         .slice(0, 80) || `post-${toDateString()}`;
     }
 
-    function clampImportance(value) {
-      const num = Number(value || 2);
-      if (Number.isNaN(num)) return 2;
-      return Math.min(Math.max(Math.round(num), 1), 5);
+    function syncDateMeta(now = toDateString()) {
+      if (!dateInput.value) dateInput.value = now;
+      if (!updatedInput.value) updatedInput.value = now;
+      if (dateText) dateText.textContent = dateInput.value || now;
+      if (updatedText) updatedText.textContent = updatedInput.value || now;
     }
 
-    function querySafeString(key) {
-      const value = query.get(key);
-      return value || '';
+    function updateModeUI() {
+      if (currentMode === 'visual') {
+        modeVisualBtn.classList.add('btn-tool-active');
+        modeSourceBtn.classList.remove('btn-tool-active');
+      } else {
+        modeSourceBtn.classList.add('btn-tool-active');
+        modeVisualBtn.classList.remove('btn-tool-active');
+      }
     }
 
-    function cleanText(value) {
-      return String(value || '').replace(/\s+/g, ' ').trim();
+    function getSelectionRange() {
+      const sel = window.getSelection();
+      if (!sel || sel.rangeCount === 0) return null;
+      return sel.getRangeAt(0);
     }
 
-    function focusEditor() {
-      if (!editor) return;
+    function getSelectionText() {
+      const sel = window.getSelection();
+      if (!sel) return '';
+      return sel.toString();
+    }
+
+    function focusEditor(forceEnd = false) {
+      if (currentMode !== 'visual') {
+        setMode('visual', true);
+      }
       editor.focus();
-      const selection = window.getSelection();
-      if (!selection || selection.rangeCount === 0) {
+      const sel = window.getSelection();
+      if (!sel || sel.rangeCount === 0 || forceEnd) {
         const range = document.createRange();
         range.selectNodeContents(editor);
         range.collapse(false);
-        selection?.removeAllRanges();
-        selection?.addRange(range);
+        sel?.removeAllRanges();
+        if (sel) sel.addRange(range);
       }
-      updateEditorEmptyState();
+      updateEmptyState();
     }
 
     function isEditorEmpty() {
       return (editor.textContent || '').replace(/\u200b/g, '').trim().length === 0;
     }
 
-    function updateEditorEmptyState() {
+    function updateEmptyState() {
       if (isEditorEmpty()) {
         editor.classList.add('is-empty');
       } else {
@@ -248,105 +357,447 @@ const TYPES = [
       }
     }
 
-    function syncDateMeta(now = toDateString()) {
-      if (!dateInput.value) {
-        dateInput.value = now;
+    function setMode(mode, keepFocus = false) {
+      currentMode = mode === 'source' ? 'source' : 'visual';
+      if (currentMode === 'visual') {
+        editor.classList.remove('hidden');
+        sourceEditor.classList.add('hidden');
+        sourceEditor.classList.remove('ring-2', 'ring-blue-500', 'ring-opacity-60');
+        editor.classList.add('ring-2', 'ring-blue-500', 'ring-opacity-0');
+        editor.innerHTML = markdownToHtml(sourceEditor.value) || '';
+        updateEmptyState();
+        if (keepFocus) focusEditor();
+      } else {
+        sourceEditor.value = editorToMarkdown();
+        sourceEditor.classList.remove('hidden');
+        editor.classList.add('hidden');
+        editor.classList.remove('ring-2', 'ring-blue-500', 'ring-opacity-0');
+        sourceEditor.classList.add('ring-2', 'ring-blue-500', 'ring-opacity-60');
       }
-      if (!updatedInput.value) {
-        updatedInput.value = now;
-      }
-      if (dateText) dateText.textContent = dateInput.value || now;
-      if (updatedText) updatedText.textContent = updatedInput.value || now;
+      updateModeUI();
+      saveDraft();
     }
 
-    function serializeNode(node, depth = 0) {
-      if (!node) return '';
+    function commandMatches(command, keyword) {
+      const target = keyword.trim().toLowerCase();
+      if (!target) return true;
+      const all = [command.id, command.label, command.description, command.group, ...(command.keywords || [])]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+      return all.includes(target);
+    }
+
+    function renderCommandList(raw = '') {
+      const keyword = String(raw || '').trim().toLowerCase();
+      const items = COMMANDS.filter((cmd) => commandMatches(cmd, keyword));
+      commandList.innerHTML = '';
+      if (items.length === 0) {
+        commandEmpty.classList.remove('hidden');
+        return;
+      }
+      commandEmpty.classList.add('hidden');
+      items.forEach((item) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-left text-sm hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900';
+        button.dataset.command = item.id;
+        button.innerHTML = `<div class="font-medium">${item.label}</div><div class="text-xs text-slate-500">${item.description}</div>`;
+        button.addEventListener('click', () => {
+          runCommandById(item.id);
+          closeCommandPalette();
+        });
+        commandList.appendChild(button);
+      });
+    }
+
+    function openCommandPalette() {
+      commandPalette.classList.remove('hidden');
+      commandSearch.value = '';
+      renderCommandList('');
+      commandSearch.focus();
+      commandPalette.setAttribute('aria-hidden', 'false');
+    }
+
+    function closeCommandPalette() {
+      commandPalette.classList.add('hidden');
+      commandPalette.setAttribute('aria-hidden', 'true');
+    }
+
+    function isBlockTag(name) {
+      const key = (name || '').toLowerCase();
+      return [
+        'p',
+        'div',
+        'h1',
+        'h2',
+        'h3',
+        'h4',
+        'h5',
+        'h6',
+        'blockquote',
+        'pre',
+        'ul',
+        'ol',
+        'li'
+      ].includes(key);
+    }
+
+    function getCurrentBlockElement() {
+      const sel = window.getSelection();
+      if (!sel || sel.rangeCount === 0) return null;
+      let node = sel.anchorNode;
+      if (!node) return null;
+
       if (node.nodeType === 3) {
-        return cleanText(node.textContent || '');
+        node = node.parentElement;
       }
 
-      if (node.nodeType === 8) {
-        return '';
+      while (node && node !== editor && node.parentElement) {
+        if (node.parentElement === editor) {
+          return node;
+        }
+        if (isBlockTag(node.tagName) && node.parentElement === editor) {
+          return node;
+        }
+        node = node.parentElement;
+      }
+      return null;
+    }
+
+    function getActiveBlockElement() {
+      const block = getCurrentBlockElement();
+      if (block) return block;
+
+      if (editor.children.length > 0) {
+        const firstBlock = editor.querySelector(':scope > *');
+        if (firstBlock) return firstBlock;
       }
 
+      if (editor.textContent && editor.textContent.trim()) {
+        const raw = editor.textContent;
+        const p = document.createElement('p');
+        p.textContent = raw;
+        editor.textContent = '';
+        editor.appendChild(p);
+        return p;
+      }
+
+      const fallback = document.createElement('p');
+      fallback.textContent = '';
+      editor.appendChild(fallback);
+      return fallback;
+    }
+
+    function setCaretToEnd(node) {
+      if (!node) return;
+      const range = document.createRange();
+      range.selectNodeContents(node);
+      range.collapse(false);
+      const sel = window.getSelection();
+      if (!sel) return;
+      sel.removeAllRanges();
+      sel.addRange(range);
+    }
+
+    function setCaretToStart(node) {
+      if (!node) return;
+      const range = document.createRange();
+      range.selectNodeContents(node);
+      range.collapse(true);
+      const sel = window.getSelection();
+      if (!sel) return;
+      sel.removeAllRanges();
+      sel.addRange(range);
+    }
+
+    function applyCommand(cmd, value) {
+      if (currentMode !== 'visual') return;
+      focusEditor();
+      if (BROWSER_COMMAND_KEYS.includes(cmd) || cmd === 'foreColor') {
+        document.execCommand(cmd, false, value || null);
+      } else {
+        switch (cmd) {
+          case 'quote':
+            applyBlock('blockquote');
+            break;
+          case 'codeBlock':
+            applyBlock('pre');
+            break;
+          case 'h1':
+            applyHeading(1);
+            break;
+          case 'h2':
+            applyHeading(2);
+            break;
+          case 'h3':
+            applyHeading(3);
+            break;
+          case 'removeFormat':
+            document.execCommand('removeFormat', false, null);
+            break;
+        }
+      }
+      updateEmptyState();
+      saveDraft();
+    }
+
+    function applyHeading(level) {
+      if (currentMode !== 'visual') return;
+      focusEditor(true);
+      const block = getActiveBlockElement();
+      const tag = `h${level}`;
+      if (block.tagName && block.tagName.toLowerCase() === tag) {
+        return;
+      }
+      const rawHtml = block.innerHTML || '';
+      const fallbackText = block.textContent?.trim();
+      const newBlock = document.createElement(tag);
+      newBlock.innerHTML = rawHtml || (fallbackText ? fallbackText : `标题 ${level}`);
+      block.replaceWith(newBlock);
+      setCaretToEnd(newBlock);
+      updateEmptyState();
+      saveDraft();
+    }
+
+    function applyBlock(tagName) {
+      if (currentMode !== 'visual') return;
+      focusEditor(true);
+      const block = getActiveBlockElement();
+      if (!block) return;
+      const target = tagName.toLowerCase();
+      const newBlock = document.createElement(target);
+      newBlock.innerHTML = block.innerHTML || '';
+      block.parentElement?.replaceChild(newBlock, block);
+      setCaretToEnd(newBlock);
+      updateEmptyState();
+      saveDraft();
+    }
+
+    function applyOrWrapTag(block, tagName) {
+      if (!block || block === editor) return;
+      const target = tagName.toLowerCase();
+      const currentName = block.tagName ? block.tagName.toLowerCase() : '';
+
+      if (currentName === 'li' && block.parentElement) {
+        const list = block.parentElement;
+        if (list.tagName.toLowerCase() === target) {
+          const p = document.createElement('p');
+          p.innerHTML = block.innerHTML;
+          list.replaceWith(p);
+          setCaretToEnd(p);
+          return;
+        }
+        const nextList = document.createElement(target);
+        const nextItem = document.createElement('li');
+        nextItem.innerHTML = block.innerHTML || '';
+        nextList.appendChild(nextItem);
+        list.replaceWith(nextList);
+        setCaretToEnd(nextItem);
+        return;
+      }
+
+      const wrapped = document.createElement(target);
+      wrapped.innerHTML = block.innerHTML || '';
+      block.replaceWith(wrapped);
+      setCaretToEnd(wrapped);
+    }
+
+    function toggleList(listType) {
+      if (currentMode !== 'visual') return;
+      focusEditor(true);
+      const block = getActiveBlockElement();
+      if (!block) return;
+      const target = listType.toLowerCase();
+
+      if (block.tagName && block.tagName.toLowerCase() === 'li') {
+        applyOrWrapTag(block, target);
+        updateEmptyState();
+        saveDraft();
+        return;
+      }
+
+      const list = document.createElement(target);
+      const item = document.createElement('li');
+      item.innerHTML = block.innerHTML || '';
+      list.appendChild(item);
+      block.parentElement?.replaceChild(list, block);
+      setCaretToEnd(item);
+      updateEmptyState();
+      saveDraft();
+    }
+
+    function insertHorizontalRule() {
+      if (currentMode !== 'visual') return;
+      focusEditor(true);
+      const hr = document.createElement('hr');
+      const range = getSelectionRange();
+      if (!range) return;
+      range.collapse(false);
+      range.insertNode(hr);
+      const br = document.createElement('div');
+      br.innerHTML = '&nbsp;';
+      hr.after(br);
+      setCaretToEnd(hr);
+      saveDraft();
+    }
+
+    function insertAtCursorHtml(html) {
+      if (currentMode !== 'visual') return;
+      focusEditor();
+      const sel = window.getSelection();
+      if (!sel || sel.rangeCount === 0) return;
+      const range = sel.getRangeAt(0);
+      range.deleteContents();
+      const holder = document.createElement('div');
+      holder.innerHTML = html;
+      const frag = document.createDocumentFragment();
+      while (holder.firstChild) frag.appendChild(holder.firstChild);
+      range.insertNode(frag);
+      range.collapse(false);
+      sel.removeAllRanges();
+      sel.addRange(range);
+      updateEmptyState();
+      saveDraft();
+    }
+
+    function addLink() {
+      if (currentMode !== 'visual') return;
+      const selection = window.getSelection();
+      const selectedText = selection ? selection.toString().trim() : '';
+      const text = window.prompt('链接文字', selectedText || '链接');
+      const url = window.prompt('链接地址', 'https://');
+      if (!text || !url || !url.trim()) {
+        stateTip.textContent = '已取消插入链接。';
+        return;
+      }
+      if (!selectedText) {
+        stateTip.textContent = '请先选中要加链接的文字。';
+        return;
+      }
+      if (!selection || selection.rangeCount === 0) return;
+      const anchor = document.createElement('a');
+      anchor.href = url.trim();
+      anchor.textContent = text;
+      const range = selection.getRangeAt(0);
+      range.deleteContents();
+      range.insertNode(anchor);
+      range.collapse(false);
+      selection.removeAllRanges();
+      selection.addRange(range);
+      editor.focus();
+      saveDraft();
+    }
+
+    function runCommandById(id) {
+    if (currentMode === 'source' && !['openCommand','colorPicker'].includes(id)) {
+        stateTip.textContent = '当前为源码模式，先切到文档模式执行可视化命令。';
+        return;
+      }
+
+      switch (id) {
+        case 'bold':
+        case 'italic':
+        case 'underline':
+        case 'strikeThrough':
+        case 'insertUnorderedList':
+        case 'insertOrderedList':
+          applyCommand(id);
+          break;
+        case 'h1':
+          applyHeading(1);
+          break;
+        case 'h2':
+          applyHeading(2);
+          break;
+        case 'h3':
+          applyHeading(3);
+          break;
+        case 'quote':
+          applyBlock('blockquote');
+          break;
+        case 'codeBlock':
+          applyBlock('pre');
+          break;
+        case 'ul':
+          toggleList('ul');
+          break;
+        case 'ol':
+          toggleList('ol');
+          break;
+        case 'p':
+          applyBlock('p');
+          break;
+        case 'hr':
+          insertHorizontalRule();
+          break;
+        case 'link':
+          addLink();
+          break;
+        case 'colorPicker':
+          colorPicker.click();
+          break;
+        case 'removeFormat':
+          applyCommand('removeFormat');
+          break;
+        case 'undo':
+          document.execCommand('undo');
+          saveDraft();
+          break;
+        case 'redo':
+          document.execCommand('redo');
+          saveDraft();
+          break;
+        default:
+          break;
+      }
+      stateTip.textContent = `已执行：${id}`;
+    }
+
+    function serializeNode(node) {
+      if (!node) return '';
+      if (node.nodeType === 3) return String(node.textContent || '').replace(/\\u0000/g, '');
+      if (node.nodeType === 8) return '';
       if (node.nodeType === 11) {
-        return Array.from(node.childNodes)
-          .map((child) => serializeNode(child, depth))
-          .join('');
+        return Array.from(node.childNodes).map((child) => serializeNode(child)).join('');
       }
 
       const tag = (node.nodeName || '').toLowerCase();
-      const children = Array.from(node.childNodes).map((child) => serializeNode(child, depth));
-      const text = children.join('').replace(/\s+$/g, '');
-      const withNoExtra = text.trim();
+      const rawChildren = Array.from(node.childNodes).map((child) => serializeNode(child)).join('');
+      const children = rawChildren.replace(/\\s+$/g, '');
 
       if (tag === 'br') return '\\n';
-      if (tag === 'strong' || tag === 'b') return `**${withNoExtra}**`;
-      if (tag === 'em' || tag === 'i') return `*${withNoExtra}*`;
-      if (tag === 'u') return `<u>${withNoExtra}</u>`;
-      if (tag === 'code') return `\`${withNoExtra}\``;
-      if (tag === 'a') {
-        const href = node.href || '#';
-        return `[${withNoExtra}](${href})`;
-      }
-      if (tag === 'img') {
-        const alt = (node.getAttribute && node.getAttribute('alt')) || 'image';
-        const src = node.getAttribute && node.getAttribute('src') ? node.getAttribute('src') : '';
-        return `![${alt}](${src})`;
-      }
+      if (tag === 'strong' || tag === 'b') return `**${children}**`;
+      if (tag === 'em' || tag === 'i') return `*${children}*`;
+      if (tag === 'u') return `<u>${children}</u>`;
+      if (tag === 's' || tag === 'del' || tag === 'strike') return `~~${children}~~`;
+      if (tag === 'code') return `\\`${children}\\``;
+      if (tag === 'a') return `[${children}](${node.href || '#'})`;
+      if (tag === 'img') return `![${node.alt || 'image'}](${node.src || ''})`;
       if (tag === 'h1' || tag === 'h2' || tag === 'h3' || tag === 'h4' || tag === 'h5' || tag === 'h6') {
         const level = Number(tag.replace('h', '')) || 1;
-        return `\\n${'#'.repeat(level)} ${withNoExtra}\\n\\n`;
+        return `${'\\n'}${'#'.repeat(level)} ${children.trim()}${'\\n'}${'\\n'}`;
       }
-      if (tag === 'blockquote') {
-        return `\\n> ${withNoExtra}\\n\\n`;
-      }
-      if (tag === 'pre') {
-        const code = node.textContent || '';
-        return `\\n\\n\`\`\`\\n${code}\\n\`\`\`\\n\\n`;
-      }
+      if (tag === 'blockquote') return `> ${children.trim()}\\n\\n`;
+      if (tag === 'pre') return `\\n\\n\`\`\`\\n${children}\\n\`\`\`\\n\\n`;
+      if (tag === 'hr') return `---\\n\\n`;
+      if (tag === 'p') return `${children.trim()}\\n\\n`;
       if (tag === 'li') {
-        const marker = depth > 0 ? `${'  '.repeat(depth)}- ` : '- ';
-        const bullet = marker + withNoExtra;
-        const nested = Array.from(node.childNodes)
-          .filter((child) => child.nodeType === 1 && ['ul', 'ol'].includes((child.nodeName || '').toLowerCase()))
-          .map((child) => serializeNode(child, depth + 1))
-          .join('');
-        return `${bullet}\\n${nested}`;
+        return `- ${children.trim()}\\n`;
       }
       if (tag === 'ul' || tag === 'ol') {
-        const listItems = Array.from(node.children).filter((child) => (child.nodeName || '').toLowerCase() === 'li');
-        return `${listItems
+        return `${Array.from(node.children)
+          .filter((item) => (item.tagName || '').toLowerCase() === 'li')
           .map((item, index) => {
-            const content = Array.from(item.childNodes)
-              .map((child) => serializeNode(child, depth + 1))
-              .join('')
-              .trim()
-              .replace(/^\\s*/, '');
             const marker = tag === 'ol' ? `${index + 1}.` : '-';
-            const indent = '  '.repeat(depth);
-            return `${indent}${marker} ${content}`;
+            return `${marker} ${serializeNode(item).replace(/^[-*]\\s*/, '').trim()}`;
           })
           .join('\\n')}\\n\\n`;
       }
-      if (tag === 'p') {
-        return `${withNoExtra}\\n\\n`;
+      if (tag === 'span' && node.style && node.style.color) {
+        return `<span style=\"color:${node.style.color}\">${children}</span>`;
       }
-      if (tag === 'span') {
-        const style = (node.getAttribute && node.getAttribute('style')) || '';
-        if (/color\\s*:/i.test(style)) {
-          return `<span style=\"${style}\">${withNoExtra}</span>`;
-        }
-        return withNoExtra;
-      }
-      if (tag === 'div') {
-        const style = (node.getAttribute && node.getAttribute('style')) || '';
-        if (/page-break-before/i.test(style)) {
-          return '';
-        }
-        return `${withNoExtra}\\n`;
-      }
-      return withNoExtra;
+      return children;
     }
 
     function editorToMarkdown() {
@@ -354,15 +805,85 @@ const TYPES = [
       if (!html) return '';
       const wrapper = document.createElement('div');
       wrapper.innerHTML = html;
-      const md = Array.from(wrapper.childNodes)
-        .map((node) => serializeNode(node, 0))
+      return Array.from(wrapper.childNodes)
+        .map((node) => serializeNode(node))
         .join('')
         .replace(/\\n{3,}/g, '\\n\\n')
         .trim();
-      return md || '请先填写正文内容。';
     }
 
-    function readDraftData() {
+    function htmlToMarkdownNodes(lines) {
+      return lines
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+    }
+
+    function markdownToHtml(md) {
+      const text = String(md || '').replace(/\\r\\n/g, '\\n');
+      const blocks = text.split(/\\n{2,}/);
+      const htmlParts = blocks.map((block) => {
+        const trimmed = block.trim();
+        if (!trimmed) return '';
+        const fenced = trimmed.match(/^```[^\\n]*\\n([\\s\\S]*)\\n```$/);
+        if (fenced) {
+          const inner = fenced[1] || '';
+          return `<pre><code>${htmlToMarkdownNodes(inner)}</code></pre>`;
+        }
+        if (/^#{1,6}\\s+/.test(trimmed)) {
+          const level = trimmed.match(/^(#{1,6})\\s+/)?.[1]?.length || 1;
+          const content = trimmed.replace(/^#{1,6}\\s+/, '');
+          return `<h${level}>${htmlToMarkdownNodes(content)}</h${level}>`;
+        }
+        if (/^>\\s+/.test(trimmed)) {
+          const content = trimmed
+            .split('\\n')
+            .map((line) => line.replace(/^>\\s?/, ''))
+            .join('\\n');
+          return `<blockquote>${htmlToMarkdownNodes(content)}</blockquote>`;
+        }
+        if (/^\\-\\s+/.test(trimmed) || /^\\*\\s+/.test(trimmed)) {
+          const items = trimmed
+            .split('\\n')
+            .filter((line) => /^[-*]\\s+/.test(line))
+            .map((line) => `<li>${htmlToMarkdownNodes(line.replace(/^[-*]\\s+/, ''))}</li>`);
+          return `<ul>${items.join('')}</ul>`;
+        }
+        if (/^\\d+\\.\\s+/.test(trimmed)) {
+          const items = trimmed
+            .split('\\n')
+            .filter((line) => /^\\d+\\.\\s+/.test(line))
+            .map((line) => `<li>${htmlToMarkdownNodes(line.replace(/^\\d+\\.\\s+/, ''))}</li>`);
+          return `<ol>${items.join('')}</ol>`;
+        }
+        if (/^!\\[[^\\]]*\\]\\([^)]*\\)$/m.test(trimmed)) {
+          const img = trimmed.match(/!\\[([^\\]]*)\\]\\(([^)]*)\\)/);
+          if (!img) return `<p>${inlineMarkdownToHtml(trimmed)}</p>`;
+          return `<p><img src="${img[2]}" alt="${img[1] || ''}" /></p>`;
+        }
+        return `<p>${inlineMarkdownToHtml(trimmed).replace(/\\n/g, '<br/>')}</p>`;
+      });
+      return htmlParts.filter(Boolean).join('\\n');
+    }
+
+    function inlineMarkdownToHtml(text) {
+      let out = htmlToMarkdownNodes(text);
+      out = out
+        .replace(/\\*\\*([^*]+)\\*\\*/g, '<strong>$1</strong>')
+        .replace(/__([^_]+)__/g, '<strong>$1</strong>')
+        .replace(/\\*([^*]+)\\*/g, '<em>$1</em>')
+        .replace(/_([^_]+)_/g, '<em>$1</em>')
+        .replace(/~~([^~]+)~~/g, '<del>$1</del>')
+        .replace(/`([^`]+)`/g, '<code>$1</code>')
+        .replace(/\\[([^\\]]+)\\]\\(([^)]+)\\)/g, '<a href="$2">$1</a>');
+      return out;
+    }
+
+    function getActiveBodyMarkdown() {
+      return currentMode === 'source' ? (sourceEditor.value || '').trim() : editorToMarkdown();
+    }
+
+    function getDraftData() {
       return {
         title: cleanText(titleInput.value),
         type: typeInput.value || 'note',
@@ -376,43 +897,32 @@ const TYPES = [
           .filter(Boolean),
         summary: summaryInput.value.trim(),
         contentHtml: editor.innerHTML || '',
-      };
-    }
-
-    function readMarkdownData() {
-      const raw = readDraftData();
-      const body = editorToMarkdown();
-      return {
-        ...raw,
-        body,
+        contentSource: sourceEditor.value || '',
+        mode: currentMode,
       };
     }
 
     function buildMarkdown(data) {
+      const now = toDateString();
+      data.date = data.date || now;
+      data.updated = data.updated || now;
       const tags = data.tags.length > 0 ? `[${data.tags.map((item) => toYamlString(item)).join(', ')}]` : '[]';
-      const slug = slugify(data.title || 'untitled');
-      const folder = data.type === 'note' ? 'notes' : data.type;
-      const comment = `<!-- 文件建议路径：src/content/${folder}/${slug}.md -->`;
-
-      return (
-        `---\n` +
-        `title: ${toYamlString(data.title || '无标题')}\n` +
-        `date: ${data.date}\n` +
-        `updated: ${data.updated || data.date}\n` +
-        `summary: ${toYamlString(data.summary || '待补充')}\n` +
-        `tags: ${tags}\n` +
-        `category: ${toYamlString(data.category || '技巧')}\n` +
-        `type: ${toYamlString(data.type)}\n` +
-        `importance: ${Number(data.importance)}\n` +
-        `draft: false\n` +
-        `---\n\n` +
-        `${data.body}\n\n` +
-        `${comment}\n`
-      );
+      return `---\\n` +
+        `title: ${toYamlString(data.title || '无标题')}\\n` +
+        `date: ${data.date}\\n` +
+        `updated: ${data.updated}\\n` +
+        `summary: ${toYamlString(data.summary || '待补充')}\\n` +
+        `tags: ${tags}\\n` +
+        `category: ${toYamlString(data.category || '技巧')}\\n` +
+        `type: ${toYamlString(data.type)}\\n` +
+        `importance: ${Number(data.importance)}\\n` +
+        `draft: false\\n` +
+        `---\\n\\n` +
+        `${getActiveBodyMarkdown() || '请在正文中填写内容。'}\\n`;
     }
 
     function saveDraft() {
-      localStorage.setItem(LS_KEY, JSON.stringify(readDraftData()));
+      localStorage.setItem(LS_KEY, JSON.stringify(getDraftData()));
     }
 
     function hydrateDraft() {
@@ -424,277 +934,324 @@ const TYPES = [
         typeInput.value = saved.type || 'note';
         categoryInput.value = saved.category || '技巧';
         importanceInput.value = String(saved.importance || 2);
-        dateInput.value = saved.date || toDateString();
-        updatedInput.value = saved.updated || toDateString();
+        dateInput.value = saved.date || '';
+        updatedInput.value = saved.updated || '';
         tagsInput.value = (saved.tags || []).join(', ');
         summaryInput.value = saved.summary || '';
-        if (saved.contentHtml) editor.innerHTML = saved.contentHtml;
-        updateEditorEmptyState();
-        stateTip.textContent = '已恢复上次本地草稿。';
+        if (saved.contentSource) {
+          sourceEditor.value = saved.contentSource;
+        }
+        if (saved.contentHtml) {
+          editor.innerHTML = saved.contentHtml;
+        }
+        currentMode = saved.mode === 'source' ? 'source' : 'visual';
+        if (currentMode === 'source') {
+          sourceEditor.classList.remove('hidden');
+          editor.classList.add('hidden');
+        }
+        updateModeUI();
+        updateEmptyState();
+        syncDateMeta();
       } catch (err) {
         console.error(err);
       }
     }
 
-    function applyCommand(cmd, value) {
-      focusEditor();
-      document.execCommand(cmd, false, value || null);
-      updateEditorEmptyState();
-      saveDraft();
-    }
+    let slashState = {
+      open: false,
+      node: null,
+      offset: -1,
+    };
 
-    function applyHeading(level) {
-      if (!editor) return;
-      focusEditor();
-      const tag = `H${level}`;
-      const done = document.execCommand('formatBlock', false, tag);
-      if (!done) {
-        const selection = window.getSelection();
-        if (!selection || selection.rangeCount === 0) return;
-        const range = selection.getRangeAt(0);
-        const selected = selection.toString().trim();
-        if (selected.length > 0) {
-          insertAtCursor(`<${tag.toLowerCase()}>${selected}</${tag.toLowerCase()}>`);
-          return;
-        }
-
-        const anchor = selection.anchorNode;
-        let current = anchor && anchor.nodeType === 3 ? anchor.parentElement : anchor;
-        while (current && current !== editor && current.parentElement) {
-          const nodeName = (current.tagName || '').toLowerCase();
-          if (['p', 'div', 'li', 'blockquote', 'pre'].includes(nodeName)) break;
-          current = current.parentElement;
-        }
-        if (current && current !== editor && current.parentElement === editor) {
-          const html = current.innerHTML;
-          current.outerHTML = `<${tag.toLowerCase()}>${html}</${tag.toLowerCase()}>`;
-          const rangeAfter = document.createRange();
-          const next = editor.querySelector(`h${level}:last-child`);
-          if (next) {
-            rangeAfter.setStartAfter(next);
-            rangeAfter.collapse(true);
-            selection.removeAllRanges();
-            selection.addRange(rangeAfter);
-            editor.focus();
-          }
-        }
-      }
-      updateEditorEmptyState();
-      saveDraft();
-    }
-
-    function applyBlockTag(commandValue) {
-      focusEditor();
-      document.execCommand('formatBlock', false, commandValue);
-      saveDraft();
-    }
-
-    function insertAtCursor(html) {
-      const selection = window.getSelection();
-      if (!selection || selection.rangeCount === 0) {
-        editor.focus();
-        const range = document.createRange();
-        range.selectNodeContents(editor);
-        range.collapse(false);
-        selection?.removeAllRanges();
-        selection?.addRange(range);
-      }
-
+    function getSlashContext() {
       const sel = window.getSelection();
-      if (!sel || sel.rangeCount === 0) return;
-      const range = sel.getRangeAt(0);
-      range.deleteContents();
-      const container = document.createElement('div');
-      container.innerHTML = html;
-      const frag = document.createDocumentFragment();
-      while (container.firstChild) {
-        frag.appendChild(container.firstChild);
+      if (!sel || sel.rangeCount === 0) return null;
+      const node = sel.anchorNode;
+      if (!node || node.nodeType !== 3) return null;
+      const pos = sel.anchorOffset;
+      const text = node.textContent || '';
+      if (pos <= 0) return null;
+      const before = text.slice(0, pos);
+      const last = before.lastIndexOf('/');
+      if (last === -1) return null;
+      if (last !== before.length - 1) return null;
+      if (last > 0 && !/\\s/.test(before.charAt(last - 1))) return null;
+      return { node, offset: last };
+    }
+
+    function renderSlashMenu() {
+      slashList.innerHTML = '';
+      SLASH_COMMANDS.forEach((item) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'w-full rounded-md border border-slate-200 px-2 py-2 text-left text-sm hover:bg-blue-50 dark:border-slate-700 dark:hover:bg-slate-800';
+        btn.innerHTML = `<div class="font-medium">${item.label}</div><div class="text-xs text-slate-500">${item.description}</div>`;
+        btn.addEventListener('click', () => {
+          applySlash(item.run);
+        });
+        slashList.appendChild(btn);
+      });
+      const rect = getSelectionRange()?.getBoundingClientRect();
+      if (!rect) {
+        slashMenu.style.left = '24px';
+        slashMenu.style.top = '24px';
+      } else {
+        slashMenu.style.left = `${rect.left + window.scrollX}px`;
+        slashMenu.style.top = `${rect.bottom + 6 + window.scrollY}px`;
       }
-      range.insertNode(frag);
-      range.collapse(false);
+      slashMenu.classList.remove('hidden');
+    }
+
+    function hideSlashMenu() {
+      slashMenu.classList.add('hidden');
+      slashState.open = false;
+    }
+
+    function applySlash(commandRunner) {
+      if (!slashState.node || slashState.offset < 0) {
+        hideSlashMenu();
+        return;
+      }
+      const sel = window.getSelection();
+      const range = document.createRange();
+      range.setStart(slashState.node, slashState.offset);
+      range.setEnd(slashState.node, slashState.offset + 1);
       sel.removeAllRanges();
       sel.addRange(range);
-      editor.focus();
-      updateEditorEmptyState();
-      saveDraft();
+      range.deleteContents();
+      setTimeout(() => {
+        commandRunner();
+        hideSlashMenu();
+        saveDraft();
+        updateEmptyState();
+      }, 0);
     }
 
-    async function insertImageFromClipboard(file) {
-      return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-          const imageUrl = String(reader.result);
-          const safe = file.name ? file.name.replace(/\\.[^.]+$/, '') : 'image';
-          const alt = safe.replace(/[^a-zA-Z0-9\\-_\\u4e00-\\u9fff]/g, '_') || 'image';
-          insertAtCursor(`<img src="${imageUrl}" alt="${alt}" />`);
-          stateTip.textContent = '已粘贴图片，导出时会转为 markdown 图片语法。';
-          resolve();
-        };
-        reader.onerror = () => resolve();
-        reader.readAsDataURL(file);
-      });
-    }
-
-    function toClipboardHtml(htmlText) {
-      const parser = new DOMParser();
-      const parsed = parser.parseFromString(htmlText, 'text/html');
-      return parsed.body ? parsed.body.textContent || '' : '';
+    function openSlashIfNeeded() {
+      if (currentMode !== 'visual') {
+        hideSlashMenu();
+        return;
+      }
+      const context = getSlashContext();
+      if (!context) {
+        hideSlashMenu();
+        return;
+      }
+      slashState = {
+        open: true,
+        node: context.node,
+        offset: context.offset,
+      };
+      renderSlashMenu();
     }
 
     function restoreQuery() {
-      let hasPayload = false;
+      let used = false;
+
       const queryType = query.get('type');
       if (queryType === 'note' || queryType === 'blog' || queryType === 'important') {
         typeInput.value = queryType;
-        hasPayload = true;
+        used = true;
       }
 
-      const queryTitle = querySafeString('title');
-      if (queryTitle) titleInput.value = queryTitle;
-      if (queryTitle) hasPayload = true;
-
-      const querySummary = querySafeString('summary');
-      if (querySummary) summaryInput.value = querySummary;
-      if (querySummary) hasPayload = true;
-
-      const queryCategory = querySafeString('category');
-      if (queryCategory) categoryInput.value = queryCategory;
-      if (queryCategory) hasPayload = true;
-
-      const queryTags = querySafeString('tags');
-      if (queryTags) {
-        tagsInput.value = queryTags;
-        hasPayload = true;
+      if (query.get('title')) {
+        titleInput.value = query.get('title');
+        used = true;
       }
-
-      const queryImportance = query.get('importance');
-      if (queryImportance) importanceInput.value = String(clampImportance(queryImportance));
-      if (queryImportance) hasPayload = true;
-
-      const queryDate = query.get('date');
-      if (queryDate) dateInput.value = queryDate;
-      if (queryDate) hasPayload = true;
-
-      const queryUpdated = query.get('updated');
-      if (queryUpdated) updatedInput.value = queryUpdated;
-      if (queryUpdated) hasPayload = true;
-
-      const queryBody = querySafeString('body');
-      if (queryBody) {
-        const html = toClipboardHtml(queryBody);
-        if (html) {
-          editor.innerHTML = html;
-          hasPayload = true;
+      if (query.get('summary')) {
+        summaryInput.value = query.get('summary');
+        used = true;
+      }
+      if (query.get('category')) {
+        categoryInput.value = query.get('category');
+        used = true;
+      }
+      if (query.get('tags')) {
+        tagsInput.value = query.get('tags');
+        used = true;
+      }
+      if (query.get('importance')) {
+        importanceInput.value = String(clampImportance(query.get('importance')));
+        used = true;
+      }
+      if (query.get('date')) {
+        dateInput.value = query.get('date');
+        used = true;
+      }
+      if (query.get('updated')) {
+        updatedInput.value = query.get('updated');
+        used = true;
+      }
+      if (query.get('body')) {
+        const body = query.get('body');
+        if (body) {
+          if (currentMode === 'source') {
+            sourceEditor.value = body;
+          } else {
+            editor.innerHTML = markdownToHtml(body);
+            updateEmptyState();
+          }
+          used = true;
         }
       }
 
-      return hasPayload;
+      return used;
+    }
+
+    modeVisualBtn.addEventListener('click', () => setMode('visual', true));
+    modeSourceBtn.addEventListener('click', () => setMode('source'));
+
+    openCommand.addEventListener('click', () => openCommandPalette());
+    commandPalette.querySelector('.command-palette__backdrop').addEventListener('click', closeCommandPalette);
+    commandSearch.addEventListener('input', () => renderCommandList(commandSearch.value));
+    commandPalette.addEventListener('click', (event) => {
+      if (event.target.closest('.command-palette__panel')) return;
+      closeCommandPalette();
+    });
+
+    commandList.addEventListener('click', (event) => {
+      const target = event.target.closest('button');
+      if (target && target.dataset?.command) {
+        runCommandById(target.dataset.command);
+        closeCommandPalette();
+      }
+    });
+
+    commandPalette.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        closeCommandPalette();
+        commandSearch.value = '';
+        commandSearch.blur();
+      }
+      if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        const buttons = Array.from(commandList.querySelectorAll('button'));
+        if (buttons.length === 0) return;
+        const active = buttons.findIndex((btn) => btn === document.activeElement);
+        const next = active === -1 ? 0 : Math.min(active + 1, buttons.length - 1);
+        buttons[next].focus();
+      }
+      if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        const buttons = Array.from(commandList.querySelectorAll('button'));
+        if (buttons.length === 0) return;
+        const active = buttons.findIndex((btn) => btn === document.activeElement);
+        const next = active <= 0 ? buttons.length - 1 : active - 1;
+        buttons[next].focus();
+      }
+      if (event.key === 'Enter') {
+        if (document.activeElement instanceof HTMLButtonElement && document.activeElement.dataset?.command) {
+          document.activeElement.click();
+        }
+      }
+    });
+
+    document.querySelectorAll('[data-command]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const command = button.getAttribute('data-command');
+        if (!command) return;
+        if (['h1', 'h2', 'h3', 'quote', 'codeBlock', 'ul', 'ol', 'p'].includes(command)) {
+          runCommandById(command);
+          return;
+        }
+        applyCommand(command);
+      });
+    });
+
+    linkBtn.addEventListener('click', () => runCommandById('link'));
+    colorPicker.addEventListener('input', () => {
+      if (currentMode !== 'visual') {
+        setMode('visual', true);
+      }
+      applyCommand('foreColor', colorPicker.value);
+      stateTip.textContent = `文字颜色设置为 ${colorPicker.value}`;
+    });
+    undoBtn.addEventListener('click', () => runCommandById('undo'));
+    redoBtn.addEventListener('click', () => runCommandById('redo'));
+    hrBtn.addEventListener('click', () => runCommandById('hr'));
+    if (imageBtn && imageInput) {
+      imageBtn.addEventListener('click', () => imageInput.click());
+      imageInput.addEventListener('change', async () => {
+        const files = Array.from(imageInput.files || []).filter((file) => file.type.startsWith('image/'));
+        if (files.length === 0) return;
+        for (const file of files) {
+          await insertClipboardImage(file);
+        }
+        imageInput.value = '';
+      });
     }
 
     editor.addEventListener('keydown', (event) => {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'b') {
         event.preventDefault();
-        applyCommand('bold');
+        runCommandById('bold');
       } else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'i') {
         event.preventDefault();
-        applyCommand('italic');
+        runCommandById('italic');
+      } else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'u') {
+        event.preventDefault();
+        runCommandById('underline');
+      } else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z') {
+        runCommandById('undo');
+      } else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'p') {
+        event.preventDefault();
+        openCommandPalette();
+      } else if (event.key === '/' && !event.metaKey && !event.ctrlKey) {
+        window.setTimeout(() => {
+          openSlashIfNeeded();
+        }, 0);
       }
     });
 
+    editor.addEventListener('keyup', openSlashIfNeeded);
     editor.addEventListener('input', () => {
-      updateEditorEmptyState();
+      updateEmptyState();
+      openSlashIfNeeded();
       saveDraft();
     });
-
     editor.addEventListener('paste', async (event) => {
       const clipboard = event.clipboardData;
       if (!clipboard) return;
-
       const files = Array.from(clipboard.files || []);
       const imageFiles = files.filter((file) => file && file.type.startsWith('image/'));
       if (imageFiles.length === 0) return;
-
       event.preventDefault();
       for (const file of imageFiles) {
-        await insertImageFromClipboard(file);
+        await insertClipboardImage(file);
+      }
+    });
+    editor.addEventListener('dragover', (event) => event.preventDefault());
+    editor.addEventListener('drop', async (event) => {
+      event.preventDefault();
+      if (!event.dataTransfer) return;
+      const files = Array.from(event.dataTransfer.files || []);
+      const imageFiles = files.filter((file) => file && file.type.startsWith('image/'));
+      if (imageFiles.length === 0) return;
+      for (const file of imageFiles) {
+        await insertClipboardImage(file);
       }
     });
 
-    document.querySelectorAll('[data-command]').forEach((button) => {
-      button.addEventListener('click', (event) => {
-        const target = event.currentTarget;
-        const command = target.getAttribute('data-command');
-        if (!command) return;
-        const value = target.getAttribute('data-value') || null;
-        applyCommand(command, value);
-      });
-    });
-
-    document.querySelectorAll('[data-block]').forEach((button) => {
-      button.addEventListener('click', (event) => {
-        const target = event.currentTarget;
-        const block = target.getAttribute('data-block');
-        if (!block) return;
-        if (block === 'h1') applyHeading(1);
-        if (block === 'h2') applyHeading(2);
-        if (block === 'h3') applyHeading(3);
-      });
-    });
-
-    colorPicker.addEventListener('input', () => {
-      applyCommand('foreColor', colorPicker.value);
-    });
-
-    clearFormatBtn.addEventListener('click', () => {
-      applyCommand('removeFormat');
-      stateTip.textContent = '已清除选区格式。';
-    });
-
-    linkBtn.addEventListener('click', () => {
-      const selection = window.getSelection();
-      focusEditor();
-      const selectedText = selection ? selection.toString().trim() : '';
-      const text = window.prompt('链接文字', selectedText || '链接');
-      const url = window.prompt('链接地址', 'https://');
-      if (!text || !url || !url.trim()) return;
-      const selected = window.getSelection();
-      if (!selected || selected.toString().trim().length === 0) {
-        stateTip.textContent = '请先选中文本再插入链接。';
-        return;
-      }
-      applyCommand('createLink', url.trim());
-      const range = selected.getRangeAt(0);
-      const anchor = document.createElement('a');
-      anchor.href = url;
-      anchor.textContent = text;
-      range.deleteContents();
-      range.insertNode(anchor);
-      range.collapse(false);
-      selected.removeAllRanges();
-      const freshRange = document.createRange();
-      freshRange.setStartAfter(anchor);
-      freshRange.collapse(true);
-      selected.addRange(freshRange);
-      editor.focus();
-      stateTip.textContent = '已插入链接。';
+    sourceEditor.addEventListener('input', () => {
       saveDraft();
     });
 
-    undoBtn.addEventListener('click', () => applyCommand('undo'));
-    redoBtn.addEventListener('click', () => applyCommand('redo'));
-
     buildBtn.addEventListener('click', () => {
       const now = toDateString();
-      const data = readMarkdownData();
+      const body = getActiveBodyMarkdown();
+      const data = getDraftData();
+      if (!body) {
+        stateTip.textContent = '先在正文写些内容再生成。';
+        return;
+      }
       data.date = data.date || now;
       data.updated = now;
-      dateInput.value = data.date;
       updatedInput.value = now;
       syncDateMeta(now);
       const markdown = buildMarkdown(data);
       output.textContent = markdown;
-      saveDraft();
       stateTip.textContent = '已生成 Markdown，可复制或下载为 .md 文件。';
+      saveDraft();
     });
 
     copyBtn.addEventListener('click', async () => {
@@ -706,9 +1263,7 @@ const TYPES = [
         await navigator.clipboard.writeText(output.textContent);
         copyBtn.textContent = '已复制';
         stateTip.textContent = 'Markdown 已复制到剪贴板。';
-        window.setTimeout(() => {
-          copyBtn.textContent = '复制内容';
-        }, 1200);
+        window.setTimeout(() => (copyBtn.textContent = '复制内容'), 1100);
       } catch (err) {
         stateTip.textContent = '复制失败，请手动选择代码块内容复制。';
       }
@@ -719,25 +1274,17 @@ const TYPES = [
         stateTip.textContent = '先点击「生成 Markdown」再下载。';
         return;
       }
-
-      const now = toDateString();
-      const data = readMarkdownData();
-      data.date = data.date || now;
-      data.updated = now;
-      dateInput.value = data.date;
-      updatedInput.value = now;
-      syncDateMeta(now);
+      const data = getDraftData();
       const slug = slugify(data.title);
       const folder = data.type === 'note' ? 'notes' : data.type;
-      const filename = `${slug}.md`;
       const blob = new Blob([output.textContent], { type: 'text/markdown;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = filename;
+      link.download = `${slug}.md`;
       link.click();
       URL.revokeObjectURL(url);
-      stateTip.textContent = `已下载 ${filename}，建议保存到 src/content/${folder}/。`;
+      stateTip.textContent = `已下载 ${slug}.md（建议保存到 src/content/${folder}/ 下）`;
     });
 
     clearBtn.addEventListener('click', () => {
@@ -747,31 +1294,76 @@ const TYPES = [
       tagsInput.value = '';
       summaryInput.value = '';
       editor.innerHTML = '';
-      updateEditorEmptyState();
+      sourceEditor.value = '';
       output.textContent = '（点击「生成 Markdown」后自动输出）';
       localStorage.removeItem(LS_KEY);
       const now = toDateString();
       dateInput.value = now;
       updatedInput.value = now;
       syncDateMeta(now);
+      updateEmptyState();
       stateTip.textContent = '草稿已清空。';
     });
 
-    const now = toDateString();
-    dateInput.value = now;
-    updatedInput.value = now;
-    syncDateMeta(now);
-    const hasQueryPayload = restoreQuery();
-    if (!hasQueryPayload) hydrateDraft();
-    syncDateMeta(now);
-    updateEditorEmptyState();
-    const html = readDraftData();
-    if (!querySafeString('title') && !html.title) {
-      stateTip.textContent = '欢迎使用，请开始填写内容；支持快捷键与工具栏排版。';
+    function insertClipboardImage(file) {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const imageUrl = String(reader.result);
+          const safe = file.name ? file.name.replace(/\\.[^.]+$/, '') : 'image';
+          const alt = safe.replace(/[^a-zA-Z0-9\\-_\\u4e00-\\u9fff]/g, '_') || 'image';
+          if (currentMode === 'visual') {
+            insertAtCursorHtml(`<img src="${imageUrl}" alt="${alt}" />`);
+          } else {
+            const insertAt = `![${alt}](${imageUrl})`;
+            const start = sourceEditor.selectionStart || 0;
+            const end = sourceEditor.selectionEnd || 0;
+            const before = sourceEditor.value.slice(0, start);
+            const after = sourceEditor.value.slice(end);
+            sourceEditor.value = `${before}\\n${insertAt}\\n${after}`;
+            sourceEditor.focus();
+            sourceEditor.selectionStart = sourceEditor.selectionEnd = before.length + insertAt.length + 2;
+          }
+          saveDraft();
+          resolve();
+        };
+        reader.onerror = () => resolve();
+        reader.readAsDataURL(file);
+      });
     }
+
+    function init() {
+      const now = toDateString();
+      dateInput.value = now;
+      updatedInput.value = now;
+      syncDateMeta(now);
+      updateModeUI();
+      const hasQuery = restoreQuery();
+      if (!hasQuery) hydrateDraft();
+      const data = getDraftData();
+      if (currentMode === 'source') {
+        sourceEditor.classList.remove('hidden');
+        editor.classList.add('hidden');
+        sourceEditor.value = data.contentSource || '';
+      } else {
+        editor.classList.remove('hidden');
+        sourceEditor.classList.add('hidden');
+        if (!editor.innerHTML) editor.innerHTML = '';
+      }
+      updateEmptyState();
+      syncDateMeta(now);
+      if (!hasQuery && !data.title) {
+        stateTip.textContent = '欢迎使用 Obsidian 风格写作模式，命令盘可用 Ctrl/Cmd+P 打开。';
+      }
+    }
+
+    init();
   </script>
 
   <style>
+    .editor-shell {
+      position: relative;
+    }
     .writer-canvas {
       min-height: 56vh;
       border: 1px solid rgb(226 232 240);
@@ -783,6 +1375,7 @@ const TYPES = [
       line-height: 1.7;
       position: relative;
       box-sizing: border-box;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
     }
     .writer-canvas.is-empty::before {
       content: attr(data-placeholder);
@@ -794,28 +1387,26 @@ const TYPES = [
       user-select: none;
       font-size: 0.95rem;
     }
-    .writer-canvas.is-empty:focus::before {
+    .writer-canvas.is-empty:focus::before,
+    .writer-canvas:focus::before {
       color: rgb(148 163 184 / 85%);
     }
     .writer-canvas h1,
     .writer-canvas h2,
     .writer-canvas h3 {
       font-weight: 700;
-      color: rgb(15 23 42);
+      line-height: 1.24;
       margin-top: 1.2rem;
-      margin-bottom: 0.45rem;
+      margin-bottom: 0.5rem;
     }
     .writer-canvas h1 {
       font-size: 1.95rem;
-      line-height: 1.2;
     }
     .writer-canvas h2 {
       font-size: 1.5rem;
-      line-height: 1.28;
     }
     .writer-canvas h3 {
-      font-size: 1.25rem;
-      line-height: 1.3;
+      font-size: 1.3rem;
     }
     .writer-canvas ul,
     .writer-canvas ol {
@@ -838,6 +1429,7 @@ const TYPES = [
       border-radius: 0.5rem;
       background: rgb(241 245 249);
       overflow-x: auto;
+      white-space: pre-wrap;
     }
     .writer-canvas img {
       max-width: 100%;
@@ -845,17 +1437,15 @@ const TYPES = [
       margin: 0.35rem 0;
       display: block;
     }
+    .writer-canvas hr {
+      border: none;
+      border-top: 1px solid rgb(226 232 240);
+      margin: 1rem 0;
+    }
     .writer-canvas:focus-within,
     .writer-canvas:focus {
       border-color: rgb(59 130 246);
       box-shadow: 0 0 0 3px rgb(59 130 246 / 10%);
-    }
-    .inline-code {
-      border-radius: 0.25rem;
-      background: rgb(243 244 246);
-      padding: 0 0.35rem;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
-      font-size: 0.82em;
     }
     .btn-tool {
       border: 1px solid rgb(203 213 225);
@@ -880,6 +1470,69 @@ const TYPES = [
     }
     .dark .btn-tool:hover {
       background: rgb(51 65 85);
+    }
+    .btn-tool-active {
+      border-color: rgb(59 130 246);
+      background: rgb(239 246 255);
+      color: rgb(37 99 235);
+    }
+    .btn-tool-strong {
+      font-weight: 600;
+      border-color: rgb(59 130 246);
+    }
+    .command-palette {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding-top: 10vh;
+      pointer-events: auto;
+    }
+    .command-palette.hidden {
+      display: none;
+    }
+    .command-palette__backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgb(15 23 42 / 45%);
+    }
+    .command-palette__panel {
+      position: relative;
+      width: min(680px, 95vw);
+      border-radius: 0.75rem;
+      border: 1px solid rgb(226 232 240);
+      background: rgb(255 255 255);
+      padding: 1rem;
+      z-index: 1;
+    }
+    .slash-menu {
+      position: absolute;
+      z-index: 40;
+      width: 240px;
+      max-width: 60vw;
+      border: 1px solid rgb(203 213 225);
+      border-radius: 0.6rem;
+      background: rgb(255 255 255);
+      box-shadow: 0 12px 30px rgb(15 23 42 / 16%);
+      padding: 0.45rem;
+    }
+    .slash-menu.hidden {
+      display: none;
+    }
+    .dark .command-palette__panel,
+    .dark .slash-menu {
+      background: rgb(15 23 42);
+      border-color: rgb(71 85 105);
+    }
+    .command-palette__panel p,
+    .command-palette__panel button {
+      color: #0f172a;
+    }
+    .dark .command-palette__panel p,
+    .dark .command-palette__panel button {
+      color: rgb(226 232 240);
     }
   </style>
 </BaseLayout>
