@@ -8,9 +8,13 @@ posts.sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
 ---
 
 <BaseLayout title="博客" description="长文与复盘内容">
-  <section class="space-y-4">
-    <h1 class="text-3xl font-bold">博客</h1>
-    <div class="grid gap-4 sm:grid-cols-2">
+  <section class="space-y-6">
+    <div>
+      <p class="inline-flex rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700 dark:border-blue-800 dark:bg-slate-800 dark:text-blue-200">Long Form</p>
+      <h1 class="mt-3 text-4xl font-bold">博客</h1>
+      <p class="mt-2 text-slate-600 dark:text-slate-300">系统设计、复盘与完整技术思路记录</p>
+    </div>
+    <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
       {posts.map((post) => <PostCard item={post} href={`/blog/${post.slug}`} />)}
     </div>
   </section>

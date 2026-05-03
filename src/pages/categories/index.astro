@@ -15,8 +15,14 @@ const categories = Array.from(
 ---
 
 <BaseLayout title="分类" description="按分类查看内容">
-  <section class="space-y-4">
-    <h1 class="text-3xl font-bold">分类页</h1>
-    <CategoryList categories={categories} />
+  <section class="space-y-6">
+    <div>
+      <p class="inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 dark:border-emerald-800 dark:bg-slate-800 dark:text-emerald-200">Category Index</p>
+      <h1 class="mt-3 text-4xl font-bold">分类页</h1>
+      <p class="mt-2 text-slate-600 dark:text-slate-300">按用途快速归类历史内容</p>
+    </div>
+    <div class="surface-card">
+      <CategoryList categories={categories} />
+    </div>
   </section>
 </BaseLayout>

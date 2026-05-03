@@ -12,8 +12,14 @@ const tags = Array.from(new Set(posts.flatMap((item) => item.data.tags).map((tag
 ---
 
 <BaseLayout title="标签" description="按标签快速筛选文章">
-  <section class="space-y-4">
-    <h1 class="text-3xl font-bold">标签页</h1>
-    <TagList tags={tags} />
+  <section class="space-y-6">
+    <div>
+      <p class="inline-flex rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-medium text-sky-700 dark:border-sky-800 dark:bg-slate-800 dark:text-sky-200">Tag Index</p>
+      <h1 class="mt-3 text-4xl font-bold">标签页</h1>
+      <p class="mt-2 text-slate-600 dark:text-slate-300">按主题快速浏览相关内容</p>
+    </div>
+    <div class="surface-card">
+      <TagList tags={tags} />
+    </div>
   </section>
 </BaseLayout>

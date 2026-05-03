@@ -8,9 +8,13 @@ posts.sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
 ---
 
 <BaseLayout title="重要事项" description="决策记录与变更日志">
-  <section class="space-y-4">
-    <h1 class="text-3xl font-bold">重要事项</h1>
-    <div class="grid gap-4 sm:grid-cols-2">
+  <section class="space-y-6">
+    <div>
+      <p class="inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 dark:border-emerald-800 dark:bg-slate-800 dark:text-emerald-200">Important Log</p>
+      <h1 class="mt-3 text-4xl font-bold">重要事项</h1>
+      <p class="mt-2 text-slate-600 dark:text-slate-300">架构决策、配置改动、关键变更记录</p>
+    </div>
+    <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
       {posts.map((post) => <PostCard item={post} href={`/important/${post.slug}`} />)}
     </div>
   </section>
