@@ -4,11 +4,15 @@
 
 @layer utilities {
   .content-shell {
-    @apply mx-auto w-full max-w-[68rem] px-4 sm:px-6 lg:px-8;
+    @apply mx-auto w-full max-w-[58rem] px-4 sm:px-6 lg:px-8;
   }
 
   .post-shell {
-    @apply mx-auto w-full max-w-[62rem] px-4 sm:px-6;
+    @apply mx-auto w-full max-w-[58rem] px-4 sm:px-6;
+  }
+
+  .reading-shell {
+    @apply mx-auto w-full max-w-[60ch] lg:max-w-[64ch];
   }
 
   .surface-card {
