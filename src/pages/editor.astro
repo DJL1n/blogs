@@ -70,13 +70,15 @@ const TYPES = [
             </label>
 
             <label class="space-y-2">
-              <span class="text-sm font-medium">创建日期</span>
-              <input id="date" type="date" class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-800" />
+              <span class="text-sm font-medium">发布时间（自动）</span>
+              <p id="date-text" class="h-10 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">-</p>
+              <input id="date" type="hidden" />
             </label>
 
             <label class="space-y-2">
-              <span class="text-sm font-medium">更新日期</span>
-              <input id="updated" type="date" class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-800" />
+              <span class="text-sm font-medium">更新时间（自动）</span>
+              <p id="updated-text" class="h-10 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">-</p>
+              <input id="updated" type="hidden" />
             </label>
 
             <label class="space-y-2 md:col-span-2">
@@ -124,10 +126,14 @@ const TYPES = [
             <button type="button" id="clear-format-btn" class="btn-tool" title="清除格式">清空格式</button>
           </div>
 
-          <div id="editor" class="writer-canvas" contenteditable="true" spellcheck="true" aria-label="正文编辑区">
-            <p>在这里开始写作，支持：标题、列表、引用、代码块、图片粘贴。<br />
-            例如：按 <span class="inline-code">Ctrl/Cmd + B</span> 直接加粗，<span class="inline-code">Ctrl/Cmd + V</span> 粘贴图片会自动转成可提交的 md 图片。</p>
-          </div>
+          <div
+            id="editor"
+            class="writer-canvas is-empty"
+            contenteditable="true"
+            spellcheck="true"
+            aria-label="正文编辑区"
+            data-placeholder="在这里开始写作（支持标题、列表、引用、代码块、图片粘贴）。例如：Ctrl/Cmd + B 加粗，Ctrl/Cmd + V 粘贴图片。"
+          ></div>
         </div>
 
         <div class="flex flex-wrap gap-3">
@@ -179,6 +185,8 @@ const TYPES = [
     const colorPicker = document.getElementById('color-picker');
     const clearFormatBtn = document.getElementById('clear-format-btn');
     const query = new URL(window.location.href).searchParams;
+    const dateText = document.getElementById('date-text');
+    const updatedText = document.getElementById('updated-text');
 
     function toDateString(date = new Date()) {
       return date.toISOString().slice(0, 10);
@@ -207,18 +215,48 @@ const TYPES = [
 
     function querySafeString(key) {
       const value = query.get(key);
-      return value ? decodeURIComponent(value) : '';
-    }
-
-    function htmlEscape(value) {
-      return String(value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;');
+      return value || '';
     }
 
     function cleanText(value) {
       return String(value || '').replace(/\s+/g, ' ').trim();
+    }
+
+    function focusEditor() {
+      if (!editor) return;
+      editor.focus();
+      const selection = window.getSelection();
+      if (!selection || selection.rangeCount === 0) {
+        const range = document.createRange();
+        range.selectNodeContents(editor);
+        range.collapse(false);
+        selection?.removeAllRanges();
+        selection?.addRange(range);
+      }
+      updateEditorEmptyState();
+    }
+
+    function isEditorEmpty() {
+      return (editor.textContent || '').replace(/\u200b/g, '').trim().length === 0;
+    }
+
+    function updateEditorEmptyState() {
+      if (isEditorEmpty()) {
+        editor.classList.add('is-empty');
+      } else {
+        editor.classList.remove('is-empty');
+      }
+    }
+
+    function syncDateMeta(now = toDateString()) {
+      if (!dateInput.value) {
+        dateInput.value = now;
+      }
+      if (!updatedInput.value) {
+        updatedInput.value = now;
+      }
+      if (dateText) dateText.textContent = dateInput.value || now;
+      if (updatedText) updatedText.textContent = updatedInput.value || now;
     }
 
     function serializeNode(node, depth = 0) {
@@ -391,21 +429,40 @@ const TYPES = [
         tagsInput.value = (saved.tags || []).join(', ');
         summaryInput.value = saved.summary || '';
         if (saved.contentHtml) editor.innerHTML = saved.contentHtml;
+        updateEditorEmptyState();
         stateTip.textContent = '已恢复上次本地草稿。';
       } catch (err) {
         console.error(err);
       }
     }
 
-    function getSelectionNode() {
-      const sel = window.getSelection();
-      if (!sel || sel.rangeCount === 0) return null;
-      return sel.getRangeAt(0).commonAncestorContainer;
+    function applyCommand(cmd, value) {
+      focusEditor();
+      document.execCommand(cmd, false, value || null);
+      updateEditorEmptyState();
+      saveDraft();
     }
 
-    function applyCommand(cmd, value) {
-      document.execCommand(cmd, false, value || null);
-      editor.focus();
+    function applyHeading(level) {
+      if (!editor) return;
+      focusEditor();
+      const tag = `H${level}`;
+      const done = document.execCommand('formatBlock', false, tag);
+      if (!done) {
+        const selection = window.getSelection();
+        if (!selection || selection.rangeCount === 0) return;
+        const range = selection.getRangeAt(0);
+        const selected = selection.toString().trim();
+        if (selected.length > 0) {
+          insertAtCursor(`<${tag.toLowerCase()}>${selected}</${tag.toLowerCase()}>`);
+        }
+      }
+      saveDraft();
+    }
+
+    function applyBlockTag(commandValue) {
+      focusEditor();
+      document.execCommand('formatBlock', false, commandValue);
       saveDraft();
     }
 
@@ -435,6 +492,7 @@ const TYPES = [
       sel.removeAllRanges();
       sel.addRange(range);
       editor.focus();
+      updateEditorEmptyState();
       saveDraft();
     }
 
@@ -461,37 +519,53 @@ const TYPES = [
     }
 
     function restoreQuery() {
+      let hasPayload = false;
       const queryType = query.get('type');
       if (queryType === 'note' || queryType === 'blog' || queryType === 'important') {
         typeInput.value = queryType;
+        hasPayload = true;
       }
 
       const queryTitle = querySafeString('title');
       if (queryTitle) titleInput.value = queryTitle;
+      if (queryTitle) hasPayload = true;
 
       const querySummary = querySafeString('summary');
       if (querySummary) summaryInput.value = querySummary;
+      if (querySummary) hasPayload = true;
 
       const queryCategory = querySafeString('category');
       if (queryCategory) categoryInput.value = queryCategory;
+      if (queryCategory) hasPayload = true;
 
       const queryTags = querySafeString('tags');
-      if (queryTags) tagsInput.value = queryTags;
+      if (queryTags) {
+        tagsInput.value = queryTags;
+        hasPayload = true;
+      }
 
       const queryImportance = query.get('importance');
       if (queryImportance) importanceInput.value = String(clampImportance(queryImportance));
+      if (queryImportance) hasPayload = true;
 
       const queryDate = query.get('date');
       if (queryDate) dateInput.value = queryDate;
+      if (queryDate) hasPayload = true;
 
       const queryUpdated = query.get('updated');
       if (queryUpdated) updatedInput.value = queryUpdated;
+      if (queryUpdated) hasPayload = true;
 
       const queryBody = querySafeString('body');
       if (queryBody) {
-        const html = toClipboardHtml(decodeURIComponent(queryBody));
-        if (html) editor.innerHTML = html;
+        const html = toClipboardHtml(queryBody);
+        if (html) {
+          editor.innerHTML = html;
+          hasPayload = true;
+        }
       }
+
+      return hasPayload;
     }
 
     editor.addEventListener('keydown', (event) => {
@@ -504,7 +578,10 @@ const TYPES = [
       }
     });
 
-    editor.addEventListener('input', saveDraft);
+    editor.addEventListener('input', () => {
+      updateEditorEmptyState();
+      saveDraft();
+    });
 
     editor.addEventListener('paste', async (event) => {
       const clipboard = event.clipboardData;
@@ -535,9 +612,9 @@ const TYPES = [
         const target = event.currentTarget;
         const block = target.getAttribute('data-block');
         if (!block) return;
-        if (block === 'h1' || block === 'h2' || block === 'h3') {
-          applyCommand('formatBlock', `<${block}>`);
-        }
+        if (block === 'h1') applyHeading(1);
+        if (block === 'h2') applyHeading(2);
+        if (block === 'h3') applyHeading(3);
       });
     });
 
@@ -552,6 +629,7 @@ const TYPES = [
 
     linkBtn.addEventListener('click', () => {
       const selection = window.getSelection();
+      focusEditor();
       const selectedText = selection ? selection.toString().trim() : '';
       const text = window.prompt('链接文字', selectedText || '链接');
       const url = window.prompt('链接地址', 'https://');
@@ -585,8 +663,11 @@ const TYPES = [
     buildBtn.addEventListener('click', () => {
       const now = toDateString();
       const data = readMarkdownData();
-      if (!data.date) data.date = now;
-      data.updated = updatedInput.value || now;
+      data.date = data.date || now;
+      data.updated = now;
+      dateInput.value = data.date;
+      updatedInput.value = now;
+      syncDateMeta(now);
       const markdown = buildMarkdown(data);
       output.textContent = markdown;
       saveDraft();
@@ -618,6 +699,11 @@ const TYPES = [
 
       const now = toDateString();
       const data = readMarkdownData();
+      data.date = data.date || now;
+      data.updated = now;
+      dateInput.value = data.date;
+      updatedInput.value = now;
+      syncDateMeta(now);
       const slug = slugify(data.title);
       const folder = data.type === 'note' ? 'notes' : data.type;
       const filename = `${slug}.md`;
@@ -635,20 +721,27 @@ const TYPES = [
       titleInput.value = '';
       categoryInput.value = '技巧';
       importanceInput.value = '2';
-      dateInput.value = toDateString();
-      updatedInput.value = toDateString();
       tagsInput.value = '';
       summaryInput.value = '';
       editor.innerHTML = '';
+      updateEditorEmptyState();
       output.textContent = '（点击「生成 Markdown」后自动输出）';
       localStorage.removeItem(LS_KEY);
+      const now = toDateString();
+      dateInput.value = now;
+      updatedInput.value = now;
+      syncDateMeta(now);
       stateTip.textContent = '草稿已清空。';
     });
 
-    dateInput.value = toDateString();
-    updatedInput.value = toDateString();
-    restoreQuery();
-    hydrateDraft();
+    const now = toDateString();
+    dateInput.value = now;
+    updatedInput.value = now;
+    syncDateMeta(now);
+    const hasQueryPayload = restoreQuery();
+    if (!hasQueryPayload) hydrateDraft();
+    syncDateMeta(now);
+    updateEditorEmptyState();
     const html = readDraftData();
     if (!querySafeString('title') && !html.title) {
       stateTip.textContent = '欢迎使用，请开始填写内容；支持快捷键与工具栏排版。';
@@ -665,11 +758,41 @@ const TYPES = [
       color: #0f172a;
       outline: none;
       line-height: 1.7;
+      position: relative;
+      box-sizing: border-box;
     }
-    .writer-canvas :where(h1, h2, h3, h4, h5, h6) {
+    .writer-canvas.is-empty::before {
+      content: attr(data-placeholder);
+      position: absolute;
+      inset: 0.9rem 1rem;
+      color: rgb(148 163 184);
+      pointer-events: none;
+      white-space: pre-wrap;
+      user-select: none;
+      font-size: 0.95rem;
+    }
+    .writer-canvas.is-empty:focus::before {
+      color: rgb(148 163 184 / 85%);
+    }
+    .writer-canvas h1,
+    .writer-canvas h2,
+    .writer-canvas h3 {
+      font-weight: 700;
+      color: rgb(15 23 42);
       margin-top: 1.2rem;
-      margin-bottom: 0.6rem;
-      line-height: 1.35;
+      margin-bottom: 0.45rem;
+    }
+    .writer-canvas h1 {
+      font-size: 1.95rem;
+      line-height: 1.2;
+    }
+    .writer-canvas h2 {
+      font-size: 1.5rem;
+      line-height: 1.28;
+    }
+    .writer-canvas h3 {
+      font-size: 1.25rem;
+      line-height: 1.3;
     }
     .writer-canvas ul,
     .writer-canvas ol {
@@ -719,6 +842,10 @@ const TYPES = [
       line-height: 1.1;
       color: rgb(15 23 42);
       background: #fff;
+      transition:
+        background-color 0.2s ease,
+        border-color 0.2s ease;
+      box-shadow: 0 1px 0 rgb(0 0 0 / 0.02);
     }
     .dark .btn-tool {
       background: rgb(30 41 59);
