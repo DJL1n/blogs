@@ -93,7 +93,7 @@ const TYPES = [
         </div>
 
         <div class="surface-card">
-          <div class="mb-3 flex flex-wrap gap-2 border-b border-slate-200 pb-3 dark:border-slate-700">
+        <div class="mb-3 flex flex-wrap gap-2 border-b border-slate-200 pb-3 dark:border-slate-700">
             <button type="button" id="mode-visual" class="btn-tool btn-tool-active">文档模式</button>
             <button type="button" id="mode-source" class="btn-tool">源码模式</button>
             <span class="w-px bg-slate-300 dark:bg-slate-600"></span>
@@ -123,6 +123,7 @@ const TYPES = [
           </div>
 
           <div id="editor-shell" class="editor-shell">
+            <div id="editor-placeholder" class="writer-placeholder"></div>
             <div
               id="editor"
               class="writer-canvas is-empty"
@@ -203,6 +204,7 @@ const TYPES = [
     const summaryInput = document.getElementById('summary');
     const editor = document.getElementById('editor');
     const sourceEditor = document.getElementById('source-editor');
+    const editorPlaceholder = document.getElementById('editor-placeholder');
     const buildBtn = document.getElementById('build-btn');
     const outputToggleBtn = document.getElementById('toggle-output');
     const outputPane = document.getElementById('output-pane');
@@ -361,38 +363,24 @@ const TYPES = [
       if (!editor) return true;
       if (!editor.hasChildNodes()) return true;
 
-      const hasMeaningfulNode = (node) => {
-        if (!node) return false;
-        if (node.nodeType === Node.TEXT_NODE || node.nodeType === Node.CDATA_SECTION_NODE) {
-          return (node.textContent || '').replace(/\u200b/g, '').trim().length > 0;
-        }
-
-        if (node.nodeType !== Node.ELEMENT_NODE) return false;
-
-        const tag = (node.tagName || '').toLowerCase();
-        if (['img', 'pre', 'hr', 'table', 'blockquote', 'ul', 'ol', 'li'].includes(tag)) {
-          return true;
-        }
-
-        if (/^h[1-6]$/.test(tag) && (node.textContent || '').replace(/\u200b/g, '').trim().length > 0) {
-          return true;
-        }
-
-        if (tag === 'a') {
-          return (node.textContent || '').replace(/\u200b/g, '').trim().length > 0;
-        }
-
-        return Array.from(node.childNodes || []).some((item) => hasMeaningfulNode(item));
-      };
-
-      return !Array.from(editor.childNodes).some((node) => hasMeaningfulNode(node));
+      const rawText = (editor.textContent || '').replace(/[\u200b\u00a0]/g, '').trim();
+      if (rawText.length > 0) return false;
+      return !editor.querySelector('img,pre,hr,table,blockquote,ul,ol,li,p,h1,h2,h3,h4,h5,h6,a');
     }
 
     function updateEmptyState() {
-      if (isEditorEmpty()) {
-        editor.classList.add('is-empty');
-      } else {
-        editor.classList.remove('is-empty');
+      const isEmpty = isEditorEmpty();
+      const visualMode = currentMode === 'visual';
+      if (editor) {
+        editor.classList.toggle('is-empty', isEmpty && visualMode);
+      }
+      if (editorPlaceholder) {
+        if (isEmpty && visualMode) {
+          editorPlaceholder.classList.remove('writer-placeholder-hidden');
+          editorPlaceholder.textContent = editor?.getAttribute('data-placeholder') || '';
+        } else {
+          editorPlaceholder.classList.add('writer-placeholder-hidden');
+        }
       }
     }
 
@@ -412,6 +400,7 @@ const TYPES = [
         editor.classList.add('hidden');
         editor.classList.remove('ring-2', 'ring-blue-500', 'ring-opacity-0');
         sourceEditor.classList.add('ring-2', 'ring-blue-500', 'ring-opacity-60');
+        editorPlaceholder?.classList.add('writer-placeholder-hidden');
       }
       updateModeUI();
       saveDraft();
@@ -1423,6 +1412,17 @@ const TYPES = [
     });
 
     editor.addEventListener('keyup', openSlashIfNeeded);
+    editor.addEventListener('focus', () => {
+      updateEmptyState();
+      openSlashIfNeeded();
+    });
+    editor.addEventListener('blur', () => {
+      updateEmptyState();
+    });
+    editor.addEventListener('compositionend', () => {
+      updateEmptyState();
+      saveDraft();
+    });
     editor.addEventListener('input', () => {
       updateEmptyState();
       openSlashIfNeeded();
@@ -1438,6 +1438,7 @@ const TYPES = [
       for (const file of imageFiles) {
         await insertClipboardImage(file);
       }
+      updateEmptyState();
     });
     editor.addEventListener('dragover', (event) => event.preventDefault());
     editor.addEventListener('drop', async (event) => {
@@ -1449,7 +1450,15 @@ const TYPES = [
       for (const file of imageFiles) {
         await insertClipboardImage(file);
       }
+      updateEmptyState();
     });
+
+    if (editor) {
+      const editorObserver = new MutationObserver(() => {
+        requestAnimationFrame(updateEmptyState);
+      });
+      editorObserver.observe(editor, { childList: true, subtree: true, characterData: true });
+    }
 
     sourceEditor.addEventListener('input', () => {
       saveDraft();
@@ -1549,6 +1558,7 @@ const TYPES = [
             sourceEditor.selectionStart = sourceEditor.selectionEnd = before.length + insertAt.length + 2;
           }
           saveDraft();
+          updateEmptyState();
           resolve();
         };
         reader.onerror = () => resolve();
@@ -1561,6 +1571,9 @@ const TYPES = [
       dateInput.value = now;
       updatedInput.value = now;
       syncDateMeta(now);
+      if (editorPlaceholder && editor?.dataset?.placeholder) {
+        editorPlaceholder.textContent = editor.dataset.placeholder;
+      }
       setOutputVisible(false);
       updateModeUI();
       const hasQuery = restoreQuery();
@@ -1588,6 +1601,23 @@ const TYPES = [
   <style>
     .editor-shell {
       position: relative;
+      min-height: 56vh;
+    }
+    .writer-placeholder {
+      position: absolute;
+      inset: 0.9rem 1rem auto 1rem;
+      color: rgb(148 163 184);
+      pointer-events: none;
+      white-space: pre-wrap;
+      user-select: none;
+      font-size: 0.95rem;
+      line-height: 1.7;
+      z-index: 0;
+      transition: opacity 0.15s ease;
+    }
+    .writer-placeholder.writer-placeholder-hidden {
+      opacity: 0;
+      display: none;
     }
     .writer-canvas {
       min-height: 56vh;
@@ -1599,26 +1629,15 @@ const TYPES = [
       outline: none;
       line-height: 1.7;
       position: relative;
+      z-index: 1;
       box-sizing: border-box;
       transition: border-color 0.2s ease, box-shadow 0.2s ease;
     }
-    .writer-canvas.is-empty::before {
-      content: attr(data-placeholder);
-      position: absolute;
-      inset: 0.9rem 1rem;
-      color: rgb(148 163 184);
-      pointer-events: none;
-      white-space: pre-wrap;
-      user-select: none;
-      font-size: 0.95rem;
+    .writer-canvas.h-\[56vh\] {
+      min-height: 56vh;
     }
-    .writer-canvas:not(.is-empty)::before {
-      display: none;
-      content: none;
-    }
-
-    .writer-canvas.is-empty:focus::before {
-      color: rgb(148 163 184 / 85%);
+    .dark .writer-placeholder {
+      color: rgb(148 163 184 / 80%);
     }
     .writer-canvas h1,
     .writer-canvas h2,
