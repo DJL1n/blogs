@@ -3,21 +3,21 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import PostCard from '../../components/PostCard.astro';
 import { getCollection } from 'astro:content';
 
-const { tag } = Astro.params;
-const target = (tag || '').toLowerCase();
+const { category } = Astro.params;
+const target = (category || '').toLowerCase();
 
 const posts = [
   ...(await getCollection('blog')).filter((post) => !post.data.draft),
   ...(await getCollection('notes')).filter((post) => !post.data.draft),
   ...(await getCollection('important')).filter((post) => !post.data.draft)
 ]
-  .filter((post) => post.data.tags.map((item) => item.toLowerCase()).includes(target))
+  .filter((post) => post.data.category.toLowerCase() === target)
   .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
 ---
 
-<BaseLayout title={`标签：${tag}`} description={`标签 ${tag} 下的内容`}>
+<BaseLayout title={`分类：${category}`} description={`分类 ${category} 下的内容`}>
   <section class="space-y-4">
-    <h1 class="text-3xl font-bold">标签：{tag}</h1>
+    <h1 class="text-3xl font-bold">分类：{category}</h1>
     <p class="text-sm text-slate-600 dark:text-slate-300">共 {posts.length} 篇。</p>
     <div class="grid gap-4 sm:grid-cols-2">
       {posts.map((post) => {

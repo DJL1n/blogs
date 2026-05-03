@@ -1,0 +1,22 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import CategoryList from '../../components/CategoryList.astro';
+import { getCollection } from 'astro:content';
+
+const posts = [
+  ...(await getCollection('blog')),
+  ...(await getCollection('notes')),
+  ...(await getCollection('important'))
+];
+
+const categories = Array.from(
+  new Set(posts.map((item) => item.data.category.toLowerCase()).filter(Boolean))
+).sort();
+---
+
+<BaseLayout title="分类" description="按分类查看内容">
+  <section class="space-y-4">
+    <h1 class="text-3xl font-bold">分类页</h1>
+    <CategoryList categories={categories} />
+  </section>
+</BaseLayout>

@@ -1,0 +1,14 @@
+---
+const { categories } = Astro.props as { categories: string[] };
+---
+
+<div class="flex flex-wrap gap-2">
+  {categories.map((category) => (
+    <a
+      href={`/categories/${encodeURIComponent(category)}`}
+      class="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-sm text-emerald-700 transition hover:bg-emerald-100 dark:border-emerald-800 dark:bg-slate-800 dark:text-emerald-200"
+    >
+      {category}
+    </a>
+  ))}
+</div>
