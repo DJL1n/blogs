@@ -1,0 +1,16 @@
+---
+import { getEntryBySlug, render } from 'astro:content';
+import PostLayout from '../../layouts/PostLayout.astro';
+
+const { slug } = Astro.params;
+const post = slug ? await getEntryBySlug('blog', slug) : null;
+
+if (!post || post.data.draft) {
+  return Astro.redirect('/blog');
+}
+
+const rendered = await render(post);
+const { Content } = rendered;
+---
+
+<PostLayout post={post} Content={Content} />

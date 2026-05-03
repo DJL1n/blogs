@@ -1,0 +1,42 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PostCard from '../components/PostCard.astro';
+import TagList from '../components/TagList.astro';
+import { getCollection } from 'astro:content';
+
+const rawPosts = [
+  ...(await getCollection('blog')).map((post) => ({ ...post, path: `/blog/${post.slug}` })),
+  ...(await getCollection('notes')).map((post) => ({ ...post, path: `/notes/${post.slug}` })),
+  ...(await getCollection('important')).map((post) => ({ ...post, path: `/important/${post.slug}` }))
+];
+
+const posts = rawPosts
+  .filter((item) => !item.data.draft)
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
+  .slice(0, 8);
+
+const tags = Array.from(
+  new Set(rawPosts.flatMap((p) => p.data.tags).map((tag) => tag.toLowerCase()))
+).sort();
+---
+
+<BaseLayout title="个人知识库博客" description="技巧/短笔记/重要记录">
+  <section class="space-y-10">
+    <header>
+      <h1 class="text-3xl font-bold">个人知识库博客</h1>
+      <p class="mt-2 text-slate-600 dark:text-slate-300">聚合技术技巧、短笔记和重要记录，便于长期迭代维护。</p>
+    </header>
+
+    <section>
+      <h2 class="mb-4 text-2xl font-semibold">最近更新</h2>
+      <div class="grid gap-4 sm:grid-cols-2">
+        {posts.map((post) => <PostCard item={post} href={post.path} />)}
+      </div>
+    </section>
+
+    <section>
+      <h2 class="mb-4 text-2xl font-semibold">标签</h2>
+      <TagList tags={tags} />
+    </section>
+  </section>
+</BaseLayout>

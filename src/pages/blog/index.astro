@@ -1,0 +1,17 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PostCard from '../components/PostCard.astro';
+import { getCollection } from 'astro:content';
+
+const posts = (await getCollection('blog')).filter((post) => !post.data.draft);
+posts.sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+---
+
+<BaseLayout title="博客" description="长文与复盘内容">
+  <section class="space-y-4">
+    <h1 class="text-3xl font-bold">博客</h1>
+    <div class="grid gap-4 sm:grid-cols-2">
+      {posts.map((post) => <PostCard item={post} href={`/blog/${post.slug}`} />)}
+    </div>
+  </section>
+</BaseLayout>

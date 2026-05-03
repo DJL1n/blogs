@@ -1,0 +1,21 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    @apply antialiased;
+  }
+
+  a {
+    @apply transition-colors duration-200;
+  }
+
+  pre {
+    @apply overflow-x-auto rounded-xl border border-slate-200 bg-slate-900 p-4 text-sm text-slate-100 dark:border-slate-700;
+  }
+
+  .prose pre {
+    background: transparent;
+    border: 0;
+    padding: 0;
+  }
+}

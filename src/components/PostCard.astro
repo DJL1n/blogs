@@ -1,0 +1,23 @@
+---
+const { item, href } = Astro.props as {
+  item: {
+    data: {
+      title: string;
+      date: Date;
+      summary: string;
+      tags: string[];
+      category: string;
+    };
+  };
+  href: string;
+};
+---
+
+<article class="rounded-xl border border-slate-200 p-4 transition hover:shadow-sm dark:border-slate-700">
+  <a href={href} class="no-underline">
+    <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100">{item.data.title}</h3>
+    <p class="mt-1 text-sm text-slate-500 dark:text-slate-300">{item.data.date.toLocaleDateString('zh-CN')} · {item.data.category}</p>
+    <p class="mt-2 text-slate-700 dark:text-slate-200">{item.data.summary}</p>
+    <p class="mt-3 text-xs text-slate-500 dark:text-slate-300">{item.data.tags.join(' / ')}</p>
+  </a>
+</article>

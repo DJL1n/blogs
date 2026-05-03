@@ -1,0 +1,33 @@
+---
+import BaseLayout from './BaseLayout.astro';
+
+const { post, Content } = Astro.props as {
+  post: {
+    data: {
+      title: string;
+      summary: string;
+      updated: Date;
+      category: string;
+      importance: number;
+      tags: string[];
+    };
+  };
+  Content: { default: object };
+};
+---
+
+<BaseLayout title={post.data.title} description={post.data.summary}>
+  <article class="prose prose-slate dark:prose-invert max-w-none">
+    <header class="not-prose mb-8">
+      <p class="mb-2 text-sm text-slate-500 dark:text-slate-300">
+        {post.data.updated.toLocaleDateString('zh-CN')} 更新 ·
+        {post.data.category} ·
+        重要性 {post.data.importance}
+      </p>
+      <h1>{post.data.title}</h1>
+      <p class="text-slate-600 dark:text-slate-300">{post.data.summary}</p>
+      <p class="text-sm text-slate-500 dark:text-slate-300">标签：{post.data.tags.join(' · ') || '未标注'}</p>
+    </header>
+    <Content />
+  </article>
+</BaseLayout>
