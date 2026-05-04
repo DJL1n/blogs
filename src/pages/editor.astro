@@ -66,6 +66,11 @@ const TYPES = [
               <span class="text-sm font-medium">摘要</span>
               <textarea id="summary" rows="2" class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-800" placeholder="一句话说明这篇内容"></textarea>
             </label>
+
+            <label class="space-y-2 md:col-span-2">
+              <span class="text-sm font-medium">论文关联（每行一个，支持 /notes/slug 或 /blog/slug）</span>
+              <textarea id="related-notes" rows="3" class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-800" placeholder="示例：\n/notes/my-paper-a\n/blog/some-article"></textarea>
+            </label>
           </div>
         </div>
 
@@ -132,6 +137,7 @@ const TYPES = [
     const updatedInput = document.getElementById('updated');
     const tagsInput = document.getElementById('tags');
     const summaryInput = document.getElementById('summary');
+    const relatedNotesInput = document.getElementById('related-notes');
     const editor = document.getElementById('editor');
     const sourceEditor = document.getElementById('source-editor');
     const editorPlaceholder = document.getElementById('editor-placeholder');
@@ -144,6 +150,28 @@ const TYPES = [
     const commands = document.querySelectorAll('[data-command]');
 
     let currentMode = 'visual';
+
+    function setFieldError(input, show) {
+      if (!input) return;
+      input.classList.toggle('field-invalid', Boolean(show));
+    }
+
+    function validateRequiredMetadata() {
+      const required = [
+        { el: titleInput, label: '标题' },
+        { el: categoryInput, label: '分类' },
+        { el: summaryInput, label: '摘要' },
+      ];
+
+      const missing = [];
+      required.forEach((item) => {
+        const ok = stripText(item.el?.value) !== '';
+        setFieldError(item.el, !ok);
+        if (!ok) missing.push(item.label);
+      });
+
+      return missing;
+    }
 
     function nowDate() {
       return new Date().toISOString().slice(0, 10);
@@ -160,17 +188,10 @@ const TYPES = [
     }
 
     function isEditorEmpty() {
-      const txt = (editor.textContent || '').replace(/[\u200b\u00a0\n\r\t]/g, '').trim();
+      const txt = (editor.innerText || '').replace(/[\u200b\u00a0]/g, '').trim();
       if (txt.length > 0) return false;
-      const hasBlock = editor.querySelector('img, pre, blockquote, ul, ol, table, hr, li');
-      if (hasBlock) return false;
-      const html = (editor.innerHTML || '')
-        .toLowerCase()
-        .replace(/\s+/g, '')
-        .replace(/&nbsp;/g, '')
-        .replace(/<\/?(div|p|span|article|section)[^>]*>/g, '')
-        .replace(/<br\s*\/?>/g, '');
-      return html.length === 0;
+      const hasBlock = editor.querySelector('img, pre, blockquote, ul, ol, table, hr, li, code');
+      return !hasBlock;
     }
 
     function updatePlaceholder() {
@@ -234,6 +255,14 @@ const TYPES = [
     function cleanTags() {
       return stripText(tagsInput.value)
         .split(',')
+        .map((item) => stripText(item))
+        .filter(Boolean);
+    }
+
+    function cleanRelatedNotes() {
+      return String(relatedNotesInput.value || '')
+        .replace(/\r\n/g, '\n')
+        .split(/[\n,]/)
         .map((item) => stripText(item))
         .filter(Boolean);
     }
@@ -442,6 +471,7 @@ const TYPES = [
     function buildMarkdown() {
       const title = stripText(titleInput.value) || '无标题';
       const tags = cleanTags();
+      const relatedNotes = cleanRelatedNotes();
       const date = dateInput.value || nowDate();
       const updated = updatedInput.value || nowDate();
       const summary = stripText(summaryInput.value) || '待补充';
@@ -457,6 +487,7 @@ const TYPES = [
         `category: ${toYamlString(stripText(categoryInput.value) || '技巧')}`,
         `type: ${toYamlString(typeInput.value || 'note')}`,
         `importance: ${clampImportance(importanceInput.value)}`,
+        `relatedNotes: [${relatedNotes.map((item) => toYamlString(item)).join(', ')}]`,
         'draft: false',
         '---',
         '',
@@ -467,22 +498,6 @@ const TYPES = [
     }
 
     let projectRootHandle = null;
-
-    function saveAsMarkdown(content) {
-      const filenameBase = slugify(stripText(titleInput.value) || '无标题');
-      const filename = `${filenameBase}.md`;
-      const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      requestAnimationFrame(() => {
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-      });
-    }
 
     function getCollectionDirName(type) {
       return TYPE_DIR_MAP[type] || 'notes';
@@ -546,24 +561,18 @@ const TYPES = [
       }
 
       const type = typeInput.value || 'note';
-      let result = await ensureCollectionDirectory(type);
-      if (!result.ok) {
-        if (result.reason === 'permission-denied' && projectRootHandle) {
-          try {
-            const retry = await ensureCollectionDirectory(type, true);
-            if (retry.ok) {
-              result = retry;
-            }
-          } catch (_retryErr) {
-            // continue to fallback
-          }
+      try {
+        let result = await ensureCollectionDirectory(type);
+        if (!result.ok && !projectRootHandle) {
+          result = await ensureCollectionDirectory(type, true);
+        }
+        if (!result.ok && result.reason === 'permission-denied' && projectRootHandle) {
+          result = await ensureCollectionDirectory(type, true);
         }
         if (!result.ok) {
           return { ok: false, reason: result.reason || 'permission-denied' };
         }
-      }
 
-      try {
         const filename = buildFileName();
         const fileHandle = await result.handle.getFileHandle(filename, { create: true });
         const writable = await fileHandle.createWritable();
@@ -574,7 +583,49 @@ const TYPES = [
           path: `src/content/${result.collection}/${filename}`
         };
       } catch (_err) {
-        return { ok: false, reason: 'write-failed' };
+        return {
+          ok: false,
+          reason: _err && _err.name ? _err.name : 'write-failed'
+        };
+      }
+    }
+
+    async function saveToServerMarkdown(content) {
+      const baseUrl = `${window.location.origin}${import.meta.env.BASE_URL || '/'}`;
+      const endpoint = new URL('api/editor-save', baseUrl).toString();
+
+      try {
+        const filename = buildFileName();
+        const type = typeInput.value || 'note';
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            markdown: content,
+            filename,
+            type,
+          }),
+        });
+        if (!response.ok) {
+          let reason = `http-${response.status}`;
+          try {
+            const payload = await response.json();
+            if (payload && payload.reason) reason = payload.reason;
+          } catch (_err) {
+            // ignore parse issue
+          }
+          return { ok: false, reason };
+        }
+        const payload = await response.json().catch(() => null);
+        if (!payload || payload.ok === false) {
+          return { ok: false, reason: payload?.reason || 'server-failed' };
+        }
+        return { ok: true, path: payload.path };
+      } catch (_err) {
+        return {
+          ok: false,
+          reason: _err && _err.name ? _err.name : 'network-error',
+        };
       }
     }
 
@@ -588,6 +639,7 @@ const TYPES = [
         updated: updatedInput.value || nowDate(),
         tags: cleanTags(),
         summary: stripText(summaryInput.value),
+        relatedNotes: cleanRelatedNotes(),
         contentHtml: editor.innerHTML || '',
         contentSource: sourceEditor.value || '',
         mode: currentMode,
@@ -613,6 +665,7 @@ const TYPES = [
         updatedInput.value = data.updated || nowDate();
         tagsInput.value = Array.isArray(data.tags) ? data.tags.join(', ') : '';
         summaryInput.value = data.summary || '';
+        relatedNotesInput.value = Array.isArray(data.relatedNotes) ? data.relatedNotes.join('\n') : '';
 
         if (data.mode === 'source') {
           sourceEditor.value = data.contentSource || '';
@@ -839,40 +892,76 @@ const TYPES = [
     });
 
     buildBtn.addEventListener('click', async () => {
-      const body = getBodyMarkdown();
-      if (!body) {
-        stateTip.textContent = '正文为空，先写一些内容。';
-        return;
-      }
-      const markdown = buildMarkdown();
-      setDraftDate();
-      saveDraft();
-      const saved = await saveToProjectMarkdown(markdown);
-      if (saved.ok) {
-        stateTip.textContent = `已写入本地文件：${saved.path}，并更新草稿。`;
-      } else {
-        saveAsMarkdown(markdown);
-        if (saved.reason === 'api-missing') {
-          stateTip.textContent = '当前环境不支持文件系统直写，已转为下载，你可以把文件放到对应 src/content 目录。';
-        } else if (saved.reason === 'invalid-root') {
-          stateTip.textContent = '未检测到项目路径，请允许选择项目目录后重试；已转为下载。';
-          projectRootHandle = null;
-        } else if (saved.reason === 'permission-denied') {
-          stateTip.textContent = '未获得写入权限，已转为下载。';
-        } else {
-          stateTip.textContent = '写入失败，已转为下载。';
+      const originalText = buildBtn.textContent;
+      let markdown = '';
+      let saveSuccess = false;
+      buildBtn.disabled = true;
+      buildBtn.textContent = '保存中...';
+      let shouldTouchUpdated = false;
+      try {
+        const missing = validateRequiredMetadata();
+        if (missing.length > 0) {
+          stateTip.textContent = `请先补齐必填项：${missing.join('、')}。`;
+          return;
         }
+
+        const body = getBodyMarkdown();
+        if (!body) {
+          stateTip.textContent = '正文为空，先写一些内容。';
+          return;
+        }
+        markdown = buildMarkdown();
+        shouldTouchUpdated = true;
+        setDraftDate();
+        saveDraft();
+
+        const serverResult = await saveToServerMarkdown(markdown);
+        if (serverResult && serverResult.ok) {
+          saveSuccess = true;
+          stateTip.textContent = `已写入本地文件：${serverResult.path}，并更新草稿。`;
+          return;
+        }
+
+        const fileResult = await saveToProjectMarkdown(markdown);
+        if (fileResult && fileResult.ok) {
+          saveSuccess = true;
+          stateTip.textContent = `已写入本地文件：${fileResult.path}，并更新草稿。`;
+          return;
+        }
+
+        const serverReason = serverResult && serverResult.reason ? serverResult.reason : 'server-error';
+        const fileReason = fileResult && fileResult.reason ? fileResult.reason : 'filesystem-error';
+        if (fileReason === 'api-missing') {
+          projectRootHandle = null;
+          stateTip.textContent = `保存失败：未检测到浏览器文件系统 API（Show Directory Picker 不可用）。请在支持该接口的浏览器打开此页后重试。`;
+          return;
+        }
+        if (fileReason === 'invalid-root') {
+          projectRootHandle = null;
+        }
+        stateTip.textContent = `保存失败：${serverReason}；本地路径写入失败：${fileReason}。请先允许选择项目目录并确认写入权限。`;
+      } catch (_err) {
+        stateTip.textContent = '保存异常，请重试。';
+        if (!markdown) {
+          markdown = buildMarkdown();
+        }
+      } finally {
+        if (shouldTouchUpdated && saveSuccess) {
+          const now = nowDate();
+          updatedInput.value = now;
+        }
+        buildBtn.disabled = false;
+        buildBtn.textContent = originalText;
       }
-      const now = nowDate();
-      updatedInput.value = now;
     });
 
     clearBtn.addEventListener('click', () => {
-      titleInput.value = '';
+        titleInput.value = '';
       categoryInput.value = '技巧';
       importanceInput.value = '2';
       tagsInput.value = '';
       summaryInput.value = '';
+      relatedNotesInput.value = '';
       editor.innerHTML = '';
       sourceEditor.value = '';
       localStorage.removeItem(LS_KEY);
@@ -899,6 +988,22 @@ const TYPES = [
       saveDraft();
     });
 
+    editor.addEventListener('keyup', () => {
+      updatePlaceholder();
+    });
+
+    editor.addEventListener('paste', () => {
+      requestAnimationFrame(() => {
+        updatePlaceholder();
+      });
+    });
+
+    editor.addEventListener('compositionend', () => {
+      requestAnimationFrame(() => {
+        updatePlaceholder();
+      });
+    });
+
     editor.addEventListener('keydown', (event) => {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'b') {
         event.preventDefault();
@@ -914,11 +1019,12 @@ const TYPES = [
       saveDraft();
     });
 
-    [titleInput, categoryInput, tagsInput, summaryInput, importanceInput, typeInput].forEach((input) => {
+    [titleInput, categoryInput, tagsInput, summaryInput, importanceInput, typeInput, relatedNotesInput].forEach((input) => {
       if (!input) return;
       input.addEventListener('input', () => {
         setDraftDate();
         saveDraft();
+        setFieldError(input, false);
       });
     });
 
@@ -1005,6 +1111,11 @@ const TYPES = [
 
     .writer-canvas p {
       margin: 0.45rem 0;
+    }
+
+    .field-invalid {
+      border-color: rgb(248 113 113) !important;
+      box-shadow: 0 0 0 2px rgb(248 113 113 / 20%);
     }
 
     .writer-canvas ul,

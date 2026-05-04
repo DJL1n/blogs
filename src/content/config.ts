@@ -6,6 +6,7 @@ const baseSchema = z.object({
   updated: z.coerce.date(),
   summary: z.string(),
   tags: z.array(z.string()).default([]),
+  relatedNotes: z.array(z.string()).default([]),
   category: z.string(),
   importance: z.number().int().min(1).max(5).default(2),
   draft: z.boolean().default(false)

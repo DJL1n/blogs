@@ -1,7 +1,7 @@
 ---
 import BaseLayout from './BaseLayout.astro';
 
-const { post, headings = [], readingTime = 0, Content } = Astro.props as {
+const { post, headings = [], readingTime = 0, Content, relatedPosts = [] } = Astro.props as {
   post: {
     data: {
       title: string;
@@ -10,6 +10,7 @@ const { post, headings = [], readingTime = 0, Content } = Astro.props as {
       category: string;
       importance: number;
       tags: string[];
+      relatedNotes?: string[];
       type: string;
     };
     body: string;
@@ -17,6 +18,13 @@ const { post, headings = [], readingTime = 0, Content } = Astro.props as {
   headings: Array<{ text: string; depth: number; slug: string }>;
   readingTime: number;
   Content: any;
+  relatedPosts?: Array<{
+    title: string;
+    summary: string;
+    collection: string;
+    slug: string;
+    href: string;
+  }>;
 };
 
 const hasToc = headings.length > 0;
@@ -55,6 +63,25 @@ const editorQuery = bodyForEditor
         <p class="mt-3 text-sm text-slate-500 dark:text-slate-300">
           标签：{post.data.tags.join(' · ') || '未标注'}
         </p>
+
+        {relatedPosts.length > 0 && (
+          <section class="mt-6 surface-card">
+            <h2 class="text-sm font-semibold">论文关联</h2>
+            <ul class="mt-3 space-y-2 text-sm">
+              {relatedPosts.map((item) => (
+                <li>
+                  <a href={item.href} class="font-medium text-slate-900 transition hover:text-blue-600 dark:text-slate-100 dark:hover:text-blue-300">
+                    {item.title}
+                  </a>
+                  <span class={`ml-2 chip ${item.collection === 'notes' ? 'bg-blue-50 text-blue-700 dark:bg-slate-800 dark:text-blue-200' : ''}`}>
+                    {item.collection}
+                  </span>
+                  <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{item.summary}</p>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
       </header>
       <div id="post-content" class="relative">
         <Content />
