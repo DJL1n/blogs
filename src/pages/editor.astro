@@ -9,7 +9,7 @@ const TYPES = [
 ---
 
 <BaseLayout title="写作 · 山不见我" description="Markdown 写作助手">
-  <div class="mx-auto max-w-3xl animate-fade-in">
+  <div class="mx-auto max-w-[72rem] px-4 sm:px-6 lg:px-8 animate-fade-in">
 
     <!-- Toolbar -->
     <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
@@ -417,9 +417,31 @@ const TYPES = [
     if (currentMode !== 'visual') return;
     const sel = window.getSelection();
     if (!sel?.rangeCount) return;
-    const block = getBlock(sel.getRangeAt(0).startContainer);
-    if (!block || block === visualEl || block.tagName === 'PRE') return;
-    const text = block.textContent || '';
+
+    let block = getBlock(sel.getRangeAt(0).startContainer);
+    let text: string;
+
+    // Direct text in editor (no wrapper element) — parse whole editor content
+    if (!block || block === visualEl) {
+      text = (visualEl.textContent || '').trim();
+      if (!text) return;
+
+      const hAll = text.match(/^(#{1,6})\s(.+)/);
+      if (hAll) {
+        visualEl.innerHTML = mdToHtml(text);
+        const newBlock = visualEl.querySelector('h1, h2, h3, h4, h5, h6');
+        if (newBlock) placeCaretEnd(newBlock as HTMLElement);
+        return;
+      }
+      const ulAll = text.match(/^[-*]\s(.+)/);
+      if (ulAll) { visualEl.innerHTML = mdToHtml(text); return; }
+      const qAll = text.match(/^>\s(.+)/);
+      if (qAll) { visualEl.innerHTML = mdToHtml(text); return; }
+      return;
+    }
+
+    if (block.tagName === 'PRE') return;
+    text = block.textContent || '';
 
     const h = text.match(/^(#{1,6})\s(.+)/);
     const ul = text.match(/^[-*]\s(.+)/);
