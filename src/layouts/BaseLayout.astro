@@ -1,8 +1,45 @@
 ---
-const { title = '个人知识库博客', description = '' } = Astro.props;
+const { title = '山不见我', description = '', mainClass } = Astro.props as {
+  title?: string;
+  description?: string;
+  mainClass?: string;
+};
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import '../styles/global.css';
+
+const path = Astro.url.pathname.replace(/\/$/, '') || '/';
+const resolvedMainClass = mainClass
+  ? mainClass
+  : path === '/'
+    ? 'main-home'
+    : path.startsWith('/blog/')
+      ? 'main-blog'
+      : path === '/blog'
+        ? 'main-blog'
+        : path.startsWith('/notes/')
+          ? 'main-notes'
+          : path === '/notes'
+            ? 'main-notes'
+            : path.startsWith('/important/')
+              ? 'main-important'
+              : path === '/important'
+                ? 'main-important'
+                : path === '/search'
+                  ? 'main-search'
+                  : path.startsWith('/categories/')
+                    ? 'main-category'
+                    : path === '/categories'
+                      ? 'main-category'
+                      : path.startsWith('/tags/')
+                        ? 'main-tag'
+                        : path === '/tags'
+                          ? 'main-tag'
+                          : path === '/about'
+                            ? 'main-about'
+                            : path === '/editor'
+                              ? 'main-editor'
+                              : 'main-default';
 ---
 
 <!doctype html>
@@ -24,7 +61,7 @@ import '../styles/global.css';
 <body
   class="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-900 dark:text-slate-100 [word-break:break-word]">
   <Header />
-  <main class="content-shell py-8 lg:py-10">
+  <main class={`content-shell py-8 lg:py-10 main-shell ${resolvedMainClass}`}>
     <slot />
   </main>
   <Footer />

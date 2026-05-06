@@ -2,15 +2,69 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 ---
 
-<BaseLayout title="关于" description="个人知识库博客说明">
-  <section class="prose prose-slate dark:prose-invert max-w-none">
-    <h1>关于这个博客</h1>
-    <p>这是一个个人知识库型博客，专注于长期可维护的内容管理，支持：</p>
-    <ul>
-      <li>技术文章（blog）</li>
-      <li>短笔记（notes）</li>
-      <li>重要事项与配置记录（important）</li>
-    </ul>
-    <p>全部内容用 Markdown/MDX 存储，结合 Astro Content Collections 做统一元数据管理。</p>
-  </section>
+<BaseLayout title="关于 · 山不见我" description="关于我和这个站点">
+  <div class="space-y-8 animate-fade-in">
+    <!-- 个人简介 -->
+    <section class="surface-card-elevated relative overflow-hidden">
+      <div class="absolute right-4 top-4 h-20 w-20 rounded-full bg-gradient-to-br from-blue-400 to-violet-500 opacity-8 blur-2xl"></div>
+      <div class="relative flex flex-col gap-5 sm:flex-row sm:items-start">
+        <div class="flex h-20 w-20 flex-shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-slate-700 to-slate-900 text-3xl shadow-lg dark:from-slate-200 dark:to-slate-400">
+          🏔️
+        </div>
+        <div>
+          <h1 class="text-3xl font-black tracking-tight">关于我</h1>
+          <p class="mt-3 leading-relaxed text-slate-600 dark:text-slate-300">
+            一个写代码的人，目前在计算机视觉、SLAM、三维重建方向摸索。
+          </p>
+          <p class="mt-2 leading-relaxed text-slate-600 dark:text-slate-300">
+            这个站点用来整理技术笔记、记录踩坑经验、沉淀一些值得长期维护的内容。不追求流量和 SEO，只想有一个安静写字的地方。
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 技能/方向 -->
+    <section class="surface-card">
+      <h2 class="section-title mb-4">技术方向</h2>
+      <div class="flex flex-wrap gap-2">
+        <span class="chip-active">Computer Vision</span>
+        <span class="chip-active">SLAM</span>
+        <span class="chip-active">3D Reconstruction</span>
+        <span class="chip-active">3DGS / NeRF</span>
+        <span class="chip-emerald">Python</span>
+        <span class="chip-emerald">C++</span>
+        <span class="chip-emerald">macOS</span>
+        <span class="chip">Git</span>
+        <span class="chip">Astro</span>
+        <span class="chip">Tailwind CSS</span>
+      </div>
+    </section>
+
+    <!-- 关于站点 -->
+    <section class="surface-card">
+      <h2 class="section-title mb-4">关于这个站点</h2>
+      <div class="space-y-3 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+        <p>
+          基于 <a href="https://astro.build" class="text-blue-600 hover:underline dark:text-blue-400">Astro</a> 构建的静态站点，
+          所有内容以 Markdown 文件存储在 <code class="rounded bg-slate-100 px-1.5 py-0.5 text-xs dark:bg-slate-800">src/content/</code> 下。
+        </p>
+        <p>
+          三类内容：<strong>博客</strong>（长文）、<strong>笔记</strong>（短内容）、<strong>重要记录</strong>（计划/待办/日志）。
+        </p>
+        <p>
+          托管在 <a href="https://github.com/Djl1n/blogs" class="text-blue-600 hover:underline dark:text-blue-400">GitHub</a>，
+          通过 Cloudflare Pages 自动部署。每次 push 到 main 分支即触发发布。
+        </p>
+      </div>
+    </section>
+
+    <!-- 联系 -->
+    <section class="surface-card">
+      <h2 class="section-title mb-4">找到我</h2>
+      <div class="flex flex-wrap gap-3">
+        <a href="https://github.com/Djl1n" target="_blank" class="btn-secondary text-sm">GitHub</a>
+        <a href="/rss.xml" class="btn-secondary text-sm">RSS 订阅</a>
+      </div>
+    </section>
+  </div>
 </BaseLayout>

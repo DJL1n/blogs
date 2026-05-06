@@ -48,7 +48,7 @@ export async function POST({ request }: APIContext) {
         headers: { 'content-type': 'application/json; charset=utf-8' },
       }
     );
-  } catch (err) {
+  } catch (err: any) {
     return new Response(
       JSON.stringify({
         ok: false,

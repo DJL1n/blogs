@@ -4,6 +4,7 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
+    "make:launcher:mac": "bash scripts/launcher/build-blog-launcher.command",
     "dev": "astro dev",
     "build": "astro check && astro build",
     "preview": "astro preview",

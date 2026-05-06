@@ -48,8 +48,8 @@ const normalizedPosts = [
     <div id="search-result" class="space-y-3"></div>
   </section>
 
-  <script is:inline>
-    const allPosts = {JSON.stringify(normalizedPosts)};
+  <script is:inline define:vars={{ postsJson: JSON.stringify(normalizedPosts) }}>
+    const allPosts = JSON.parse(postsJson);
     const input = document.getElementById('search-input');
     const result = document.getElementById('search-result');
     const count = document.getElementById('count');

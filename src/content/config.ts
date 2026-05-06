@@ -29,7 +29,22 @@ const notes = defineCollection({
 const important = defineCollection({
   type: 'content',
   schema: baseSchema.extend({
-    type: z.literal('important')
+    type: z.literal('important'),
+    plan: z.array(z.object({
+      title: z.string(),
+      status: z.enum(['done', 'active', 'planned']),
+      detail: z.string(),
+    })).optional(),
+    todos: z.array(z.object({
+      text: z.string(),
+      done: z.boolean(),
+    })).optional(),
+    intro: z.string().optional(),
+    avatar: z.string().optional(),
+    links: z.array(z.object({
+      label: z.string(),
+      url: z.string(),
+    })).optional(),
   })
 });
 

@@ -9,8 +9,8 @@ export async function GET(context: { site: string }) {
   ].sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
 
   return rss({
-    title: '个人知识库博客',
-    description: '技术技巧、短笔记与重要记录',
+    title: '山不见我',
+    description: '技术笔记 · 长期写作 · 个人站点',
     site: context.site || 'https://example.com',
     items: posts.map((post) => ({
       title: post.data.title,
