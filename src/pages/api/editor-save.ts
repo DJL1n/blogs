@@ -1,5 +1,6 @@
 import type { APIContext } from 'astro';
 import { mkdir, writeFile } from 'node:fs/promises';
+import { execSync } from 'node:child_process';
 import path from 'node:path';
 
 const TYPE_DIR_MAP = {
@@ -38,10 +39,21 @@ export async function POST({ request }: APIContext) {
     await mkdir(targetDir, { recursive: true });
     await writeFile(targetFile, body.markdown, 'utf8');
 
+    // Auto-commit
+    let commitHash = '';
+    try {
+      execSync(`git add "${targetFile}"`, { cwd: repoRoot, stdio: 'pipe' });
+      execSync(`git commit -m "feat(editor): save ${path.basename(filename)}"`, { cwd: repoRoot, stdio: 'pipe' });
+      commitHash = execSync('git rev-parse --short HEAD', { cwd: repoRoot, stdio: 'pipe' }).toString().trim();
+    } catch {
+      // non-blocking: save succeeded even if commit fails
+    }
+
     return new Response(
       JSON.stringify({
         ok: true,
         path: `src/content/${collection}/${filename}`,
+        commit: commitHash || undefined,
       }),
       {
         status: 200,

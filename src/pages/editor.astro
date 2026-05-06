@@ -2,1168 +2,808 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 
 const TYPES = [
-  { value: 'note', label: 'note（短笔记）' },
-  { value: 'blog', label: 'blog（长文）' },
-  { value: 'important', label: 'important（重要记录）' },
+  { value: 'note', label: '笔记' },
+  { value: 'blog', label: '博客' },
+  { value: 'important', label: '重要记录' },
 ];
-
-    const LS_KEY = 'kb-editor-draft-clean-v1';
-    const TYPE_DIR_MAP = {
-      note: 'notes',
-      blog: 'blog',
-      important: 'important'
-    };
 ---
 
-<BaseLayout title="写作助手（重构版）" description="简化稳定的本地写作页：可视化编辑、源码编辑、元数据与 Markdown 导出。">
-  <section class="space-y-6">
-    <header>
-      <p class="inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 dark:border-emerald-700 dark:bg-slate-800 dark:text-emerald-200">
-        重构版编辑器
-      </p>
-      <h1 class="mt-3 text-4xl font-bold">写作助手</h1>
-      <p class="mt-2 text-slate-600 dark:text-slate-300">
-        以本地 draft 为主，支持文档模式和源码模式。你可以直接在正文写作并生成 frontmatter + Markdown。
-      </p>
-    </header>
-
-    <section class="space-y-6 content-shell">
-      <form id="writer-form" class="space-y-4" autocomplete="off">
-        <div class="surface-card space-y-4">
-          <h2 class="text-lg font-semibold">元数据</h2>
-          <div class="grid gap-3 md:grid-cols-2">
-            <label class="space-y-2">
-              <span class="text-sm font-medium">标题</span>
-              <input id="title" type="text" class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-800" placeholder="输入标题" value="" />
-            </label>
-
-            <label class="space-y-2">
-              <span class="text-sm font-medium">类型</span>
-              <select id="type" class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-800">
-                {TYPES.map((item) => <option value={item.value}>{item.label}</option>)}
-              </select>
-            </label>
-
-            <label class="space-y-2">
-              <span class="text-sm font-medium">分类</span>
-              <input id="category" type="text" class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-800" value="技巧" />
-            </label>
-
-            <label class="space-y-2">
-              <span class="text-sm font-medium">重要性（1-5）</span>
-              <input id="importance" type="number" min="1" max="5" value="2" class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-800" />
-            </label>
-
-            <input id="date" type="hidden" />
-            <input id="updated" type="hidden" />
-
-            <label class="space-y-2 md:col-span-2">
-              <span class="text-sm font-medium">标签（英文逗号分隔）</span>
-              <input id="tags" type="text" class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-800" placeholder="macOS, dns, network" />
-            </label>
-
-            <label class="space-y-2 md:col-span-2">
-              <span class="text-sm font-medium">摘要</span>
-              <textarea id="summary" rows="2" class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-800" placeholder="一句话说明这篇内容"></textarea>
-            </label>
-
-            <label class="space-y-2 md:col-span-2">
-              <span class="text-sm font-medium">论文关联（每行一个，支持 /notes/slug 或 /blog/slug）</span>
-              <textarea id="related-notes" rows="3" class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-800" placeholder="示例：\n/notes/my-paper-a\n/blog/some-article"></textarea>
-            </label>
-          </div>
-        </div>
-
-        <div class="surface-card">
-          <div class="mb-3 flex flex-wrap items-center gap-2 border-b border-slate-200 pb-3 dark:border-slate-700">
-            <button type="button" id="mode-visual" class="btn-tool btn-tool-active">文档模式</button>
-            <button type="button" id="mode-source" class="btn-tool">源码模式</button>
-            <span class="h-4 w-px bg-slate-300 dark:bg-slate-600"></span>
-            <button type="button" data-command="bold" class="btn-tool" title="加粗 (Cmd/Ctrl+B)">B</button>
-            <button type="button" data-command="italic" class="btn-tool" title="斜体 (Cmd/Ctrl+I)">I</button>
-            <button type="button" data-command="underline" class="btn-tool">U</button>
-            <button type="button" data-command="foreColor" data-color="#ef4444" class="btn-tool" title="红色" style="color:#ef4444;font-weight:700;">A</button>
-            <button type="button" data-command="foreColor" data-color="#f59e0b" class="btn-tool" title="橙色" style="color:#f59e0b;font-weight:700;">A</button>
-            <button type="button" data-command="foreColor" data-color="#eab308" class="btn-tool" title="黄色" style="color:#eab308;font-weight:700;">A</button>
-            <button type="button" data-command="foreColor" data-color="#22c55e" class="btn-tool" title="绿色" style="color:#22c55e;font-weight:700;">A</button>
-            <button type="button" data-command="foreColor" data-color="#0ea5e9" class="btn-tool" title="蓝色" style="color:#0ea5e9;font-weight:700;">A</button>
-            <button type="button" data-command="foreColor" data-color="#a855f7" class="btn-tool" title="紫色" style="color:#a855f7;font-weight:700;">A</button>
-            <button type="button" data-command="foreColor" data-color="#64748b" class="btn-tool" title="灰色" style="color:#64748b;font-weight:700;">A</button>
-            <button type="button" data-command="insertOrderedList" class="btn-tool">有序列表</button>
-            <button type="button" data-command="insertUnorderedList" class="btn-tool">无序列表</button>
-            <button type="button" data-command="blockquote" class="btn-tool">引用</button>
-            <button type="button" data-command="h1" class="btn-tool">H1</button>
-            <button type="button" data-command="h2" class="btn-tool">H2</button>
-            <button type="button" data-command="h3" class="btn-tool">H3</button>
-            <button type="button" data-command="h4" class="btn-tool">H4</button>
-            <button type="button" data-command="h5" class="btn-tool">H5</button>
-            <button type="button" data-command="h6" class="btn-tool">H6</button>
-          </div>
-
-          <div id="editor-shell" class="editor-shell">
-            <div id="editor-placeholder" class="writer-placeholder">在这里开始写作（支持标题、列表、引用、代码块、图片粘贴）。例如：输入 / 调出块级命令，或 Ctrl/Cmd+P 打开命令盘。</div>
-            <div
-              id="editor"
-              class="writer-canvas w-full"
-              contenteditable="true"
-              aria-label="正文编辑区"
-            ></div>
-
-            <textarea
-              id="source-editor"
-              class="writer-canvas h-[56vh] w-full font-mono hidden"
-              placeholder="在这里直接写 Markdown，例如：# 标题"
-              aria-label="Markdown 源码编辑"
-            ></textarea>
-          </div>
-        </div>
-
-        <div class="flex flex-wrap gap-3">
-          <button type="button" id="build-btn" class="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500">保存</button>
-          <button type="button" id="clear-btn" class="rounded-md border border-rose-300 px-4 py-2 text-sm text-rose-600 dark:border-rose-700 dark:text-rose-300">清空草稿</button>
-        </div>
-
-        <p id="state-tip" class="text-sm text-slate-500 dark:text-slate-300">欢迎使用重构版编辑器，先填正文再切换源码/保存。</p>
-      </form>
-    </section>
-  </section>
-
-  <script is:inline>
-    const titleInput = document.getElementById('title');
-    const typeInput = document.getElementById('type');
-    const categoryInput = document.getElementById('category');
-    const importanceInput = document.getElementById('importance');
-    const dateInput = document.getElementById('date');
-    const updatedInput = document.getElementById('updated');
-    const tagsInput = document.getElementById('tags');
-    const summaryInput = document.getElementById('summary');
-    const relatedNotesInput = document.getElementById('related-notes');
-    const editor = document.getElementById('editor');
-    const sourceEditor = document.getElementById('source-editor');
-    const editorPlaceholder = document.getElementById('editor-placeholder');
-    const modeVisualBtn = document.getElementById('mode-visual');
-    const modeSourceBtn = document.getElementById('mode-source');
-    const buildBtn = document.getElementById('build-btn');
-    const clearBtn = document.getElementById('clear-btn');
-    const stateTip = document.getElementById('state-tip');
-
-    const commands = document.querySelectorAll('[data-command]');
-
-    let currentMode = 'visual';
-
-    function setFieldError(input, show) {
-      if (!input) return;
-      input.classList.toggle('field-invalid', Boolean(show));
-    }
-
-    function validateRequiredMetadata() {
-      const required = [
-        { el: titleInput, label: '标题' },
-        { el: categoryInput, label: '分类' },
-        { el: summaryInput, label: '摘要' },
-      ];
-
-      const missing = [];
-      required.forEach((item) => {
-        const ok = stripText(item.el?.value) !== '';
-        setFieldError(item.el, !ok);
-        if (!ok) missing.push(item.label);
-      });
-
-      return missing;
-    }
-
-    function nowDate() {
-      return new Date().toISOString().slice(0, 10);
-    }
-
-    function clampImportance(value) {
-      const n = Number(value);
-      if (Number.isNaN(n)) return 2;
-      return Math.min(Math.max(Math.round(n), 1), 5);
-    }
-
-    function stripText(value) {
-      return String(value || '').replace(/\s+/g, ' ').trim();
-    }
-
-    function isEditorEmpty() {
-      const txt = (editor.innerText || '').replace(/[\u200b\u00a0]/g, '').trim();
-      if (txt.length > 0) return false;
-      const hasBlock = editor.querySelector('img, pre, blockquote, ul, ol, table, hr, li, code');
-      return !hasBlock;
-    }
-
-    function updatePlaceholder() {
-      const empty = isEditorEmpty() && currentMode === 'visual';
-      if (!editorPlaceholder) return;
-      editorPlaceholder.style.display = empty ? '' : 'none';
-    }
-
-    function setMode(mode, sync = true) {
-      currentMode = mode === 'source' ? 'source' : 'visual';
-      if (currentMode === 'visual') {
-        sourceEditor.classList.add('hidden');
-        editor.classList.remove('hidden');
-        editorPlaceholder.style.display = isEditorEmpty() ? '' : 'none';
-      } else {
-        editorPlaceholder.style.display = 'none';
-        editor.classList.add('hidden');
-        sourceEditor.classList.remove('hidden');
-      }
-      updateModeUI();
-      if (sync) {
-        syncState();
-      }
-    }
-
-    function syncState() {
-      if (currentMode === 'source') {
-        sourceEditor.value = editorToMarkdown() || sourceEditor.value;
-      } else {
-        editor.innerHTML = sourceToHtml(sourceEditor.value);
-      }
-      updatePlaceholder();
-      saveDraft();
-    }
-
-    function updateModeUI() {
-      if (currentMode === 'visual') {
-        modeVisualBtn.classList.add('btn-tool-active');
-        modeSourceBtn.classList.remove('btn-tool-active');
-      } else {
-        modeSourceBtn.classList.add('btn-tool-active');
-        modeVisualBtn.classList.remove('btn-tool-active');
-      }
-    }
-
-    function toYamlString(value) {
-      return JSON.stringify(String(value));
-    }
-
-    function slugify(value) {
-      return String(value || '')
-        .trim()
-        .toLowerCase()
-        .replace(/\s+/g, '-')
-        .replace(/[^a-z0-9\u4e00-\u9fff_-]/g, '')
-        .replace(/-+/g, '-')
-        .replace(/(^-|-$)/g, '')
-        .slice(0, 80) || `post-${nowDate()}`;
-    }
-
-    function cleanTags() {
-      return stripText(tagsInput.value)
-        .split(',')
-        .map((item) => stripText(item))
-        .filter(Boolean);
-    }
-
-    function cleanRelatedNotes() {
-      return String(relatedNotesInput.value || '')
-        .replace(/\r\n/g, '\n')
-        .split(/[\n,]/)
-        .map((item) => stripText(item))
-        .filter(Boolean);
-    }
-
-    function escapeHtml(value) {
-      return String(value || '')
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    }
-
-    function inlineMarkdownToHtml(text) {
-      let out = String(text || '');
-      const colorSpans = [];
-      out = out.replace(/<span\b[^>]*\bstyle\s*=\s*(["'])([\s\S]*?)\1[^>]*>([\s\S]*?)<\/span>/gi, (_match, _quote, styleText, body) => {
-        const style = (styleText || '').toLowerCase().trim();
-        const safeStyle = style.includes('color') ? ` style=\"${escapeHtml(style)}\"` : '';
-        const safeBody = body || '';
-        if (!safeStyle) return '';
-        const index = colorSpans.length;
-        colorSpans.push(`<span${safeStyle}>${escapeHtml(safeBody)}</span>`);
-        return `__COLOR_SPAN_${index}__`;
-      });
-      out = escapeHtml(out);
-
-      out = out.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_, alt, src) => {
-        const safeAlt = (alt || '').trim() || 'image';
-        return `<img src="${escapeHtml(src.trim())}" alt="${escapeHtml(safeAlt)}" />`;
-      });
-
-      out = out.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, label, href) => {
-        return `<a href="${encodeURI((href || '').trim())}">${escapeHtml(label)}</a>`;
-      });
-
-      out = out.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-      out = out.replace(/__([^_]+)__/g, '<strong>$1</strong>');
-      out = out.replace(/\*([^*]+)\*/g, '<em>$1</em>');
-      out = out.replace(/_([^_]+)_/g, '<em>$1</em>');
-      out = out.replace(/~~([^~]+)~~/g, '<del>$1</del>');
-      out = out.replace(/`([^`]+)`/g, '<code>$1</code>');
-      out = out.replace(/__COLOR_SPAN_(\d+)__/g, (_, idx) => colorSpans[Number(idx)] || '');
-
-      return out;
-    }
-
-    function sourceToHtml(md) {
-      const text = String(md || '').replace(/\r\n/g, '\n').trim();
-      if (!text) return '';
-      const lines = text.split('\n');
-      const html = [];
-      let i = 0;
-
-      while (i < lines.length) {
-        const line = (lines[i] || '').trim();
-        if (!line) {
-          i += 1;
-          continue;
-        }
-
-        const heading = line.match(/^(#{1,6})\s+(.*)$/);
-        if (heading) {
-          const level = Math.min(6, heading[1].length);
-          html.push(`<h${level}>${inlineMarkdownToHtml(heading[2])}</h${level}>`);
-          i += 1;
-          continue;
-        }
-
-        if (/^```/.test(line)) {
-          const language = line.replace(/^```/, '').trim();
-          i += 1;
-          const code = [];
-          while (i < lines.length && !/^```/.test((lines[i] || '').trim())) {
-            code.push(lines[i]);
-            i += 1;
-          }
-          if (i < lines.length) i += 1;
-          const codeText = escapeHtml(code.join('\n'));
-          const lang = language ? ` data-language="${escapeHtml(language)}"` : '';
-          const cls = language ? ` class="language-${escapeHtml(language)}"` : '';
-          html.push(`<pre${lang}><code${cls}>${codeText}</code></pre>`);
-          continue;
-        }
-
-        if (/^>/.test(line)) {
-          let quote = [];
-          while (i < lines.length && /^>/.test((lines[i] || '').trim())) {
-            quote.push((lines[i] || '').replace(/^>\s?/, ''));
-            i += 1;
-          }
-          const quoteHtml = quote.map((item) => inlineMarkdownToHtml(item)).join('<br/>');
-          html.push(`<blockquote>${quoteHtml}</blockquote>`);
-          continue;
-        }
-
-        if (/^[-*]\s+/.test(line)) {
-          const items = [];
-          while (i < lines.length && /^[-*]\s+/.test((lines[i] || '').trim())) {
-            items.push((lines[i] || '').replace(/^[-*]\s+/, ''));
-            i += 1;
-          }
-          html.push(`<ul>${items.map((item) => `<li>${inlineMarkdownToHtml(item)}</li>`).join('')}</ul>`);
-          continue;
-        }
-
-        if (/^\d+\.\s+/.test(line)) {
-          const items = [];
-          while (i < lines.length && /^\d+\.\s+/.test((lines[i] || '').trim())) {
-            items.push((lines[i] || '').replace(/^\d+\.\s+/, ''));
-            i += 1;
-          }
-          html.push(`<ol>${items.map((item) => `<li>${inlineMarkdownToHtml(item)}</li>`).join('')}</ol>`);
-          continue;
-        }
-
-        html.push(`<p>${inlineMarkdownToHtml(line)}</p>`);
-        i += 1;
-      }
-
-      return html.join('');
-    }
-
-    function serializeNode(node) {
-      if (!node) return '';
-      if (node.nodeType === Node.TEXT_NODE) return (node.textContent || '').replace(/\u0000/g, '');
-      if (node.nodeType === Node.ELEMENT_NODE) {
-        const tag = (node.tagName || '').toLowerCase();
-        const style = (node.getAttribute('style') || '').toLowerCase();
-        const raw = Array.from(node.childNodes).map(serializeNode).join('');
-        const content = raw.replace(/\s+$/, '');
-        if (tag === 'strong' || tag === 'b') return `**${content.trim()}**`;
-        if (tag === 'em' || tag === 'i') return `*${content.trim()}*`;
-        if (tag === 'del' || tag === 'strike' || tag === 's') return `~~${content.trim()}~~`;
-        if (tag === 'u') return `_${content.trim()}_`;
-        if (tag === 'span' && /font-weight:\s*(bold|[7-9]00|bolder|[1-9][0-9]{2})/.test(style)) {
-          return `**${content.trim()}**`;
-        }
-        if (tag === 'span' && /font-style:\s*italic/.test(style)) {
-          return `*${content.trim()}*`;
-        }
-        if (tag === 'span' && /text-decoration:\s*[^;]*underline/.test(style)) {
-          return `_${content.trim()}_`;
-        }
-        if (tag === 'span' && /text-decoration:\s*[^;]*line-through/.test(style)) {
-          return `~~${content.trim()}~~`;
-        }
-        if (tag === 'span' && /color:\s*[^;]+/.test(style)) {
-          const safeStyle = (node.getAttribute('style') || '').replace(/["']/g, '');
-          return `<span style="${safeStyle}">${content}</span>`;
-        }
-        if (tag === 'code') return `\`${content}\``;
-        if (tag === 'h1') return `# ${content.trim()}\n\n`;
-        if (tag === 'h2') return `## ${content.trim()}\n\n`;
-        if (tag === 'h3') return `### ${content.trim()}\n\n`;
-        if (tag === 'h4') return `#### ${content.trim()}\n\n`;
-        if (tag === 'h5') return `##### ${content.trim()}\n\n`;
-        if (tag === 'h6') return `###### ${content.trim()}\n\n`;
-        if (tag === 'blockquote') return `> ${content.trim()}\n\n`;
-        if (tag === 'pre') {
-          const codeNode = node.querySelector('code');
-          const code = (node.textContent || '').replace(/^\n+|\n+$/g, '');
-          const lang = (node.getAttribute('data-language') || codeNode?.getAttribute('class') || '').match(/language-([\w-]+)/)?.[1] || '';
-          const info = lang ? `${lang}` : '';
-          return `\n\n\`\`\`${info}\n${code}\n\`\`\`\n\n`;
-        }
-        if (tag === 'ul' || tag === 'ol') {
-          return Array.from(node.querySelectorAll(':scope > li'))
-            .map((li, idx) => {
-              const prefix = tag === 'ol' ? `${idx + 1}. ` : '- ';
-              const row = Array.from(li.childNodes).map((child) => serializeNode(child)).join('').replace(/\n+/g, ' ').trim();
-              return `${prefix}${row}`;
-            })
-            .join('\n') + '\n\n';
-        }
-        if (tag === 'a') {
-          const href = (node.getAttribute('href') || '').trim() || '#';
-          return `[${content.trim()}](${href})`;
-        }
-        if (tag === 'li') return `- ${content.trim()}\n`;
-        if (tag === 'img') return `![${node.alt || 'image'}](${(node.getAttribute('src') || '').trim() || ''})\n\n`;
-        if (tag === 'hr') return '---\n\n';
-        if (tag === 'p') return `${content.trim()}\n\n`;
-        if (tag === 'br') return '\n';
-        return content;
-      }
-      return '';
-    }
-
-    function editorToMarkdown() {
-      const container = document.createElement('div');
-      container.innerHTML = editor.innerHTML || '';
-      return Array.from(container.childNodes)
-        .map(serializeNode)
-        .join('')
-        .replace(/\n{3,}/g, '\n\n')
-        .trim();
-    }
-
-    function getBodyMarkdown() {
-      if (currentMode === 'source') {
-        return (sourceEditor.value || '').trim();
-      }
-      return editorToMarkdown() || '';
-    }
-
-    function buildMarkdown() {
-      const title = stripText(titleInput.value) || '无标题';
-      const tags = cleanTags();
-      const relatedNotes = cleanRelatedNotes();
-      const date = dateInput.value || nowDate();
-      const updated = updatedInput.value || nowDate();
-      const summary = stripText(summaryInput.value) || '待补充';
-      const body = getBodyMarkdown();
-
-      const front = [
-        '---',
-        `title: ${toYamlString(title)}`,
-        `date: ${date}`,
-        `updated: ${updated}`,
-        `summary: ${toYamlString(summary)}`,
-        `tags: [${tags.map((item) => toYamlString(item)).join(', ')}]`,
-        `category: ${toYamlString(stripText(categoryInput.value) || '技巧')}`,
-        `type: ${toYamlString(typeInput.value || 'note')}`,
-        `importance: ${clampImportance(importanceInput.value)}`,
-        `relatedNotes: [${relatedNotes.map((item) => toYamlString(item)).join(', ')}]`,
-        'draft: false',
-        '---',
-        '',
-        body || '请在正文中填写内容。',
-        '',
-      ];
-      return front.join('\n');
-    }
-
-    let projectRootHandle = null;
-
-    function getCollectionDirName(type) {
-      return TYPE_DIR_MAP[type] || 'notes';
-    }
-
-    function buildFileName() {
-      const title = stripText(titleInput.value) || '无标题';
-      const date = nowDate();
-      return `${date}-${slugify(title)}.md`;
-    }
-
-    async function ensureDirectoryPermission(handle) {
-      if (!handle || typeof handle.queryPermission !== 'function') return true;
-      let status = await handle.queryPermission({ mode: 'readwrite' });
-      if (status === 'granted') return true;
-      if (status === 'prompt') {
-        status = await handle.requestPermission({ mode: 'readwrite' });
-      }
-      return status === 'granted';
-    }
-
-    async function resolveProjectRoot(force = false) {
-      if (!projectRootHandle || force) {
-        if (!window.showDirectoryPicker) {
-          return null;
-        }
-        projectRootHandle = await window.showDirectoryPicker({
-          mode: 'readwrite',
-          startIn: 'documents'
-        });
-      }
-      const accepted = await ensureDirectoryPermission(projectRootHandle);
-      return accepted ? projectRootHandle : null;
-    }
-
-    async function ensureCollectionDirectory(type, force = false) {
-      const root = await resolveProjectRoot(force);
-      if (!root) return { ok: false, reason: 'permission-denied' };
-
-      const collection = getCollectionDirName(type);
-      try {
-        const srcHandle = await root.getDirectoryHandle('src', { create: false });
-        const contentHandle = await srcHandle.getDirectoryHandle('content', { create: false });
-        const targetHandle = await contentHandle.getDirectoryHandle(collection, { create: false });
-        return { ok: true, handle: targetHandle, collection };
-      } catch (_err) {
-        try {
-          const srcHandle = await root.getDirectoryHandle('src', { create: true });
-          const contentHandle = await srcHandle.getDirectoryHandle('content', { create: true });
-          const targetHandle = await contentHandle.getDirectoryHandle(collection, { create: true });
-          return { ok: true, handle: targetHandle, collection };
-        } catch (_innerErr) {
-          return { ok: false, reason: 'invalid-root' };
-        }
-      }
-    }
-
-    async function saveToProjectMarkdown(content) {
-      if (!('showDirectoryPicker' in window)) {
-        return { ok: false, reason: 'api-missing' };
-      }
-
-      const type = typeInput.value || 'note';
-      try {
-        let result = await ensureCollectionDirectory(type);
-        if (!result.ok && !projectRootHandle) {
-          result = await ensureCollectionDirectory(type, true);
-        }
-        if (!result.ok && result.reason === 'permission-denied' && projectRootHandle) {
-          result = await ensureCollectionDirectory(type, true);
-        }
-        if (!result.ok) {
-          return { ok: false, reason: result.reason || 'permission-denied' };
-        }
-
-        const filename = buildFileName();
-        const fileHandle = await result.handle.getFileHandle(filename, { create: true });
-        const writable = await fileHandle.createWritable();
-        await writable.write(content);
-        await writable.close();
-        return {
-          ok: true,
-          path: `src/content/${result.collection}/${filename}`
-        };
-      } catch (_err) {
-        return {
-          ok: false,
-          reason: _err && _err.name ? _err.name : 'write-failed'
-        };
-      }
-    }
-
-    async function saveToServerMarkdown(content) {
-      const baseUrl = `${window.location.origin}${import.meta.env.BASE_URL || '/'}`;
-      const endpoint = new URL('api/editor-save', baseUrl).toString();
-
-      try {
-        const filename = buildFileName();
-        const type = typeInput.value || 'note';
-        const response = await fetch(endpoint, {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({
-            markdown: content,
-            filename,
-            type,
-          }),
-        });
-        if (!response.ok) {
-          let reason = `http-${response.status}`;
-          try {
-            const payload = await response.json();
-            if (payload && payload.reason) reason = payload.reason;
-          } catch (_err) {
-            // ignore parse issue
-          }
-          return { ok: false, reason };
-        }
-        const payload = await response.json().catch(() => null);
-        if (!payload || payload.ok === false) {
-          return { ok: false, reason: payload?.reason || 'server-failed' };
-        }
-        return { ok: true, path: payload.path };
-      } catch (_err) {
-        return {
-          ok: false,
-          reason: _err && _err.name ? _err.name : 'network-error',
-        };
-      }
-    }
-
-    function saveDraft() {
-      const payload = {
-        title: stripText(titleInput.value),
-        type: typeInput.value || 'note',
-        category: stripText(categoryInput.value) || '技巧',
-        importance: clampImportance(importanceInput.value),
-        date: dateInput.value || nowDate(),
-        updated: updatedInput.value || nowDate(),
-        tags: cleanTags(),
-        summary: stripText(summaryInput.value),
-        relatedNotes: cleanRelatedNotes(),
-        contentHtml: editor.innerHTML || '',
-        contentSource: sourceEditor.value || '',
-        mode: currentMode,
-      };
-      localStorage.setItem(LS_KEY, JSON.stringify(payload));
-    }
-
-    function loadDraft() {
-      const raw = localStorage.getItem(LS_KEY);
-      if (!raw) {
-        dateInput.value = nowDate();
-        updatedInput.value = nowDate();
-        return;
-      }
-
-      try {
-        const data = JSON.parse(raw);
-        titleInput.value = data.title || '';
-        typeInput.value = data.type || 'note';
-        categoryInput.value = data.category || '技巧';
-        importanceInput.value = String(data.importance || 2);
-        dateInput.value = data.date || nowDate();
-        updatedInput.value = data.updated || nowDate();
-        tagsInput.value = Array.isArray(data.tags) ? data.tags.join(', ') : '';
-        summaryInput.value = data.summary || '';
-        relatedNotesInput.value = Array.isArray(data.relatedNotes) ? data.relatedNotes.join('\n') : '';
-
-        if (data.mode === 'source') {
-          sourceEditor.value = data.contentSource || '';
-          editor.innerHTML = sourceEditor.value ? sourceToHtml(sourceEditor.value) : (data.contentHtml || '');
-          currentMode = 'source';
-          setMode('source', false);
-        } else {
-          editor.innerHTML = data.contentHtml || '';
-          if (!editor.innerHTML && data.contentSource) {
-            editor.innerHTML = sourceToHtml(data.contentSource);
-          }
-          currentMode = 'visual';
-          setMode('visual', false);
-        }
-        updateModeUI();
-        updatePlaceholder();
-      } catch (_err) {
-        // ignore corrupted data
-      }
-    }
-
-    function setDraftDate() {
-      const now = nowDate();
-      if (!dateInput.value) dateInput.value = now;
-      updatedInput.value = now;
-    }
-
-    function getCurrentBlockElement(range) {
-      if (!range) return null;
-      let node = range.startContainer?.nodeType === Node.TEXT_NODE ? range.startContainer.parentElement : range.startContainer;
-      while (node && node !== editor) {
-        const tag = (node.tagName || '').toUpperCase();
-        if (!tag) break;
-        if (['P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'BLOCKQUOTE', 'UL', 'OL', 'LI', 'DIV'].includes(tag)) {
-          return node;
-        }
-        node = node.parentElement;
-      }
-      return node === editor ? editor : null;
-    }
-
-    function replaceWithBlock(node, tagName) {
-      if (!node || node === editor || !node.parentElement) return null;
-      const wrapper = document.createElement(tagName);
-      Array.from(node.childNodes).forEach((child) => {
-        wrapper.appendChild(child);
-      });
-      node.parentElement.replaceChild(wrapper, node);
-      return wrapper;
-    }
-
-    function normalizeColor(value) {
-      if (!value) return '';
-      return String(value).toLowerCase().trim();
-    }
-
-    function applyTextColor(color) {
-      if (!color) return;
-      const ok = document.execCommand('foreColor', false, color);
-      if (ok) return;
-      const selection = window.getSelection();
-      if (!selection?.rangeCount) return;
-      const range = selection.getRangeAt(0);
-      const text = range.toString();
-      if (!text) return;
-      const span = document.createElement('span');
-      span.style.color = color;
-      span.textContent = text;
-      range.deleteContents();
-      range.insertNode(span);
-      const newRange = document.createRange();
-      newRange.setStartAfter(span);
-      newRange.setEndAfter(span);
-      selection.removeAllRanges();
-      selection.addRange(newRange);
-    }
-
-    function applyHeading(level) {
-      const selection = window.getSelection();
-      if (!selection?.rangeCount) return;
-      const range = selection.getRangeAt(0);
-      const before = editor.innerHTML;
-      const ok = document.execCommand('formatBlock', false, `<h${level}>`);
-      const after = editor.innerHTML;
-      if (ok && before !== after) return;
-      const block = getCurrentBlockElement(range);
-      if (!block || block === editor) return;
-      const headingNode = replaceWithBlock(block, `H${level}`);
-      if (headingNode && headingNode !== editor) {
-        const newRange = document.createRange();
-        newRange.selectNodeContents(headingNode);
-        selection.removeAllRanges();
-        selection.addRange(newRange);
-      }
-    }
-
-    function applyList(command) {
-      const tagName = command === 'insertOrderedList' ? 'OL' : 'UL';
-      const selection = window.getSelection();
-      if (!selection?.rangeCount) return;
-      const range = selection.getRangeAt(0);
-      const before = editor.innerHTML;
-      const ok = document.execCommand(command, false, null);
-      const after = editor.innerHTML;
-      if (ok && before !== after) return;
-      const block = getCurrentBlockElement(range);
-      if (!block || block === editor) return;
-
-      if (block.tagName === 'UL' || block.tagName === 'OL') {
-        if (block.tagName !== tagName) {
-          const parent = block.parentElement;
-          if (!parent) return;
-          const list = document.createElement(tagName);
-          Array.from(block.childNodes).forEach((child) => list.appendChild(child));
-          parent.replaceChild(list, block);
-        }
-        return;
-      }
-
-      if (block.tagName === 'LI') {
-        const parent = block.parentElement;
-        if (!parent) return;
-        if (parent.tagName !== tagName) {
-          const list = document.createElement(tagName);
-          Array.from(parent.children).forEach((item) => {
-            list.appendChild(item);
-          });
-          parent.replaceWith(list);
-        }
-        return;
-      }
-
-      const list = document.createElement(tagName);
-      const li = document.createElement('li');
-      Array.from(block.childNodes).forEach((child) => li.appendChild(child));
-      list.appendChild(li);
-      if (block.parentElement) {
-        block.parentElement.replaceChild(list, block);
-      }
-      const newRange = document.createRange();
-      newRange.selectNodeContents(li);
-      selection.removeAllRanges();
-      selection.addRange(newRange);
-    }
-
-    function applyBlockquote() {
-      const selection = window.getSelection();
-      if (!selection?.rangeCount) return;
-      const range = selection.getRangeAt(0);
-      const before = editor.innerHTML;
-      const ok = document.execCommand('formatBlock', false, '<blockquote>');
-      const after = editor.innerHTML;
-      if (ok && before !== after) return;
-      const block = getCurrentBlockElement(range);
-      if (!block || block === editor) return;
-      if (block.tagName === 'BLOCKQUOTE') {
-        const firstChild = block.firstElementChild;
-        if (firstChild) {
-          block.parentElement?.replaceChild(firstChild, block);
-        }
-        return;
-      }
-      replaceWithBlock(block, 'BLOCKQUOTE');
-    }
-
-    function runCommand(command, colorValue) {
-      if (currentMode !== 'visual') {
-        stateTip.textContent = '先切到文档模式再执行命令。';
-        return;
-      }
-
-      if (['bold', 'italic', 'underline'].includes(command)) {
-        document.execCommand(command, false, null);
-      }
-
-      if (command === 'blockquote') {
-        applyBlockquote();
-      }
-      if (command === 'insertOrderedList' || command === 'insertUnorderedList') {
-        applyList(command);
-      }
-
-      if (command === 'h1') {
-        applyHeading(1);
-      }
-      if (command === 'h2') {
-        applyHeading(2);
-      }
-      if (command === 'h3') {
-        applyHeading(3);
-      }
-      if (command === 'h4') {
-        applyHeading(4);
-      }
-      if (command === 'h5') {
-        applyHeading(5);
-      }
-      if (command === 'h6') {
-        applyHeading(6);
-      }
-      if (command === 'foreColor') {
-        applyTextColor(normalizeColor(colorValue));
-      }
-      editor.focus();
-      updatePlaceholder();
-      saveDraft();
-    }
-
-    modeVisualBtn.addEventListener('click', () => {
-      if (currentMode === 'source') {
-        editor.innerHTML = sourceToHtml(sourceEditor.value);
-      }
-      setMode('visual');
-      stateTip.textContent = '已切换到文档模式。';
-    });
-
-    modeSourceBtn.addEventListener('click', () => {
-      if (currentMode === 'visual') {
-        sourceEditor.value = editorToMarkdown();
-      }
-      setMode('source');
-      editorPlaceholder.style.display = 'none';
-      stateTip.textContent = '已切换到源码模式。';
-    });
-
-    buildBtn.addEventListener('click', async () => {
-      const originalText = buildBtn.textContent;
-      let markdown = '';
-      let saveSuccess = false;
-      buildBtn.disabled = true;
-      buildBtn.textContent = '保存中...';
-      let shouldTouchUpdated = false;
-      try {
-        const missing = validateRequiredMetadata();
-        if (missing.length > 0) {
-          stateTip.textContent = `请先补齐必填项：${missing.join('、')}。`;
-          return;
-        }
-
-        const body = getBodyMarkdown();
-        if (!body) {
-          stateTip.textContent = '正文为空，先写一些内容。';
-          return;
-        }
-        markdown = buildMarkdown();
-        shouldTouchUpdated = true;
-        setDraftDate();
-        saveDraft();
-
-        const serverResult = await saveToServerMarkdown(markdown);
-        if (serverResult && serverResult.ok) {
-          saveSuccess = true;
-          stateTip.textContent = `已写入本地文件：${serverResult.path}，并更新草稿。`;
-          return;
-        }
-
-        const fileResult = await saveToProjectMarkdown(markdown);
-        if (fileResult && fileResult.ok) {
-          saveSuccess = true;
-          stateTip.textContent = `已写入本地文件：${fileResult.path}，并更新草稿。`;
-          return;
-        }
-
-        const serverReason = serverResult && serverResult.reason ? serverResult.reason : 'server-error';
-        const fileReason = fileResult && fileResult.reason ? fileResult.reason : 'filesystem-error';
-        if (fileReason === 'api-missing') {
-          projectRootHandle = null;
-          stateTip.textContent = `保存失败：未检测到浏览器文件系统 API（Show Directory Picker 不可用）。请在支持该接口的浏览器打开此页后重试。`;
-          return;
-        }
-        if (fileReason === 'invalid-root') {
-          projectRootHandle = null;
-        }
-        stateTip.textContent = `保存失败：${serverReason}；本地路径写入失败：${fileReason}。请先允许选择项目目录并确认写入权限。`;
-      } catch (_err) {
-        stateTip.textContent = '保存异常，请重试。';
-        if (!markdown) {
-          markdown = buildMarkdown();
-        }
-      } finally {
-        if (shouldTouchUpdated && saveSuccess) {
-          const now = nowDate();
-          updatedInput.value = now;
-        }
-        buildBtn.disabled = false;
-        buildBtn.textContent = originalText;
-      }
-    });
-
-    clearBtn.addEventListener('click', () => {
-        titleInput.value = '';
-      categoryInput.value = '技巧';
-      importanceInput.value = '2';
-      tagsInput.value = '';
-      summaryInput.value = '';
-      relatedNotesInput.value = '';
-      editor.innerHTML = '';
-      sourceEditor.value = '';
-      localStorage.removeItem(LS_KEY);
-      dateInput.value = nowDate();
-      updatedInput.value = nowDate();
-      updatePlaceholder();
-      currentMode = 'visual';
-      setMode('visual');
-      updateModeUI();
-      stateTip.textContent = '草稿已清空。';
-    });
-
-    commands.forEach((button) => {
-      button.addEventListener('click', () => {
-        const command = button.getAttribute('data-command');
-        if (!command) return;
-        const colorValue = button.getAttribute('data-color');
-        runCommand(command, colorValue);
-      });
-    });
-
-    editor.addEventListener('input', () => {
-      updatePlaceholder();
-      saveDraft();
-    });
-
-    editor.addEventListener('keyup', () => {
-      updatePlaceholder();
-    });
-
-    editor.addEventListener('paste', () => {
-      requestAnimationFrame(() => {
-        updatePlaceholder();
-      });
-    });
-
-    editor.addEventListener('compositionend', () => {
-      requestAnimationFrame(() => {
-        updatePlaceholder();
-      });
-    });
-
-    editor.addEventListener('keydown', (event) => {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'b') {
-        event.preventDefault();
-        runCommand('bold');
-      }
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'i') {
-        event.preventDefault();
-        runCommand('italic');
-      }
-    });
-
-    sourceEditor.addEventListener('input', () => {
-      saveDraft();
-    });
-
-    [titleInput, categoryInput, tagsInput, summaryInput, importanceInput, typeInput, relatedNotesInput].forEach((input) => {
-      if (!input) return;
-      input.addEventListener('input', () => {
-        setDraftDate();
-        saveDraft();
-        setFieldError(input, false);
-      });
-    });
-
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'hidden') {
-        saveDraft();
-      }
-    });
-
-    function init() {
-      loadDraft();
-      setDraftDate();
-      updateModeUI();
-      if (!currentMode || currentMode === 'visual') {
-        setMode('visual', false);
-      } else {
-        setMode('source', false);
-      }
-      editorPlaceholder.textContent = '在这里开始写作（支持标题、列表、引用、代码块、图片粘贴）。例如：输入 / 调出块级命令，或 Ctrl/Cmd+P 打开命令盘。';
-      updatePlaceholder();
-      requestAnimationFrame(() => {
-        updatePlaceholder();
-      });
-    }
-
-    init();
-  </script>
-
-  <style>
-    .editor-shell {
-      position: relative;
-      min-height: 56vh;
-    }
-
-    .writer-placeholder {
-      position: absolute;
-      inset: 0.9rem 1rem auto 1rem;
-      color: rgb(148 163 184);
-      white-space: pre-wrap;
-      pointer-events: none;
-      user-select: none;
-      font-size: 0.95rem;
-      line-height: 1.7;
-      z-index: 3;
-    }
-
-    .writer-canvas {
-      min-height: 56vh;
-      width: 100%;
-      border: 1px solid rgb(226 232 240);
-      border-radius: 0.7rem;
-      background-color: rgb(255, 255, 255);
-      padding: 0.9rem 1rem;
-      color: #0f172a;
-      outline: none;
-      line-height: 1.7;
-      box-sizing: border-box;
-      overflow: auto;
-      position: relative;
-      z-index: 1;
-    }
-
-    .writer-canvas:focus-within,
-    .writer-canvas:focus {
-      border-color: rgb(59 130 246);
-      box-shadow: 0 0 0 3px rgb(59 130 246 / 10%);
-    }
-
-    .writer-canvas.h-\[56vh\] {
-      min-height: 56vh;
-    }
-
-    .writer-canvas h1,
-    .writer-canvas h2,
-    .writer-canvas h3,
-    .writer-canvas h4,
-    .writer-canvas h5,
-    .writer-canvas h6 {
-      font-weight: 700;
-      margin-top: 1rem;
-      margin-bottom: 0.5rem;
-      line-height: 1.3;
-    }
-
-    .writer-canvas p {
-      margin: 0.45rem 0;
-    }
-
-    .field-invalid {
-      border-color: rgb(248 113 113) !important;
-      box-shadow: 0 0 0 2px rgb(248 113 113 / 20%);
-    }
-
-    .writer-canvas ul,
-    .writer-canvas ol {
-      padding-left: 1.4rem;
-      margin: 0.7rem 0;
-    }
-
-    .writer-canvas blockquote {
-      margin: 0.75rem 0;
-      padding-left: 0.9rem;
-      border-left: 3px solid rgb(148 163 184);
-      color: rgb(71 85 105);
-    }
-
-    .writer-canvas pre {
-      margin: 0.8rem 0;
-      padding: 0.8rem;
-      border: 1px solid rgb(226 232 240);
-      border-radius: 0.5rem;
-      background: rgb(241 245 249);
-      overflow-x: auto;
-      white-space: pre-wrap;
-    }
-
-    .writer-canvas img {
-      max-width: 100%;
-    }
-
-    .writer-canvas hr {
-      border: none;
-      border-top: 1px solid rgb(226 232 240);
-      margin: 1rem 0;
-    }
-
-    .btn-tool {
-      border: 1px solid rgb(203 213 225);
-      border-radius: 0.45rem;
-      padding: 0.25rem 0.58rem;
-      font-size: 0.8rem;
-      color: rgb(15 23 42);
-      background: white;
-    }
-
-    .btn-tool-active {
-      background: rgb(219 234 254);
-      border-color: rgb(59 130 246);
-      color: rgb(29 78 216);
-    }
-  </style>
+<BaseLayout title="写作 · 山不见我" description="Markdown 写作助手">
+  <div class="mx-auto max-w-3xl animate-fade-in">
+
+    <!-- Toolbar -->
+    <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center rounded-xl border border-slate-200 bg-white p-0.5 dark:border-slate-700 dark:bg-slate-900">
+        <button id="mode-visual" class="mode-tab mode-tab-active">可视化</button>
+        <button id="mode-source" class="mode-tab">Markdown</button>
+      </div>
+      <div class="flex gap-2">
+        <button id="save-btn" class="btn-primary text-sm" type="button">保存到文件</button>
+        <button id="copy-btn" class="btn-secondary text-sm" type="button">复制 Markdown</button>
+      </div>
+    </div>
+
+    <!-- Writing surface -->
+    <div class="surface-card-elevated">
+      <!-- Title -->
+      <input
+        id="title-input"
+        type="text"
+        class="w-full border-0 bg-transparent text-4xl font-black tracking-tight text-slate-900 outline-none placeholder:text-slate-300 dark:text-slate-100 dark:placeholder:text-slate-600"
+        placeholder="无标题"
+        autocomplete="off"
+      />
+
+      <!-- Visual editor -->
+      <div id="visual-editor" class="editor-visual" contenteditable="true" spellcheck="true"
+           data-placeholder="输入 `/` 选择块类型，或直接写 Markdown..."></div>
+
+      <!-- Source editor -->
+      <textarea
+        id="source-editor"
+        class="editor-source hidden"
+        placeholder="直接写 Markdown..."
+        spellcheck="true"
+      ></textarea>
+
+      <!-- Formatting toolbar (visual only) -->
+      <div id="format-bar" class="mt-3 flex flex-wrap items-center gap-1 border-t border-slate-100 pt-3 dark:border-slate-800">
+        <button data-cmd="bold" class="fmt-btn font-bold">B</button>
+        <button data-cmd="italic" class="fmt-btn"><i>I</i></button>
+        <button data-cmd="strike" class="fmt-btn"><s>S</s></button>
+        <button data-cmd="code" class="fmt-btn">&lt;/&gt;</button>
+        <span class="mx-1 text-slate-300">|</span>
+        <button data-cmd="h2" class="fmt-btn">H2</button>
+        <button data-cmd="h3" class="fmt-btn">H3</button>
+        <button data-cmd="ul" class="fmt-btn">• 列表</button>
+        <button data-cmd="ol" class="fmt-btn">1. 列表</button>
+        <button data-cmd="quote" class="fmt-btn">〝 引用</button>
+        <button data-cmd="hr" class="fmt-btn">— 分割</button>
+      </div>
+
+      <!-- Slash menu -->
+      <div id="slash-menu" class="slash-menu hidden">
+        <div data-slash="h1" class="slash-item"><span class="slash-icon">H1</span>一级标题</div>
+        <div data-slash="h2" class="slash-item"><span class="slash-icon">H2</span>二级标题</div>
+        <div data-slash="h3" class="slash-item"><span class="slash-icon">H3</span>三级标题</div>
+        <div class="slash-divider"></div>
+        <div data-slash="ul" class="slash-item"><span class="slash-icon">•</span>无序列表</div>
+        <div data-slash="ol" class="slash-item"><span class="slash-icon">1.</span>有序列表</div>
+        <div data-slash="quote" class="slash-item"><span class="slash-icon">〝</span>引用块</div>
+        <div class="slash-divider"></div>
+        <div data-slash="code" class="slash-item"><span class="slash-icon">&lt;/&gt;</span>代码块</div>
+        <div data-slash="hr" class="slash-item"><span class="slash-icon">—</span>分割线</div>
+      </div>
+    </div>
+
+    <!-- Metadata (collapsible) -->
+    <details class="surface-card mt-4" id="meta-details">
+      <summary class="cursor-pointer text-sm font-medium text-slate-500 select-none">元数据</summary>
+      <div class="mt-4 grid gap-3 sm:grid-cols-2">
+        <label class="block">
+          <span class="text-xs font-medium text-slate-500">类型</span>
+          <select id="meta-type" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-blue-400 focus:outline-none dark:border-slate-700 dark:bg-slate-800">
+            {TYPES.map((t) => <option value={t.value}>{t.label}</option>)}
+          </select>
+        </label>
+        <label class="block">
+          <span class="text-xs font-medium text-slate-500">分类</span>
+          <input id="meta-category" type="text" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-blue-400 focus:outline-none dark:border-slate-700 dark:bg-slate-800" placeholder="技术 / 概念" />
+        </label>
+        <label class="block">
+          <span class="text-xs font-medium text-slate-500">标签（逗号分隔）</span>
+          <input id="meta-tags" type="text" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-blue-400 focus:outline-none dark:border-slate-700 dark:bg-slate-800" placeholder="macOS, dns, astro" />
+        </label>
+        <label class="block">
+          <span class="text-xs font-medium text-slate-500">重要性</span>
+          <input id="meta-importance" type="number" min="1" max="5" value="2" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-blue-400 focus:outline-none dark:border-slate-700 dark:bg-slate-800" />
+        </label>
+        <label class="block sm:col-span-2">
+          <span class="text-xs font-medium text-slate-500">摘要</span>
+          <textarea id="meta-summary" rows="2" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-blue-400 focus:outline-none dark:border-slate-700 dark:bg-slate-800" placeholder="一句话描述"></textarea>
+        </label>
+      </div>
+    </details>
+
+    <!-- Status -->
+    <p id="status-bar" class="mt-3 text-center text-xs text-slate-400"></p>
+  </div>
 </BaseLayout>
+
+<script>
+  // ── DOM refs ──
+  const $ = (id: string) => document.getElementById(id)!;
+  const titleEl = $('title-input') as HTMLInputElement;
+  const visualEl = $('visual-editor') as HTMLDivElement;
+  const sourceEl = $('source-editor') as HTMLTextAreaElement;
+  const modeVisualBtn = $('mode-visual') as HTMLButtonElement;
+  const modeSourceBtn = $('mode-source') as HTMLButtonElement;
+  const formatBar = $('format-bar') as HTMLDivElement;
+  const slashMenu = $('slash-menu') as HTMLDivElement;
+  const typeEl = $('meta-type') as HTMLSelectElement;
+  const categoryEl = $('meta-category') as HTMLInputElement;
+  const tagsEl = $('meta-tags') as HTMLInputElement;
+  const importanceEl = $('meta-importance') as HTMLInputElement;
+  const summaryEl = $('meta-summary') as HTMLTextAreaElement;
+  const saveBtn = $('save-btn') as HTMLButtonElement;
+  const copyBtn = $('copy-btn') as HTMLButtonElement;
+  const statusBar = $('status-bar') as HTMLParagraphElement;
+
+  const LS_KEY = 'kb-editor-v2';
+  const DEBOUNCE_MS = 600;
+  let currentMode: 'visual' | 'source' = 'visual';
+  let draftTimer: ReturnType<typeof setTimeout>;
+
+  // ── Status ──
+  function status(msg: string, err = false) {
+    statusBar.textContent = msg;
+    statusBar.className = `mt-3 text-center text-xs ${err ? 'text-rose-500' : 'text-slate-400'}`;
+  }
+
+  // ── Markdown ↔ HTML (lightweight) ──
+  function esc(s: string) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function unesc(s: string) { return s.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"'); }
+
+  function inlineToHtml(t: string): string {
+    let s = esc(t);
+    s = s.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1">');
+    s = s.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
+    s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    s = s.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+    s = s.replace(/~~([^~]+)~~/g, '<del>$1</del>');
+    s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
+    return s;
+  }
+
+  function mdToHtml(md: string): string {
+    if (!md.trim()) return '';
+    const lines = md.split('\n');
+    const out: string[] = [];
+    let i = 0;
+    while (i < lines.length) {
+      const line = lines[i];
+      if (/^```/.test(line.trim())) {
+        const lang = line.trim().slice(3).trim();
+        i++;
+        const cl: string[] = [];
+        while (i < lines.length && !/^```/.test(lines[i].trim())) { cl.push(esc(lines[i])); i++; }
+        if (i < lines.length) i++;
+        out.push(`<pre data-lang="${esc(lang)}"><code>${cl.join('\n')}</code></pre>`);
+        continue;
+      }
+      const h = line.match(/^(#{1,6})\s+(.+)/);
+      if (h) { out.push(`<h${h[1].length}>${inlineToHtml(h[2])}</h${h[1].length}>`); i++; continue; }
+      if (/^(-{3,}|\*{3,})$/.test(line.trim())) { out.push('<hr>'); i++; continue; }
+      if (/^>\s?/.test(line)) {
+        const q: string[] = [];
+        while (i < lines.length && /^>\s?/.test(lines[i])) { q.push(lines[i].replace(/^>\s?/,'')); i++; }
+        out.push(`<blockquote><p>${q.map(inlineToHtml).join('<br>')}</p></blockquote>`);
+        continue;
+      }
+      if (/^[-*]\s+/.test(line)) {
+        const items: string[] = [];
+        while (i < lines.length && /^[-*]\s+/.test(lines[i])) { items.push(`<li>${inlineToHtml(lines[i].replace(/^[-*]\s+/,''))}</li>`); i++; }
+        out.push(`<ul>${items.join('')}</ul>`);
+        continue;
+      }
+      if (/^\d+\.\s+/.test(line)) {
+        const items: string[] = [];
+        while (i < lines.length && /^\d+\.\s+/.test(lines[i])) { items.push(`<li>${inlineToHtml(lines[i].replace(/^\d+\.\s+/,''))}</li>`); i++; }
+        out.push(`<ol>${items.join('')}</ol>`);
+        continue;
+      }
+      if (!line.trim()) { out.push('<p><br></p>'); i++; continue; }
+      out.push(`<p>${inlineToHtml(line)}</p>`);
+      i++;
+    }
+    return out.join('');
+  }
+
+  function serializeNode(node: ChildNode): string {
+    if (node.nodeType === Node.TEXT_NODE) return node.textContent || '';
+    if (node.nodeType !== Node.ELEMENT_NODE) return '';
+    const el = node as HTMLElement;
+    const tag = el.tagName.toLowerCase();
+    const kids = Array.from(el.childNodes).map(serializeNode).join('');
+
+    switch (tag) {
+      case 'strong': case 'b': return `**${kids}**`;
+      case 'em': case 'i': return `*${kids}*`;
+      case 'del': case 's': return `~~${kids}~~`;
+      case 'code': return `\`${kids}\``;
+      case 'br': return '\n';
+      case 'hr': return '---';
+      case 'h1': return `# ${kids}`;
+      case 'h2': return `## ${kids}`;
+      case 'h3': return `### ${kids}`;
+      case 'h4': return `#### ${kids}`;
+      case 'h5': return `##### ${kids}`;
+      case 'h6': return `###### ${kids}`;
+      case 'p': return kids.trim() || '';
+      case 'blockquote': return `> ${kids.replace(/\n/g, '\n> ')}`;
+      case 'pre': {
+        const lang = el.getAttribute('data-lang') || '';
+        return `\`\`\`${lang}\n${el.textContent || ''}\n\`\`\``;
+      }
+      case 'ul': return Array.from(el.querySelectorAll(':scope > li')).map(li => `- ${serializeNode(li)}`).join('\n');
+      case 'ol': return Array.from(el.querySelectorAll(':scope > li')).map((li, i) => `${i+1}. ${serializeNode(li)}`).join('\n');
+      case 'li': return Array.from(el.childNodes).map(serializeNode).join('').replace(/\n/g, ' ').trim();
+      case 'a': return `[${kids}](${el.getAttribute('href')||'#'})`;
+      case 'img': return `![${el.getAttribute('alt')||''}](${el.getAttribute('src')||''})`;
+      default: return kids;
+    }
+  }
+
+  function htmlToMd(): string {
+    const container = document.createElement('div');
+    container.innerHTML = visualEl.innerHTML || '';
+    return Array.from(container.childNodes).map(serializeNode).join('\n').replace(/\n{3,}/g, '\n\n').trim();
+  }
+
+  // ── Mode switching ──
+  function setMode(mode: 'visual' | 'source') {
+    if (mode === currentMode) return;
+    if (currentMode === 'visual') {
+      sourceEl.value = htmlToMd();
+    } else {
+      visualEl.innerHTML = mdToHtml(sourceEl.value);
+    }
+    currentMode = mode;
+    if (mode === 'visual') {
+      visualEl.classList.remove('hidden');
+      sourceEl.classList.add('hidden');
+      formatBar.classList.remove('hidden');
+      modeVisualBtn.classList.add('mode-tab-active');
+      modeSourceBtn.classList.remove('mode-tab-active');
+    } else {
+      visualEl.classList.add('hidden');
+      sourceEl.classList.remove('hidden');
+      formatBar.classList.add('hidden');
+      hideSlash();
+      modeSourceBtn.classList.add('mode-tab-active');
+      modeVisualBtn.classList.remove('mode-tab-active');
+    }
+  }
+
+  // ── Slash menu ──
+  let slashIdx = 0;
+  let slashVisible = false;
+
+  function showSlash(x: number, y: number) {
+    slashMenu.style.left = `${x}px`;
+    slashMenu.style.top = `${y}px`;
+    slashMenu.classList.remove('hidden');
+    slashVisible = true;
+    slashIdx = 0;
+    highlightSlash();
+  }
+  function hideSlash() { slashMenu.classList.add('hidden'); slashVisible = false; }
+
+  function highlightSlash() {
+    slashMenu.querySelectorAll('.slash-item').forEach((el, i) => el.classList.toggle('slash-active', i === slashIdx));
+  }
+
+  function applySlashBlock(tag: string) {
+    const sel = window.getSelection();
+    if (!sel?.rangeCount) return;
+    const range = sel.getRangeAt(0);
+    const block = getBlock(range.startContainer);
+    if (!block || block === visualEl) return;
+
+    // remove "/" character
+    const txt = block.textContent || '';
+    const pos = txt.indexOf('/');
+    if (pos >= 0 && block.firstChild?.nodeType === Node.TEXT_NODE) {
+      (block.firstChild as Text).textContent = txt.slice(0, pos);
+    }
+
+    let el: HTMLElement;
+    if (tag === 'pre') {
+      el = document.createElement('pre');
+      el.innerHTML = '<code><br></code>';
+    } else if (tag === 'hr') {
+      el = document.createElement('hr');
+      const p = document.createElement('p');
+      p.innerHTML = '<br>';
+      block.replaceWith(el);
+      el.after(p);
+      hideSlash();
+      placeCaret(p);
+      return;
+    } else {
+      el = document.createElement(tag);
+      el.innerHTML = '<br>';
+    }
+    block.replaceWith(el);
+    hideSlash();
+    placeCaret(el);
+  }
+
+  function placeCaret(el: HTMLElement) {
+    const sel = window.getSelection();
+    const r = document.createRange();
+    r.selectNodeContents(el);
+    r.collapse(true);
+    sel?.removeAllRanges();
+    sel?.addRange(r);
+    visualEl.focus();
+  }
+
+  function getBlock(node: Node | null): HTMLElement | null {
+    while (node && node !== visualEl) {
+      if (node.nodeType === Node.ELEMENT_NODE) {
+        const t = (node as HTMLElement).tagName.toLowerCase();
+        if (['p','h1','h2','h3','h4','h5','h6','blockquote','pre','ul','ol','li','hr'].includes(t)) return node as HTMLElement;
+      }
+      node = node.parentNode;
+    }
+    return null;
+  }
+
+  // ── Toolbar commands ──
+  function execCmd(cmd: string) {
+    if (currentMode !== 'visual') return;
+    const sel = window.getSelection();
+    if (!sel?.rangeCount) return;
+    const range = sel.getRangeAt(0);
+    const block = getBlock(range.startContainer);
+
+    switch (cmd) {
+      case 'bold': wrapInline('strong'); break;
+      case 'italic': wrapInline('em'); break;
+      case 'strike': wrapInline('del'); break;
+      case 'code': wrapInline('code'); break;
+      case 'h2':
+      case 'h3':
+        if (block && !/^(h[1-6]|pre|ul|ol|blockquote|hr)$/.test(block.tagName.toLowerCase())) {
+          const h = document.createElement(cmd);
+          h.innerHTML = block.innerHTML;
+          block.replaceWith(h);
+          placeCaretEnd(h);
+        }
+        break;
+      case 'ul':
+      case 'ol': {
+        if (!block || block === visualEl) return;
+        const list = document.createElement(cmd);
+        const li = document.createElement('li');
+        li.innerHTML = block.innerHTML || '<br>';
+        list.appendChild(li);
+        block.replaceWith(list);
+        placeCaretEnd(li);
+        break;
+      }
+      case 'quote':
+        if (block && block.tagName.toLowerCase() !== 'blockquote') {
+          const bq = document.createElement('blockquote');
+          bq.innerHTML = block.innerHTML ? `<p>${block.innerHTML}</p>` : '<p><br></p>';
+          block.replaceWith(bq);
+          placeCaretEnd(bq);
+        }
+        break;
+      case 'hr':
+        if (block) {
+          const hr = document.createElement('hr');
+          const p = document.createElement('p'); p.innerHTML = '<br>';
+          block.replaceWith(hr);
+          hr.after(p);
+          placeCaret(p);
+        }
+        break;
+    }
+    visualEl.focus();
+    saveDraft();
+  }
+
+  function wrapInline(tag: string) {
+    const sel = window.getSelection();
+    if (!sel?.rangeCount || sel.isCollapsed) return;
+    const range = sel.getRangeAt(0);
+    try { range.surroundContents(document.createElement(tag)); } catch { /* cross-node */ }
+    sel.removeAllRanges();
+  }
+
+  function placeCaretEnd(el: HTMLElement) {
+    const sel = window.getSelection();
+    const r = document.createRange();
+    r.selectNodeContents(el);
+    r.collapse(false);
+    sel?.removeAllRanges();
+    sel?.addRange(r);
+  }
+
+  // ── Markdown shortcut detection ──
+  function detectShortcuts() {
+    if (currentMode !== 'visual') return;
+    const sel = window.getSelection();
+    if (!sel?.rangeCount) return;
+    const block = getBlock(sel.getRangeAt(0).startContainer);
+    if (!block || block === visualEl || block.tagName === 'PRE') return;
+    const text = block.textContent || '';
+
+    const h = text.match(/^(#{1,6})\s(.+)/);
+    const ul = text.match(/^[-*]\s(.+)/);
+    const q = text.match(/^>\s(.+)/);
+
+    if (h) {
+      const lv = h[1].length;
+      const el = document.createElement(`h${lv}`);
+      el.innerHTML = inlineToHtml(h[2]);
+      block.replaceWith(el);
+      placeCaretEnd(el);
+    } else if (ul) {
+      const list = document.createElement('ul');
+      const li = document.createElement('li');
+      li.innerHTML = inlineToHtml(ul[1]);
+      list.appendChild(li);
+      block.replaceWith(list);
+      placeCaretEnd(li);
+    } else if (q) {
+      const bq = document.createElement('blockquote');
+      bq.innerHTML = `<p>${inlineToHtml(q[1])}</p>`;
+      block.replaceWith(bq);
+      placeCaretEnd(bq);
+    }
+  }
+
+  // ── Draft persistence ──
+  function saveDraft() {
+    clearTimeout(draftTimer);
+    draftTimer = setTimeout(() => {
+      const data = {
+        title: titleEl.value,
+        type: typeEl.value,
+        category: categoryEl.value,
+        tags: tagsEl.value,
+        importance: importanceEl.value,
+        summary: summaryEl.value,
+        bodyHtml: visualEl.innerHTML,
+        bodyMd: sourceEl.value,
+        mode: currentMode,
+        savedAt: Date.now(),
+      };
+      localStorage.setItem(LS_KEY, JSON.stringify(data));
+      status('草稿已保存', false);
+    }, DEBOUNCE_MS);
+  }
+
+  function loadDraft() {
+    const params = new URLSearchParams(window.location.search);
+    const hasParams = params.has('title') || params.has('body') || params.has('type');
+
+    if (hasParams) {
+      titleEl.value = params.get('title') || '';
+      typeEl.value = params.get('type') || 'note';
+      categoryEl.value = params.get('category') || '';
+      tagsEl.value = params.get('tags') || '';
+      importanceEl.value = params.get('importance') || '2';
+      summaryEl.value = params.get('summary') || '';
+      const body = params.get('body');
+      if (body) {
+        const decoded = decodeURIComponent(body);
+        visualEl.innerHTML = mdToHtml(decoded);
+        sourceEl.value = decoded;
+      }
+      status('已加载文章内容', false);
+      saveDraft();
+      return;
+    }
+
+    const raw = localStorage.getItem(LS_KEY);
+    if (!raw) { status('新文章', false); return; }
+    try {
+      const d = JSON.parse(raw);
+      titleEl.value = d.title || '';
+      typeEl.value = d.type || 'note';
+      categoryEl.value = d.category || '';
+      tagsEl.value = d.tags || '';
+      importanceEl.value = d.importance || '2';
+      summaryEl.value = d.summary || '';
+      visualEl.innerHTML = d.bodyHtml || mdToHtml(d.bodyMd || '');
+      sourceEl.value = d.bodyMd || '';
+      if (d.mode === 'source') setMode('source');
+      status('已恢复草稿', false);
+    } catch { status('新文章', false); }
+  }
+
+  // ── Build markdown ──
+  function buildMarkdown(): string {
+    const title = titleEl.value.trim() || '无标题';
+    const body = currentMode === 'source' ? sourceEl.value.trim() : htmlToMd();
+    const now = new Date().toISOString().slice(0, 10);
+    const tags = tagsEl.value.split(',').map(s => s.trim()).filter(Boolean);
+    const type = typeEl.value || 'note';
+    const category = categoryEl.value.trim() || '技巧';
+    const importance = Math.min(Math.max(Number(importanceEl.value) || 2, 1), 5);
+    const summary = summaryEl.value.trim() || '待补充';
+
+    return [
+      '---',
+      `title: ${JSON.stringify(title)}`,
+      `date: ${now}`,
+      `updated: ${now}`,
+      `summary: ${JSON.stringify(summary)}`,
+      `tags: [${tags.map(t => JSON.stringify(t)).join(', ')}]`,
+      `category: ${JSON.stringify(category)}`,
+      `type: ${JSON.stringify(type)}`,
+      `importance: ${importance}`,
+      'draft: false',
+      '---',
+      '',
+      body || '正文内容待补充。',
+      '',
+    ].join('\n');
+  }
+
+  function buildFileName(): string {
+    const title = titleEl.value.trim() || '无标题';
+    const now = new Date().toISOString().slice(0, 10);
+    const slug = title.replace(/\s+/g, '-').replace(/[\\/:*?"<>|]/g, '').slice(0, 60) || 'untitled';
+    return `${now}-${slug}.md`;
+  }
+
+  // ── Save ──
+  async function save() {
+    const title = titleEl.value.trim();
+    const category = categoryEl.value.trim();
+    const summary = summaryEl.value.trim();
+    if (!title) { status('请填写标题', true); return; }
+    if (!category) { status('请填写分类', true); return; }
+    if (!summary) { status('请填写摘要', true); return; }
+
+    const markdown = buildMarkdown();
+    const filename = buildFileName();
+    const type = typeEl.value || 'note';
+
+    saveBtn.textContent = '保存中...';
+    saveBtn.setAttribute('disabled', 'true');
+
+    try {
+      const resp = await fetch('/api/editor-save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ markdown, filename, type }),
+      });
+      const result = await resp.json();
+      if (result.ok) {
+        status(`已保存: ${result.path}${result.commit ? ` (commit: ${result.commit})` : ''}`, false);
+        saveDraft();
+      } else {
+        status(`保存失败: ${result.reason}`, true);
+      }
+    } catch (e: any) {
+      status(`网络错误: ${e.message || '请确认 dev server 已启动'}`, true);
+    } finally {
+      saveBtn.textContent = '保存到文件';
+      saveBtn.removeAttribute('disabled');
+    }
+  }
+
+  // ── Copy ──
+  function copyMd() {
+    const md = buildMarkdown();
+    navigator.clipboard.writeText(md).then(() => {
+      status('Markdown 已复制到剪贴板', false);
+      setTimeout(() => status('', false), 2000);
+    }).catch(() => status('复制失败', true));
+  }
+
+  // ── Event bindings ──
+  modeVisualBtn.addEventListener('click', () => setMode('visual'));
+  modeSourceBtn.addEventListener('click', () => setMode('source'));
+
+  visualEl.addEventListener('input', () => { detectShortcuts(); saveDraft(); });
+  sourceEl.addEventListener('input', () => saveDraft());
+
+  visualEl.addEventListener('keydown', (e: KeyboardEvent) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'b') { e.preventDefault(); execCmd('bold'); }
+    if ((e.metaKey || e.ctrlKey) && e.key === 'i') { e.preventDefault(); execCmd('italic'); }
+    if ((e.metaKey || e.ctrlKey) && e.key === 's') { e.preventDefault(); save(); }
+
+    // Slash menu nav
+    if (slashVisible) {
+      const items = slashMenu.querySelectorAll('.slash-item');
+      if (e.key === 'ArrowDown') { e.preventDefault(); slashIdx = (slashIdx + 1) % items.length; highlightSlash(); }
+      if (e.key === 'ArrowUp') { e.preventDefault(); slashIdx = (slashIdx - 1 + items.length) % items.length; highlightSlash(); }
+      if (e.key === 'Enter' || e.key === 'Tab') {
+        e.preventDefault();
+        const tag = (items[slashIdx] as HTMLElement)?.getAttribute('data-slash') || '';
+        applySlashBlock(tag);
+      }
+      if (e.key === 'Escape') { e.preventDefault(); hideSlash(); }
+    }
+
+    // Detect "/" at line start
+    if (e.key === '/') {
+      setTimeout(() => {
+        const sel = window.getSelection();
+        if (!sel?.rangeCount) return;
+        const block = getBlock(sel.getRangeAt(0).startContainer);
+        const txt = block?.textContent?.trim() || '';
+        if (txt === '/' || txt.startsWith('/')) {
+          const rect = (block as HTMLElement)?.getBoundingClientRect?.();
+          if (rect) showSlash(rect.left, rect.bottom + 4);
+        }
+      }, 10);
+    }
+
+    // Enter on empty heading → convert to paragraph
+    if (e.key === 'Enter') {
+      setTimeout(() => {
+        const sel = window.getSelection();
+        if (!sel?.rangeCount) return;
+        const block = getBlock(sel.getRangeAt(0).startContainer);
+        if (block && /^h[1-6]$/.test(block.tagName.toLowerCase()) && !block.textContent?.trim()) {
+          const p = document.createElement('p');
+          p.innerHTML = '<br>';
+          block.replaceWith(p);
+          placeCaret(p);
+        }
+      }, 10);
+    }
+  });
+
+  visualEl.addEventListener('click', () => hideSlash());
+
+  document.querySelectorAll('[data-cmd]').forEach(btn => {
+    btn.addEventListener('click', () => execCmd(btn.getAttribute('data-cmd') || ''));
+  });
+
+  slashMenu.querySelectorAll('.slash-item').forEach(item => {
+    item.addEventListener('click', () => {
+      applySlashBlock(item.getAttribute('data-slash') || '');
+    });
+  });
+
+  [titleEl, typeEl, categoryEl, tagsEl, importanceEl, summaryEl].forEach(el =>
+    el?.addEventListener('input', () => saveDraft())
+  );
+
+  saveBtn.addEventListener('click', () => save());
+  copyBtn.addEventListener('click', () => copyMd());
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') saveDraft();
+  });
+
+  // ── Init ──
+  loadDraft();
+</script>
+
+<style>
+  /* Mode tabs */
+  .mode-tab {
+    padding: 0.35rem 1rem;
+    border-radius: 0.6rem;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: #64748b;
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .mode-tab-active {
+    background: #1e293b;
+    color: white;
+  }
+  .dark .mode-tab { color: #94a3b8; }
+  .dark .mode-tab-active { background: #e2e8f0; color: #0f172a; }
+
+  /* Editor surfaces */
+  .editor-visual {
+    min-height: 50vh;
+    width: 100%;
+    border: 0;
+    outline: none;
+    font-size: 0.95rem;
+    line-height: 1.75;
+    color: #1e293b;
+    padding: 0.5rem 0 1rem;
+    overflow-y: auto;
+  }
+  .dark .editor-visual { color: #e2e8f0; }
+
+  .editor-visual[data-placeholder]:empty::before {
+    content: attr(data-placeholder);
+    color: #94a3b8;
+    pointer-events: none;
+    font-style: italic;
+  }
+
+  .editor-source {
+    min-height: 50vh;
+    width: 100%;
+    border: 0;
+    outline: none;
+    resize: vertical;
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+    font-size: 0.88rem;
+    line-height: 1.65;
+    color: #1e293b;
+    background: transparent;
+    padding: 0.5rem 0 1rem;
+  }
+  .dark .editor-source { color: #e2e8f0; }
+
+  /* Visual editor typography */
+  .editor-visual h1 { font-size: 1.8rem; font-weight: 800; margin: 1.5rem 0 0.5rem; line-height: 1.3; }
+  .editor-visual h2 { font-size: 1.4rem; font-weight: 700; margin: 1.25rem 0 0.4rem; line-height: 1.35; }
+  .editor-visual h3 { font-size: 1.15rem; font-weight: 700; margin: 1rem 0 0.3rem; line-height: 1.4; }
+  .editor-visual p { margin: 0.35rem 0; }
+  .editor-visual ul, .editor-visual ol { padding-left: 1.5rem; margin: 0.5rem 0; }
+  .editor-visual li { margin: 0.15rem 0; }
+  .editor-visual blockquote {
+    margin: 0.6rem 0; padding-left: 0.9rem;
+    border-left: 3px solid #94a3b8; color: #475569;
+  }
+  .dark .editor-visual blockquote { color: #94a3b8; border-color: #64748b; }
+  .editor-visual pre {
+    margin: 0.6rem 0; padding: 0.75rem;
+    background: #f1f5f9; border-radius: 0.5rem;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 0.85rem; line-height: 1.5;
+    overflow-x: auto; white-space: pre-wrap;
+  }
+  .dark .editor-visual pre { background: #1e293b; }
+  .editor-visual code {
+    background: #f1f5f9; padding: 0.1rem 0.35rem; border-radius: 0.25rem;
+    font-size: 0.88em;
+  }
+  .dark .editor-visual code { background: #334155; }
+  .editor-visual pre code { background: none; padding: 0; }
+  .editor-visual hr { border: none; border-top: 1px solid #e2e8f0; margin: 1rem 0; }
+  .dark .editor-visual hr { border-color: #334155; }
+  .editor-visual a { color: #2563eb; text-decoration: underline; }
+  .editor-visual img { max-width: 100%; border-radius: 0.5rem; }
+
+  /* Formatting buttons */
+  .fmt-btn {
+    border: 1px solid transparent;
+    border-radius: 0.375rem;
+    padding: 0.2rem 0.45rem;
+    font-size: 0.78rem;
+    color: #475569;
+    background: transparent;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+  }
+  .fmt-btn:hover { background: #f1f5f9; border-color: #cbd5e1; }
+  .dark .fmt-btn { color: #94a3b8; }
+  .dark .fmt-btn:hover { background: #1e293b; border-color: #475569; }
+
+  /* Slash menu */
+  .slash-menu {
+    position: absolute;
+    z-index: 50;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.75rem;
+    box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.1), 0 4px 10px -6px rgb(0 0 0 / 0.1);
+    padding: 0.4rem;
+    min-width: 200px;
+  }
+  .dark .slash-menu { background: #1e293b; border-color: #334155; }
+  .slash-item {
+    display: flex; align-items: center; gap: 0.5rem;
+    padding: 0.4rem 0.6rem; border-radius: 0.4rem;
+    font-size: 0.85rem; cursor: pointer;
+    color: #334155;
+  }
+  .dark .slash-item { color: #cbd5e1; }
+  .slash-item:hover, .slash-active { background: #eff6ff; color: #1d4ed8; }
+  .dark .slash-item:hover, .dark .slash-active { background: #1e3a5f; color: #93c5fd; }
+  .slash-icon {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 1.5rem; height: 1.5rem; border-radius: 0.3rem;
+    background: #f1f5f9; font-size: 0.7rem; font-weight: 700;
+    font-family: monospace; flex-shrink: 0;
+  }
+  .dark .slash-icon { background: #334155; }
+  .slash-divider { height: 1px; background: #e2e8f0; margin: 0.25rem 0; }
+  .dark .slash-divider { background: #334155; }
+
+  /* Details/summary */
+  details summary::marker { font-size: 0.7rem; }
+</style>
