@@ -3,7 +3,7 @@ const { autofocus = false } = Astro.props as { autofocus?: boolean };
 const currentQuery = Astro.url.searchParams.get('q') ?? '';
 ---
 
-<form class="flex" role="search" action="/search" method="get">
+<form class="search-form liquid-control" role="search" action="/search" method="get">
   <label for="q" class="sr-only">搜索</label>
   <input
     id="q"
@@ -12,14 +12,10 @@ const currentQuery = Astro.url.searchParams.get('q') ?? '';
     value={currentQuery}
     placeholder="搜索标题、摘要、标签"
     autocomplete="off"
-    class="w-56 rounded-l-md border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 transition focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:focus:border-blue-500 dark:focus:ring-blue-900"
+    class="search-input"
     {autofocus}
   />
-  <button
-    type="submit"
-    class="rounded-r-md border border-slate-300 bg-slate-100 px-3 py-1.5 text-sm hover:bg-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:hover:bg-slate-600"
-    aria-label="执行搜索"
-  >
-    搜索
+  <button type="submit" class="search-submit" aria-label="执行搜索">
+    <span aria-hidden="true">⌕</span>
   </button>
 </form>

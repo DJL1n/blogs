@@ -14,9 +14,10 @@ const allPosts = [
 const published = allPosts.filter((p) => !p.data.draft);
 const sorted = published.sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
 const recent = sorted.slice(0, 6);
+const heroRecent = sorted.slice(0, 3);
 
 const blogCount = published.filter((p) => p.data.type === 'blog').length;
-const noteCount = published.filter((p) => p.data.type === 'notes').length;
+const noteCount = published.filter((p) => p.data.type === 'note').length;
 const importantCount = published.filter((p) => p.data.type === 'important').length;
 
 const tags = Array.from(
@@ -27,166 +28,1099 @@ const categories = Array.from(
   new Set(published.map((p) => p.data.category.toLowerCase()))
 ).sort();
 
-// 从内容集合读取计划与待办
 const planPost = (await getCollection('important')).find((p) => p.slug === 'long-term-plan');
 const todoPost = (await getCollection('important')).find((p) => p.slug === 'short-term-todo');
-
 const longTermPlan = planPost?.data.plan ?? [];
 const shortTermTodos = todoPost?.data.todos ?? [];
+
+const formatDate = (date: Date) =>
+  new Intl.DateTimeFormat('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(date);
+
+const metrics = [
+  { label: '文章', value: published.length, tone: 'cyan' },
+  { label: '博客', value: blogCount, tone: 'green' },
+  { label: '笔记', value: noteCount, tone: 'amber' },
+  { label: '记录', value: importantCount, tone: 'rose' },
+];
+
+const primaryActions = [
+  { label: '博客', href: '/blog', style: 'btn-primary' },
+  { label: '笔记', href: '/notes', style: 'btn-secondary' },
+  { label: '重要记录', href: '/important', style: 'btn-secondary' },
+  { label: '写作', href: '/editor', style: 'btn-secondary' },
+];
+
+const focusAreas = [
+  'Computer Vision',
+  'SLAM / 3DGS',
+  'Tooling',
+  'Research Notes',
+];
 ---
 
 <BaseLayout title="山不见我" description="技术笔记 · 长期写作 · 可迁移的个人站点">
-  <div class="space-y-10 animate-fade-in">
+  <canvas id="liquid-field" class="liquid-field" aria-hidden="true"></canvas>
 
-    <!-- ====== Hero —— 个人介绍 ====== -->
-    <section class="surface-card-elevated relative overflow-hidden">
-      <div class="absolute right-4 top-4 h-24 w-24 rounded-full bg-gradient-to-br from-blue-400 to-violet-500 opacity-10 blur-2xl"></div>
-      <div class="absolute -left-8 -top-8 h-32 w-32 rounded-full bg-gradient-to-br from-emerald-300 to-sky-400 opacity-5 blur-3xl"></div>
-      <div class="relative flex flex-col gap-6 sm:flex-row sm:items-start">
-        <!-- 头像占位 -->
-        <div class="flex h-20 w-20 flex-shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-slate-700 to-slate-900 text-3xl shadow-lg dark:from-slate-200 dark:to-slate-400">
-          🏔️
-        </div>
-        <div class="min-w-0 flex-1">
-          <p class="inline-flex rounded-full bg-gradient-to-r from-blue-50 to-indigo-50 px-3 py-1 text-xs font-semibold text-blue-700 ring-1 ring-blue-200/60 dark:from-slate-800 dark:to-indigo-950 dark:text-blue-300 dark:ring-blue-800">
-            山不见我，我自见山
-          </p>
-          <h1 class="mt-3 text-3xl font-black tracking-tight sm:text-4xl">
-            山不见我
-          </h1>
-          <p class="mt-3 max-w-xl leading-relaxed text-slate-600 dark:text-slate-300">
-            这里是我整理技术笔记、记录思考、沉淀知识的地方。内容涵盖计算机视觉、SLAM、三维重建、开发工具链等方向。追求长期可维护的静态写作，而非流量驱动的内容农场。
-          </p>
-          <!-- 社交链接 -->
-          <div class="mt-4 flex flex-wrap gap-2 text-sm">
-            <a href="https://github.com/Djl1n" class="btn-secondary text-xs py-1.5 px-3" target="_blank">GitHub</a>
-            <a href="/about" class="btn-secondary text-xs py-1.5 px-3">关于我</a>
-            <a href="/rss.xml" class="btn-secondary text-xs py-1.5 px-3">RSS</a>
-          </div>
-        </div>
+  <div class="home-stage">
+    <section class="hero-liquid" id="hero-section">
+      <div class="hero-backplate" aria-hidden="true">
+        <span class="glass-ribbon glass-ribbon-a"></span>
+        <span class="glass-ribbon glass-ribbon-b"></span>
+        <span class="glass-ribbon glass-ribbon-c"></span>
       </div>
 
-      <!-- Stats row -->
-      <div class="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <div class="rounded-xl border border-blue-100 bg-blue-50/60 p-3 text-center dark:border-blue-900 dark:bg-blue-950/40">
-          <p class="text-2xl font-black text-blue-700 dark:text-blue-300">{published.length}</p>
-          <p class="text-xs font-medium text-blue-600/70 dark:text-blue-400/70">文章</p>
-        </div>
-        <div class="rounded-xl border border-indigo-100 bg-indigo-50/60 p-3 text-center dark:border-indigo-900 dark:bg-indigo-950/40">
-          <p class="text-2xl font-black text-indigo-700 dark:text-indigo-300">{blogCount}</p>
-          <p class="text-xs font-medium text-indigo-600/70 dark:text-indigo-400/70">博客</p>
-        </div>
-        <div class="rounded-xl border border-violet-100 bg-violet-50/60 p-3 text-center dark:border-violet-900 dark:bg-violet-950/40">
-          <p class="text-2xl font-black text-violet-700 dark:text-violet-300">{noteCount}</p>
-          <p class="text-xs font-medium text-violet-600/70 dark:text-violet-400/70">笔记</p>
-        </div>
-        <div class="rounded-xl border border-emerald-100 bg-emerald-50/60 p-3 text-center dark:border-emerald-900 dark:bg-emerald-950/40">
-          <p class="text-2xl font-black text-emerald-700 dark:text-emerald-300">{importantCount}</p>
-          <p class="text-xs font-medium text-emerald-600/70 dark:text-emerald-400/70">记录</p>
-        </div>
+      <div class="hero-copy reveal">
+        <p class="hero-kicker">山不见我，我自见山</p>
+        <h1>
+          <span>山不见我</span>
+          <span class="hero-title-line">长期知识库</span>
+        </h1>
+        <p class="hero-intro">
+          整理技术笔记、研究脉络和重要记录。内容保持静态、可迁移、可长期维护，页面只服务于阅读、检索和沉淀。
+        </p>
       </div>
 
-      <!-- Quick actions -->
-      <div class="mt-6 flex flex-wrap gap-3">
-        <a href="/blog" class="btn-primary">博客</a>
-        <a href="/notes" class="btn-secondary">笔记</a>
-        <a href="/important" class="btn-secondary">重要记录</a>
-        <a href="/editor" class="btn-secondary">写作</a>
+      <div class="hero-actions reveal reveal-delay-1">
+        {primaryActions.map((action) => (
+          <a href={action.href} class={`${action.style} magnetic`}>{action.label}</a>
+        ))}
+      </div>
+
+      <div class="hero-focus reveal reveal-delay-2" aria-label="关注方向">
+        {focusAreas.map((area) => (
+          <span>{area}</span>
+        ))}
       </div>
     </section>
 
-    <!-- ====== 双列面板 ====== -->
-    <div class="grid gap-6 lg:grid-cols-2">
-      <!-- 长期计划 -->
-      <section class="surface-card">
-        <div class="flex items-center justify-between">
-          <h2 class="section-title">长期计划</h2>
+    <section class="signal-grid" aria-label="站点概览">
+      {metrics.map((metric, index) => (
+        <article
+          class={`metric-panel liquid-panel reveal reveal-delay-${Math.min(index + 1, 4)}`}
+          data-liquid-panel
+          data-tilt
+          data-tone={metric.tone}
+        >
+          <p class="metric-value">
+            <span class="counter" data-target={metric.value}>0</span>
+          </p>
+          <p class="metric-label">{metric.label}</p>
+        </article>
+      ))}
+
+      <article class="latest-panel liquid-panel reveal reveal-delay-2" data-liquid-panel data-tilt>
+        <div class="panel-heading">
+          <h2>近期沉淀</h2>
+          <a href="/blog" class="panel-link magnetic">全部</a>
+        </div>
+        <div class="latest-list">
+          {heroRecent.length > 0 ? (
+            heroRecent.map((post) => (
+              <a href={post.path} class="latest-row">
+                <span class="latest-date">{formatDate(post.data.date)}</span>
+                <span class="latest-title">{post.data.title}</span>
+              </a>
+            ))
+          ) : (
+            <p class="empty-copy">暂无发布内容。</p>
+          )}
+        </div>
+      </article>
+    </section>
+
+    <section class="workbench-grid" aria-label="计划与待办">
+      <article class="liquid-panel reveal" data-liquid-panel data-tilt>
+        <div class="panel-heading">
+          <div>
+            <p class="panel-eyebrow">Roadmap</p>
+            <h2>长期计划</h2>
+          </div>
           <a
             href="https://github.com/Djl1n/blogs/edit/main/src/content/important/long-term-plan.md"
             target="_blank"
-            class="text-xs text-slate-400 hover:text-blue-500 transition-colors"
-          >编辑 ✎</a>
+            class="panel-link magnetic"
+          >编辑</a>
         </div>
-        <p class="mt-1 mb-5 text-sm text-slate-500 dark:text-slate-400">博客建设与内容路线图</p>
+
         {longTermPlan.length > 0 ? (
-          <div>
+          <div class="timeline-list">
             {longTermPlan.map((item) => (
               <div class="timeline-item">
-                <span class={`timeline-dot ${item.status === 'done' ? 'done' : item.status === 'active' ? 'active' : ''}`}></span>
-                <div class="flex items-center gap-2">
-                  <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100">{item.title}</h3>
-                  {item.status === 'done' && (
-                    <span class="inline-flex rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300">已完成</span>
-                  )}
-                  {item.status === 'active' && (
-                    <span class="inline-flex rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-medium text-violet-700 dark:bg-violet-900/50 dark:text-violet-300">进行中</span>
-                  )}
-                  {item.status === 'planned' && (
-                    <span class="inline-flex rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-400">计划中</span>
-                  )}
+                <span class={`timeline-dot ${item.status}`}></span>
+                <div>
+                  <div class="timeline-head">
+                    <h3>{item.title}</h3>
+                    <span class={`status-pill ${item.status}`}>
+                      {item.status === 'done' ? '已完成' : item.status === 'active' ? '进行中' : '计划中'}
+                    </span>
+                  </div>
+                  <p>{item.detail}</p>
                 </div>
-                <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{item.detail}</p>
               </div>
             ))}
           </div>
         ) : (
-          <p class="text-sm text-slate-400 italic dark:text-slate-500">暂无计划。在 long-term-plan.md 中添加 plan 条目即可。</p>
+          <p class="empty-copy">暂无计划。在 long-term-plan.md 中添加 plan 条目即可。</p>
         )}
-      </section>
+      </article>
 
-      <!-- 短期待办 -->
-      <section class="surface-card">
-        <div class="flex items-center justify-between">
-          <h2 class="section-title">短期待办</h2>
+      <article class="liquid-panel reveal reveal-delay-1" data-liquid-panel data-tilt>
+        <div class="panel-heading">
+          <div>
+            <p class="panel-eyebrow">Now</p>
+            <h2>短期待办</h2>
+          </div>
           <a
             href="https://github.com/Djl1n/blogs/edit/main/src/content/important/short-term-todo.md"
             target="_blank"
-            class="text-xs text-slate-400 hover:text-blue-500 transition-colors"
-          >编辑 ✎</a>
+            class="panel-link magnetic"
+          >编辑</a>
         </div>
-        <p class="mt-1 mb-5 text-sm text-slate-500 dark:text-slate-400">本周 / 本月待完成事项</p>
+
         {shortTermTodos.length > 0 ? (
-          <div class="space-y-1">
+          <div class="todo-list">
             {shortTermTodos.map((item) => (
               <div class="todo-item">
-                <span class={`todo-check ${item.done ? 'done' : ''}`}></span>
-                <span class={`text-sm ${item.done ? 'text-slate-400 line-through dark:text-slate-500' : 'text-slate-700 dark:text-slate-200'}`}>
-                  {item.text}
-                </span>
+                <span class={`todo-check ${item.done ? 'done' : ''}`} aria-hidden="true"></span>
+                <span class={item.done ? 'is-done' : ''}>{item.text}</span>
               </div>
             ))}
           </div>
         ) : (
-          <p class="text-sm text-slate-400 italic dark:text-slate-500">暂无待办。在 short-term-todo.md 中添加 todos 条目即可。</p>
+          <p class="empty-copy">暂无待办。在 short-term-todo.md 中添加 todos 条目即可。</p>
         )}
-      </section>
-    </div>
-
-    <!-- ====== 最近更新 ====== -->
-    <section>
-      <h2 class="section-title mb-1">最近更新</h2>
-      <p class="mb-5 text-sm text-slate-500 dark:text-slate-400">最新发布的文章和笔记</p>
-      <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {recent.map((post) => <PostCard item={post} href={post.path} />)}
-      </div>
-      {published.length > 6 && (
-        <div class="mt-4 text-center">
-          <a href="/blog" class="btn-secondary">查看全部 {published.length} 篇文章 →</a>
-        </div>
-      )}
+      </article>
     </section>
 
-    <!-- ====== 快速导航 ====== -->
-    <div class="grid gap-6 sm:grid-cols-2">
-      <section class="surface-card">
-        <h2 class="section-title mb-4">分类</h2>
-        <CategoryList categories={categories} />
-      </section>
-      <section class="surface-card">
-        <h2 class="section-title mb-4">标签</h2>
-        <TagList tags={tags} />
-      </section>
-    </div>
+    <section class="content-section">
+      <div class="section-heading reveal">
+        <div>
+          <p class="panel-eyebrow">Recent</p>
+          <h2>最近更新</h2>
+        </div>
+        {published.length > 6 && (
+          <a href="/blog" class="panel-link magnetic">查看全部 {published.length} 篇</a>
+        )}
+      </div>
 
+      <div class="recent-grid">
+        {recent.map((post, i) => (
+          <div class="post-card-wrapper reveal" style={`--reveal-delay: ${120 + (i % 6) * 80}ms`} data-tilt>
+            <PostCard item={post} href={post.path} />
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <section class="navigation-grid" aria-label="快速导航">
+      <article class="liquid-panel reveal" data-liquid-panel data-tilt>
+        <div class="panel-heading">
+          <div>
+            <p class="panel-eyebrow">Index</p>
+            <h2>分类</h2>
+          </div>
+          <a href="/categories" class="panel-link magnetic">全部</a>
+        </div>
+        <CategoryList categories={categories} />
+      </article>
+
+      <article class="liquid-panel reveal reveal-delay-1" data-liquid-panel data-tilt>
+        <div class="panel-heading">
+          <div>
+            <p class="panel-eyebrow">Tags</p>
+            <h2>标签</h2>
+          </div>
+          <a href="/tags" class="panel-link magnetic">全部</a>
+        </div>
+        <TagList tags={tags} />
+      </article>
+    </section>
   </div>
 </BaseLayout>
+
+<style is:global>
+  .liquid-field {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.78;
+  }
+
+  .home-stage {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    gap: 1.5rem;
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: clip;
+  }
+
+  .hero-liquid {
+    position: relative;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    min-height: 520px;
+    display: grid;
+    align-content: center;
+    gap: 1.4rem;
+    overflow: hidden;
+    padding: clamp(2rem, 5vw, 5.5rem) 0 clamp(2rem, 4vw, 4rem);
+    isolation: isolate;
+  }
+
+  .hero-backplate {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    overflow: hidden;
+    border-radius: 8px;
+  }
+
+  .hero-backplate::before {
+    content: '';
+    position: absolute;
+    inset: 2.5rem 0 1.5rem;
+    border: 1px solid rgb(255 255 255 / 0.48);
+    border-radius: 8px;
+    background:
+      linear-gradient(120deg, rgb(255 255 255 / 0.5), rgb(255 255 255 / 0.1) 38%, rgb(236 253 245 / 0.25) 74%, rgb(255 247 237 / 0.2)),
+      linear-gradient(180deg, rgb(255 255 255 / 0.44), rgb(255 255 255 / 0.16));
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.8),
+      inset 0 -1px 0 rgb(15 23 42 / 0.08),
+      0 34px 90px rgb(15 23 42 / 0.12);
+    backdrop-filter: blur(28px) saturate(160%) contrast(105%);
+    -webkit-backdrop-filter: blur(28px) saturate(160%) contrast(105%);
+  }
+
+  .dark .hero-backplate::before {
+    border-color: rgb(255 255 255 / 0.12);
+    background:
+      linear-gradient(120deg, rgb(255 255 255 / 0.1), rgb(255 255 255 / 0.04) 40%, rgb(20 184 166 / 0.08) 72%, rgb(251 146 60 / 0.06)),
+      linear-gradient(180deg, rgb(2 6 23 / 0.42), rgb(2 6 23 / 0.16));
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.16),
+      inset 0 -1px 0 rgb(255 255 255 / 0.04),
+      0 34px 90px rgb(0 0 0 / 0.36);
+  }
+
+  .glass-ribbon {
+    position: absolute;
+    display: block;
+    height: 11rem;
+    width: 74rem;
+    left: 50%;
+    border: 1px solid rgb(255 255 255 / 0.34);
+    border-radius: 999px;
+    background: linear-gradient(90deg, rgb(255 255 255 / 0), rgb(255 255 255 / 0.36), rgb(255 255 255 / 0));
+    filter: blur(0.2px);
+    opacity: 0.64;
+    transform-origin: center;
+    animation: glass-drift 12s ease-in-out infinite alternate;
+  }
+
+  .glass-ribbon-a {
+    top: 9%;
+    transform: translateX(-50%) rotate(-8deg);
+  }
+
+  .glass-ribbon-b {
+    top: 39%;
+    animation-delay: -5s;
+    transform: translateX(-50%) rotate(8deg);
+  }
+
+  .glass-ribbon-c {
+    top: 64%;
+    animation-delay: -9s;
+    transform: translateX(-50%) rotate(-3deg);
+  }
+
+  .dark .glass-ribbon {
+    border-color: rgb(255 255 255 / 0.08);
+    background: linear-gradient(90deg, rgb(255 255 255 / 0), rgb(255 255 255 / 0.12), rgb(255 255 255 / 0));
+  }
+
+  .hero-copy {
+    max-width: 56rem;
+    min-width: 0;
+    padding: 0 1.4rem;
+  }
+
+  .hero-kicker,
+  .panel-eyebrow {
+    margin: 0;
+    color: rgb(20 184 166);
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  .dark .hero-kicker,
+  .dark .panel-eyebrow {
+    color: rgb(94 234 212);
+  }
+
+  .hero-copy h1 {
+    margin: 0.7rem 0 0;
+    color: rgb(9 13 18);
+    font-size: clamp(3.15rem, 8vw, 7rem);
+    font-weight: 950;
+    line-height: 0.92;
+    letter-spacing: 0;
+  }
+
+  .dark .hero-copy h1 {
+    color: rgb(248 250 252);
+  }
+
+  .hero-title-line {
+    display: block;
+    color: transparent;
+    -webkit-text-stroke: 1px rgb(15 23 42 / 0.5);
+    text-shadow: none;
+  }
+
+  .dark .hero-title-line {
+    -webkit-text-stroke-color: rgb(226 232 240 / 0.46);
+  }
+
+  .hero-intro {
+    max-width: 48rem;
+    margin: 1.25rem 0 0;
+    color: rgb(51 65 85);
+    font-size: 1.03rem;
+    line-height: 1.85;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .dark .hero-intro {
+    color: rgb(203 213 225);
+  }
+
+  .hero-actions,
+  .hero-focus {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.7rem;
+    min-width: 0;
+    max-width: 100%;
+    padding: 0 1.4rem;
+  }
+
+  .hero-focus span {
+    display: inline-flex;
+    align-items: center;
+    flex: 0 1 auto;
+    min-height: 2.15rem;
+    max-width: 100%;
+    border: 1px solid rgb(15 23 42 / 0.08);
+    border-radius: 8px;
+    padding: 0.45rem 0.7rem;
+    color: rgb(51 65 85);
+    background: rgb(255 255 255 / 0.28);
+    backdrop-filter: blur(18px) saturate(150%);
+    -webkit-backdrop-filter: blur(18px) saturate(150%);
+    font-size: 0.78rem;
+    font-weight: 750;
+    overflow-wrap: anywhere;
+  }
+
+  .dark .hero-focus span {
+    border-color: rgb(255 255 255 / 0.1);
+    color: rgb(203 213 225);
+    background: rgb(15 23 42 / 0.28);
+  }
+
+  .signal-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.9rem;
+    min-width: 0;
+  }
+
+  .metric-panel {
+    min-height: 8.5rem;
+  }
+
+  .metric-panel::after {
+    background:
+      linear-gradient(130deg, transparent 0 35%, rgb(255 255 255 / 0.5) 46%, transparent 58%),
+      radial-gradient(circle at var(--mx, 50%) var(--my, 30%), var(--tone-glow, rgb(20 184 166 / 0.18)), transparent 38%);
+  }
+
+  .metric-panel[data-tone='cyan'] {
+    --tone-glow: rgb(6 182 212 / 0.2);
+  }
+
+  .metric-panel[data-tone='green'] {
+    --tone-glow: rgb(34 197 94 / 0.18);
+  }
+
+  .metric-panel[data-tone='amber'] {
+    --tone-glow: rgb(245 158 11 / 0.2);
+  }
+
+  .metric-panel[data-tone='rose'] {
+    --tone-glow: rgb(244 63 94 / 0.16);
+  }
+
+  .metric-value {
+    margin: 0;
+    color: rgb(9 13 18);
+    font-size: 2.55rem;
+    font-weight: 950;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .dark .metric-value {
+    color: rgb(248 250 252);
+  }
+
+  .metric-label {
+    margin: 0.75rem 0 0;
+    color: rgb(71 85 105);
+    font-size: 0.78rem;
+    font-weight: 750;
+  }
+
+  .dark .metric-label {
+    color: rgb(148 163 184);
+  }
+
+  .latest-panel {
+    grid-column: span 4;
+  }
+
+  .panel-heading,
+  .section-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.15rem;
+  }
+
+  .panel-heading h2,
+  .section-heading h2 {
+    margin: 0.2rem 0 0;
+    color: rgb(15 23 42);
+    font-size: 1.25rem;
+    font-weight: 900;
+    letter-spacing: 0;
+  }
+
+  .dark .panel-heading h2,
+  .dark .section-heading h2 {
+    color: rgb(248 250 252);
+  }
+
+  .panel-link {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    min-height: 2rem;
+    border: 1px solid rgb(15 23 42 / 0.08);
+    border-radius: 8px;
+    padding: 0.3rem 0.6rem;
+    color: rgb(15 23 42 / 0.72);
+    background: rgb(255 255 255 / 0.2);
+    font-size: 0.78rem;
+    font-weight: 800;
+    text-decoration: none;
+  }
+
+  .panel-link:hover {
+    color: rgb(15 118 110);
+    border-color: rgb(20 184 166 / 0.38);
+  }
+
+  .dark .panel-link {
+    border-color: rgb(255 255 255 / 0.1);
+    color: rgb(226 232 240 / 0.78);
+    background: rgb(15 23 42 / 0.26);
+  }
+
+  .dark .panel-link:hover {
+    color: rgb(94 234 212);
+    border-color: rgb(94 234 212 / 0.34);
+  }
+
+  .latest-list {
+    display: grid;
+    gap: 0.45rem;
+  }
+
+  .latest-row {
+    display: grid;
+    grid-template-columns: 8.2rem minmax(0, 1fr);
+    gap: 0.9rem;
+    align-items: center;
+    border-radius: 8px;
+    padding: 0.65rem 0.7rem;
+    text-decoration: none;
+  }
+
+  .latest-row:hover {
+    background: rgb(255 255 255 / 0.24);
+  }
+
+  .dark .latest-row:hover {
+    background: rgb(255 255 255 / 0.06);
+  }
+
+  .latest-date {
+    color: rgb(100 116 139);
+    font-size: 0.77rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .latest-title {
+    overflow: hidden;
+    color: rgb(15 23 42);
+    font-size: 0.94rem;
+    font-weight: 800;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .dark .latest-date {
+    color: rgb(148 163 184);
+  }
+
+  .dark .latest-title {
+    color: rgb(226 232 240);
+  }
+
+  .workbench-grid,
+  .navigation-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+    min-width: 0;
+  }
+
+  .timeline-list,
+  .todo-list {
+    display: grid;
+    gap: 0.9rem;
+  }
+
+  .timeline-item {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1.1rem minmax(0, 1fr);
+    gap: 0.75rem;
+    padding-bottom: 0;
+  }
+
+  .timeline-dot {
+    position: relative;
+    top: 0.2rem;
+    width: 0.7rem;
+    height: 0.7rem;
+    border: 2px solid rgb(20 184 166);
+    border-radius: 999px;
+    background: rgb(255 255 255 / 0.8);
+    box-shadow: 0 0 0 5px rgb(20 184 166 / 0.12);
+  }
+
+  .timeline-dot::after {
+    content: '';
+    position: absolute;
+    top: 0.75rem;
+    left: 50%;
+    width: 1px;
+    height: calc(100% + 3.1rem);
+    background: linear-gradient(rgb(20 184 166 / 0.28), rgb(245 158 11 / 0.18));
+    transform: translateX(-50%);
+  }
+
+  .timeline-item:last-child .timeline-dot::after {
+    display: none;
+  }
+
+  .timeline-dot.done {
+    border-color: rgb(34 197 94);
+    box-shadow: 0 0 0 5px rgb(34 197 94 / 0.12);
+  }
+
+  .timeline-dot.active {
+    border-color: rgb(245 158 11);
+    box-shadow: 0 0 0 5px rgb(245 158 11 / 0.14);
+  }
+
+  .dark .timeline-dot {
+    background: rgb(15 23 42 / 0.82);
+  }
+
+  .timeline-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.45rem;
+  }
+
+  .timeline-head h3 {
+    margin: 0;
+    color: rgb(15 23 42);
+    font-size: 0.95rem;
+    font-weight: 850;
+  }
+
+  .timeline-item p {
+    margin: 0.35rem 0 0;
+    color: rgb(71 85 105);
+    font-size: 0.84rem;
+    line-height: 1.7;
+  }
+
+  .dark .timeline-head h3 {
+    color: rgb(241 245 249);
+  }
+
+  .dark .timeline-item p {
+    color: rgb(148 163 184);
+  }
+
+  .status-pill {
+    border-radius: 999px;
+    padding: 0.13rem 0.45rem;
+    font-size: 0.68rem;
+    font-weight: 850;
+  }
+
+  .status-pill.done {
+    color: rgb(22 101 52);
+    background: rgb(220 252 231 / 0.78);
+  }
+
+  .status-pill.active {
+    color: rgb(146 64 14);
+    background: rgb(254 243 199 / 0.82);
+  }
+
+  .status-pill.planned {
+    color: rgb(71 85 105);
+    background: rgb(226 232 240 / 0.78);
+  }
+
+  .dark .status-pill.done {
+    color: rgb(134 239 172);
+    background: rgb(22 101 52 / 0.28);
+  }
+
+  .dark .status-pill.active {
+    color: rgb(253 186 116);
+    background: rgb(154 52 18 / 0.26);
+  }
+
+  .dark .status-pill.planned {
+    color: rgb(203 213 225);
+    background: rgb(71 85 105 / 0.28);
+  }
+
+  .todo-item {
+    display: grid;
+    grid-template-columns: 1.25rem minmax(0, 1fr);
+    gap: 0.75rem;
+    align-items: start;
+    border-radius: 8px;
+    padding: 0.62rem 0.65rem;
+    color: rgb(51 65 85);
+    font-size: 0.9rem;
+    line-height: 1.65;
+  }
+
+  .todo-item:hover {
+    background: rgb(255 255 255 / 0.22);
+  }
+
+  .dark .todo-item {
+    color: rgb(203 213 225);
+  }
+
+  .dark .todo-item:hover {
+    background: rgb(255 255 255 / 0.06);
+  }
+
+  .todo-check {
+    position: relative;
+    top: 0.22rem;
+    width: 1rem;
+    height: 1rem;
+    border: 1px solid rgb(100 116 139 / 0.6);
+    border-radius: 4px;
+    background: rgb(255 255 255 / 0.36);
+  }
+
+  .todo-check.done {
+    border-color: rgb(20 184 166);
+    background: rgb(20 184 166);
+  }
+
+  .todo-check.done::after {
+    content: '';
+    position: absolute;
+    top: 0.16rem;
+    left: 0.29rem;
+    width: 0.32rem;
+    height: 0.55rem;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+  }
+
+  .todo-item .is-done {
+    color: rgb(100 116 139);
+    text-decoration: line-through;
+  }
+
+  .content-section {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .recent-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+    min-width: 0;
+  }
+
+  .post-card-wrapper {
+    perspective: 900px;
+  }
+
+  .post-card-wrapper.reveal {
+    transition-delay: var(--reveal-delay, 0ms);
+  }
+
+  .empty-copy {
+    margin: 0;
+    color: rgb(100 116 139);
+    font-size: 0.9rem;
+    line-height: 1.7;
+  }
+
+  .dark .empty-copy {
+    color: rgb(148 163 184);
+  }
+
+  .reveal {
+    opacity: 0;
+    transform: translateY(22px);
+    transition:
+      opacity 0.72s cubic-bezier(0.22, 1, 0.36, 1),
+      transform 0.72s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .reveal-delay-1 { transition-delay: 90ms; }
+  .reveal-delay-2 { transition-delay: 160ms; }
+  .reveal-delay-3 { transition-delay: 230ms; }
+  .reveal-delay-4 { transition-delay: 300ms; }
+
+  @keyframes glass-drift {
+    from {
+      translate: -1.5rem 0;
+    }
+    to {
+      translate: 1.5rem 0.8rem;
+    }
+  }
+
+  @media (max-width: 1024px) {
+    .hero-liquid {
+      min-height: 470px;
+    }
+
+    .signal-grid,
+    .recent-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .latest-panel {
+      grid-column: span 2;
+    }
+  }
+
+  @media (max-width: 720px) {
+    .hero-liquid {
+      min-height: auto;
+      padding-top: 2.8rem;
+      max-width: 100%;
+      overflow-x: clip;
+    }
+
+    .hero-copy {
+      width: 100%;
+      padding: 0 0.2rem;
+    }
+
+    .hero-copy h1 {
+      font-size: 2.55rem;
+      line-height: 0.98;
+    }
+
+    .hero-intro {
+      max-width: 100%;
+      font-size: 0.96rem;
+    }
+
+    .hero-focus span {
+      max-width: 100%;
+      flex: 0 1 auto;
+    }
+
+    .hero-actions,
+    .hero-focus {
+      padding: 0;
+    }
+
+    .hero-actions {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      width: 100%;
+    }
+
+    .hero-focus {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      width: 100%;
+    }
+
+    .hero-focus span {
+      justify-content: center;
+      width: 100%;
+    }
+
+    .signal-grid,
+    .workbench-grid,
+    .navigation-grid,
+    .recent-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .latest-panel {
+      grid-column: auto;
+    }
+
+    .latest-row {
+      grid-template-columns: 1fr;
+      gap: 0.2rem;
+    }
+
+    .latest-title {
+      white-space: normal;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .glass-ribbon {
+      animation: none;
+    }
+
+    .reveal {
+      opacity: 1;
+      transform: none;
+      transition: none;
+    }
+  }
+</style>
+
+<script>
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  (function initLiquidField() {
+    const canvasElement = document.getElementById('liquid-field');
+    if (!(canvasElement instanceof HTMLCanvasElement) || reducedMotion) return;
+
+    const canvas: HTMLCanvasElement = canvasElement;
+    const context = canvas.getContext('2d');
+    if (!context) return;
+    const ctx: CanvasRenderingContext2D = context;
+
+    let width = 0;
+    let height = 0;
+    let dpr = 1;
+    let pointerX = -9999;
+    let pointerY = -9999;
+    let raf = 0;
+
+    const strands = Array.from({ length: 9 }, (_, index) => ({
+      offset: index / 9,
+      speed: 0.00018 + index * 0.000018,
+      amp: 18 + (index % 4) * 7,
+    }));
+
+    function resize() {
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = Math.floor(width * dpr);
+      canvas.height = Math.floor(height * dpr);
+      canvas.style.width = `${width}px`;
+      canvas.style.height = `${height}px`;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    function draw(now: number) {
+      ctx.clearRect(0, 0, width, height);
+      const isDark = document.documentElement.classList.contains('dark');
+      const baseAlpha = isDark ? 0.13 : 0.16;
+      const accentAlpha = isDark ? 0.2 : 0.18;
+
+      strands.forEach((strand, strandIndex) => {
+        const yBase = height * (0.16 + strand.offset * 0.86);
+        const hue = strandIndex % 3 === 0 ? '20 184 166' : strandIndex % 3 === 1 ? '245 158 11' : '244 63 94';
+        ctx.beginPath();
+
+        for (let x = -40; x <= width + 40; x += 22) {
+          const phase = now * strand.speed + x * 0.006 + strand.offset * 5.8;
+          const wave = Math.sin(phase) * strand.amp + Math.sin(phase * 0.43 + strandIndex) * strand.amp * 0.48;
+          const dx = x - pointerX;
+          const dy = yBase - pointerY;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          const pull = distance < 220 ? (1 - distance / 220) * 34 : 0;
+          const y = yBase + wave + pull;
+
+          if (x === -40) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+
+        ctx.strokeStyle = `rgb(${hue} / ${strandIndex % 2 === 0 ? accentAlpha : baseAlpha})`;
+        ctx.lineWidth = strandIndex % 2 === 0 ? 1.1 : 0.75;
+        ctx.stroke();
+      });
+
+      raf = requestAnimationFrame(draw);
+    }
+
+    window.addEventListener('resize', resize, { passive: true });
+    window.addEventListener('pointermove', (event) => {
+      pointerX = event.clientX;
+      pointerY = event.clientY;
+    }, { passive: true });
+    window.addEventListener('pointerleave', () => {
+      pointerX = -9999;
+      pointerY = -9999;
+    }, { passive: true });
+
+    resize();
+    raf = requestAnimationFrame(draw);
+
+    document.addEventListener('astro:before-swap', () => cancelAnimationFrame(raf), { once: true });
+  })();
+
+  (function initReveal() {
+    const elements = document.querySelectorAll<HTMLElement>('.reveal');
+    if (!elements.length || reducedMotion) {
+      elements.forEach((element) => element.classList.add('visible'));
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
+        });
+      },
+      { threshold: 0.08, rootMargin: '0px 0px -42px 0px' }
+    );
+
+    elements.forEach((element) => observer.observe(element));
+  })();
+
+  (function initCounters() {
+    const counters = document.querySelectorAll<HTMLElement>('.counter');
+    if (!counters.length) return;
+
+    const runCounter = (element: HTMLElement) => {
+      const target = Number.parseInt(element.dataset.target || '0', 10);
+      if (!Number.isFinite(target)) return;
+      if (reducedMotion) {
+        element.textContent = String(target);
+        return;
+      }
+
+      const duration = 1100;
+      const start = performance.now();
+      const tick = (now: number) => {
+        const progress = Math.min((now - start) / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        element.textContent = String(Math.round(eased * target));
+        if (progress < 1) requestAnimationFrame(tick);
+        else element.textContent = String(target);
+      };
+      requestAnimationFrame(tick);
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        runCounter(entry.target as HTMLElement);
+        observer.unobserve(entry.target);
+      });
+    }, { threshold: 0.5 });
+
+    counters.forEach((counter) => observer.observe(counter));
+  })();
+
+  (function initPointerGlass() {
+    const interactiveElements = document.querySelectorAll<HTMLElement>('[data-liquid-panel], [data-tilt]');
+    const magneticElements = document.querySelectorAll<HTMLElement>('.magnetic');
+    if (reducedMotion) return;
+
+    interactiveElements.forEach((element) => {
+      element.addEventListener('pointermove', (event) => {
+        const rect = element.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+        const px = x / rect.width - 0.5;
+        const py = y / rect.height - 0.5;
+
+        element.style.setProperty('--mx', `${x}px`);
+        element.style.setProperty('--my', `${y}px`);
+
+        if (!element.hasAttribute('data-tilt')) return;
+        element.style.transform = `perspective(900px) rotateX(${(-py * 5).toFixed(2)}deg) rotateY(${(px * 6).toFixed(2)}deg) translate3d(0, -2px, 0)`;
+      }, { passive: true });
+
+      element.addEventListener('pointerleave', () => {
+        element.style.removeProperty('--mx');
+        element.style.removeProperty('--my');
+        element.style.transform = '';
+      }, { passive: true });
+    });
+
+    magneticElements.forEach((element) => {
+      element.addEventListener('pointermove', (event) => {
+        const rect = element.getBoundingClientRect();
+        const x = event.clientX - rect.left - rect.width / 2;
+        const y = event.clientY - rect.top - rect.height / 2;
+        element.style.transform = `translate(${(x * 0.12).toFixed(1)}px, ${(y * 0.18).toFixed(1)}px)`;
+      }, { passive: true });
+
+      element.addEventListener('pointerleave', () => {
+        element.style.transform = '';
+      }, { passive: true });
+    });
+  })();
+</script>

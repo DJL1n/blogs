@@ -58,12 +58,30 @@ const resolvedMainClass = mainClass
       })();
     </script>
   </head>
-<body
-  class="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-900 dark:text-slate-100 [word-break:break-word]">
+<body class="[word-break:break-word]">
   <Header />
   <main class={`content-shell py-8 lg:py-10 main-shell ${resolvedMainClass}`}>
     <slot />
   </main>
   <Footer />
+
+  <script>
+    (function() {
+      const root = document.documentElement;
+      const hoverSelector = '.btn-primary, .btn-secondary, .liquid-control, .theme-toggle, .panel-link';
+
+      document.addEventListener('pointermove', (e: PointerEvent) => {
+        root.style.setProperty('--page-x', `${e.clientX}px`);
+        root.style.setProperty('--page-y', `${e.clientY}px`);
+
+        const el = (e.target as HTMLElement).closest(hoverSelector) as HTMLElement | null;
+        if (!el) return;
+
+        const r = el.getBoundingClientRect();
+        el.style.setProperty('--gx', `${e.clientX - r.left}px`);
+        el.style.setProperty('--gy', `${e.clientY - r.top}px`);
+      }, { passive: true });
+    })();
+  </script>
 </body>
 </html>
