@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import PageHeader from '../../components/PageHeader.astro';
 import TagList from '../../components/TagList.astro';
 import { getCollection } from 'astro:content';
 
@@ -12,13 +13,16 @@ const tags = Array.from(new Set(posts.flatMap((item) => item.data.tags).map((tag
 ---
 
 <BaseLayout title="标签" description="按标签快速筛选文章">
-  <section class="space-y-6">
-    <div>
-      <p class="inline-flex rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-medium text-sky-700 dark:border-sky-800 dark:bg-slate-800 dark:text-sky-200">Tag Index</p>
-      <h1 class="mt-3 text-4xl font-bold">标签页</h1>
-      <p class="mt-2 text-slate-600 dark:text-slate-300">按主题快速浏览相关内容</p>
-    </div>
-    <div class="surface-card">
+  <section class="page-stack">
+    <PageHeader
+      eyebrow="Tag Index"
+      title="标签页"
+      description="用标签串起跨分类的主题脉络，适合从一个概念追到所有相关记录。"
+      meta={[`${tags.length} 个标签`, '跨集合筛选']}
+      actions={[{ label: '站内搜索', href: '/search' }]}
+    />
+
+    <div class="liquid-panel index-panel reveal" data-liquid-panel>
       <TagList tags={tags} />
     </div>
   </section>

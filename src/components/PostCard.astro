@@ -13,7 +13,7 @@ const { item, href } = Astro.props as {
 };
 ---
 
-<article class="surface-card post-card">
+<article class="surface-card post-card reveal" data-liquid-panel data-tilt>
   <a href={href} class="no-underline">
     <div class="mb-3 flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
       <span class="chip">{item.data.category}</span>

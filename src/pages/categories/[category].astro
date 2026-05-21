@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import PageHeader from '../../components/PageHeader.astro';
 import PostCard from '../../components/PostCard.astro';
 import { getCollection } from 'astro:content';
 
@@ -37,13 +38,16 @@ const posts = [
 ---
 
 <BaseLayout title={`分类：${category}`} description={`分类 ${category} 下的内容`}>
-  <section class="space-y-6">
-    <div>
-      <p class="inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 dark:border-emerald-800 dark:bg-slate-800 dark:text-emerald-200">分类筛选</p>
-      <h1 class="mt-3 text-4xl font-bold">分类：{category}</h1>
-      <p class="mt-2 text-slate-600 dark:text-slate-300">共 {posts.length} 篇</p>
-    </div>
-    <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+  <section class="page-stack">
+    <PageHeader
+      eyebrow="Category Filter"
+      title={`分类：${category}`}
+      description="这个分类下的内容按更新时间排序，适合从一个稳定用途回看全部材料。"
+      meta={[`${posts.length} 篇内容`]}
+      actions={[{ label: '所有分类', href: '/categories' }, { label: '搜索', href: `/search?q=${encodeURIComponent(category || '')}` }]}
+    />
+
+    <div class="collection-grid">
       {posts.map((post) => {
         const url =
           post.collection === 'blog'

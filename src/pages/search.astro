@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHeader from '../components/PageHeader.astro';
 import { getCollection } from 'astro:content';
 
 const normalizedPosts = [
@@ -21,31 +22,28 @@ const normalizedPosts = [
 ---
 
 <BaseLayout title="搜索" description="站内文章快速检索">
-  <section class="space-y-6">
-    <header>
-      <p class="inline-flex rounded-full border border-slate-300 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">Search</p>
-      <h1 class="mt-3 text-4xl font-bold">站内搜索</h1>
-      <p class="mt-2 text-slate-600 dark:text-slate-300">支持标题、摘要、标签与分类关键词匹配</p>
-    </header>
+  <section class="page-stack">
+    <PageHeader
+      eyebrow="Search"
+      title="站内搜索"
+      description="标题、摘要、标签和分类会被一起匹配。搜索结果即时更新，也会同步到地址栏。"
+      meta={[`${normalizedPosts.length} 条可检索内容`, '实时过滤']}
+      actions={[{ label: '回到首页', href: '/' }]}
+    />
 
-    <form class="surface-card flex" role="search" id="search-form">
+    <form class="liquid-panel search-panel reveal" role="search" id="search-form" data-liquid-panel>
       <label for="search-input" class="sr-only">搜索</label>
       <input
         id="search-input"
         type="search"
         placeholder="输入关键词"
-        class="w-full border-0 bg-transparent px-3 py-2.5 text-sm focus-visible:outline-none dark:text-slate-100"
+        autocomplete="off"
       />
-      <button
-        type="submit"
-        class="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500"
-      >
-        搜索
-      </button>
+      <button type="submit" class="btn-primary magnetic">搜索</button>
     </form>
 
-    <p id="count" class="text-sm text-slate-500 dark:text-slate-300"></p>
-    <div id="search-result" class="space-y-3"></div>
+    <p id="count" class="search-count" aria-live="polite"></p>
+    <div id="search-result" class="collection-grid" aria-live="polite"></div>
   </section>
 
   <script is:inline define:vars={{ postsJson: JSON.stringify(normalizedPosts) }}>
@@ -65,6 +63,21 @@ const normalizedPosts = [
       return String(value || '').toLowerCase();
     }
 
+    function escapeHtml(value) {
+      return String(value || '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
+
+    function collectionLabel(collection) {
+      if (collection === 'blog') return '博客';
+      if (collection === 'notes') return '笔记';
+      return '重要';
+    }
+
     function filterPosts(query) {
       const keyword = query.trim().toLowerCase();
       if (!keyword) return allPosts;
@@ -79,42 +92,43 @@ const normalizedPosts = [
       });
     }
 
-    function render(list) {
+    function render() {
       const query = textLower(input.value).trim();
       const listToRender = filterPosts(query);
-      count.textContent = `共 ${listToRender.length} 条结果`;
+      count.textContent = query ? `命中 ${listToRender.length} 条结果` : `共 ${listToRender.length} 条内容`;
+      result.classList.toggle('collection-grid', listToRender.length > 0);
+      result.classList.toggle('search-empty', listToRender.length === 0);
+
       if (listToRender.length === 0) {
-        result.innerHTML = '<p class="text-sm text-slate-500 dark:text-slate-300">未命中内容，建议缩短关键词或换词。</p>';
+        result.innerHTML = '<p class="empty-copy">未命中内容，建议缩短关键词或换一个主题词。</p>';
         return;
       }
 
-      const html = listToRender
+      result.innerHTML = listToRender
         .map((post) => {
-          const tags = post.tags.map((tag) => `#${tag}`).join(' ');
+          const tags = post.tags.map((tag) => `<span class="chip">#${escapeHtml(tag)}</span>`).join('');
           return `
-            <article class="surface-card">
-              <a href="${toUrl(post)}" class="block">
-                <h3 class="text-lg font-semibold">${post.title}</h3>
-                <p class="text-sm text-slate-500 dark:text-slate-300">${new Date(post.date).toLocaleDateString('zh-CN')} · ${post.collection}</p>
-                <p class="mt-2 text-slate-700 dark:text-slate-200">${post.summary}</p>
-                <p class="mt-2 text-xs text-slate-500">${tags}</p>
+            <article class="surface-card post-card reveal visible" data-liquid-panel>
+              <a href="${toUrl(post)}" class="no-underline">
+                <div class="mb-3 flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                  <span class="chip">${escapeHtml(post.category)}</span>
+                  <span>${new Date(post.date).toLocaleDateString('zh-CN')}</span>
+                  <span>${collectionLabel(post.collection)}</span>
+                </div>
+                <h3 class="text-xl font-black leading-tight tracking-tight text-slate-950 dark:text-slate-50">${escapeHtml(post.title)}</h3>
+                <p class="mt-3 leading-relaxed text-slate-700 dark:text-slate-300">${escapeHtml(post.summary)}</p>
+                <p class="mt-4 flex flex-wrap gap-2 text-xs text-slate-500 dark:text-slate-300">${tags}</p>
               </a>
             </article>
           `;
         })
         .join('');
-
-      result.innerHTML = html;
     }
 
     function syncFromQuery() {
       const params = new URLSearchParams(window.location.search);
-      const q = params.get('q') || '';
-      input.value = q;
-      render(allPosts);
-      if (!q) {
-        count.textContent = `共 ${allPosts.length} 条内容`;
-      }
+      input.value = params.get('q') || '';
+      render();
     }
 
     form.addEventListener('submit', (event) => {
@@ -127,10 +141,96 @@ const normalizedPosts = [
         url.searchParams.delete('q');
       }
       window.history.replaceState({}, '', url);
-      render(allPosts);
+      render();
     });
 
-    input.addEventListener('input', () => render(allPosts));
+    input.addEventListener('input', () => {
+      const q = input.value.trim();
+      const url = new URL(window.location.href);
+      if (q) url.searchParams.set('q', q);
+      else url.searchParams.delete('q');
+      window.history.replaceState({}, '', url);
+      render();
+    });
+
     syncFromQuery();
   </script>
 </BaseLayout>
+
+<style>
+  .search-panel {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 7rem;
+    align-items: stretch;
+    gap: 0.6rem;
+    padding: 0.55rem;
+  }
+
+  .search-panel input {
+    grid-column: 1;
+    width: 100%;
+    min-width: 0;
+    border: 0;
+    background: transparent;
+    padding: 0 0.78rem;
+    color: rgb(15 23 42);
+    font-size: 0.96rem;
+    outline: none;
+  }
+
+  .search-panel button {
+    grid-column: 2;
+    width: 100%;
+  }
+
+  .search-panel input::placeholder {
+    color: rgb(100 116 139);
+  }
+
+  .search-count {
+    margin: 0;
+    color: rgb(100 116 139);
+    font-size: 0.86rem;
+    font-weight: 780;
+  }
+
+  .search-empty {
+    display: block;
+    border: 1px solid rgb(15 23 42 / 0.08);
+    border-radius: 8px;
+    padding: 1rem;
+    background: rgb(255 255 255 / 0.22);
+  }
+
+  :global(.dark) .search-panel input {
+    color: rgb(241 245 249);
+  }
+
+  :global(.dark) .search-panel input::placeholder {
+    color: rgb(148 163 184);
+  }
+
+  :global(.dark) .search-count {
+    color: rgb(148 163 184);
+  }
+
+  :global(.dark) .search-empty {
+    border-color: rgb(255 255 255 / 0.1);
+    background: rgb(15 23 42 / 0.24);
+  }
+
+  @media (max-width: 620px) {
+    .search-panel {
+      grid-template-columns: 1fr;
+    }
+
+    .search-panel button {
+      grid-column: 1;
+    }
+
+    .search-panel input {
+      grid-column: 1;
+      min-height: 2.7rem;
+    }
+  }
+</style>

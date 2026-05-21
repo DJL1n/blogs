@@ -1,0 +1,45 @@
+---
+const {
+  eyebrow,
+  title,
+  description,
+  meta = [],
+  actions = [],
+} = Astro.props as {
+  eyebrow: string;
+  title: string;
+  description: string;
+  meta?: string[];
+  actions?: Array<{ label: string; href: string; primary?: boolean }>;
+};
+---
+
+<header class="page-hero liquid-panel reveal" data-liquid-panel>
+  <div class="page-hero-copy">
+    <p class="panel-eyebrow">{eyebrow}</p>
+    <h1>{title}</h1>
+    <p>{description}</p>
+  </div>
+
+  {(meta.length > 0 || actions.length > 0) && (
+    <div class="page-hero-side">
+      {meta.length > 0 && (
+        <div class="page-hero-meta" aria-label="页面概览">
+          {meta.map((item) => (
+            <span class="system-badge">{item}</span>
+          ))}
+        </div>
+      )}
+
+      {actions.length > 0 && (
+        <div class="page-hero-actions">
+          {actions.map((action) => (
+            <a href={action.href} class={action.primary ? 'btn-primary magnetic' : 'btn-secondary magnetic'}>
+              {action.label}
+            </a>
+          ))}
+        </div>
+      )}
+    </div>
+  )}
+</header>

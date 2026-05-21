@@ -6,7 +6,7 @@ const { tags } = Astro.props as { tags: string[] };
   {tags.map((tag) => (
     <a
       href={`/tags/${encodeURIComponent(tag)}`}
-      class="chip border-blue-200/80 bg-blue-50 text-blue-700 dark:border-blue-700 dark:bg-slate-800 dark:text-blue-200"
+      class="chip-active"
     >
       #{tag}
     </a>

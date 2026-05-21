@@ -1,70 +1,117 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHeader from '../components/PageHeader.astro';
 ---
 
 <BaseLayout title="关于 · 山不见我" description="关于我和这个站点">
-  <div class="space-y-8 animate-fade-in">
-    <!-- 个人简介 -->
-    <section class="surface-card-elevated relative overflow-hidden">
-      <div class="absolute right-4 top-4 h-20 w-20 rounded-full bg-gradient-to-br from-blue-400 to-violet-500 opacity-8 blur-2xl"></div>
-      <div class="relative flex flex-col gap-5 sm:flex-row sm:items-start">
-        <div class="flex h-20 w-20 flex-shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-slate-700 to-slate-900 text-3xl shadow-lg dark:from-slate-200 dark:to-slate-400">
-          🏔️
+  <div class="page-stack">
+    <PageHeader
+      eyebrow="About"
+      title="关于我"
+      description="一个写代码的人，目前在计算机视觉、SLAM、三维重建方向摸索。这个站点是长期知识管理空间，不追求流量，只追求清晰、稳定和可迁移。"
+      meta={['Computer Vision', 'SLAM', '3D Reconstruction']}
+      actions={[
+        { label: 'GitHub', href: 'https://github.com/Djl1n', primary: true },
+        { label: 'RSS', href: '/rss.xml' },
+      ]}
+    />
+
+    <section class="about-grid">
+      <article class="liquid-panel reveal" data-liquid-panel data-tilt>
+        <div class="panel-heading">
+          <div>
+            <p class="panel-eyebrow">Focus</p>
+            <h2>技术方向</h2>
+          </div>
         </div>
-        <div>
-          <h1 class="text-3xl font-black tracking-tight">关于我</h1>
-          <p class="mt-3 leading-relaxed text-slate-600 dark:text-slate-300">
-            一个写代码的人，目前在计算机视觉、SLAM、三维重建方向摸索。
+        <div class="flex flex-wrap gap-2">
+          <span class="chip-active">Computer Vision</span>
+          <span class="chip-active">SLAM</span>
+          <span class="chip-active">3D Reconstruction</span>
+          <span class="chip-active">3DGS / NeRF</span>
+          <span class="chip-emerald">Python</span>
+          <span class="chip-emerald">C++</span>
+          <span class="chip">Git</span>
+          <span class="chip">Astro</span>
+          <span class="chip">Tailwind CSS</span>
+        </div>
+      </article>
+
+      <article class="liquid-panel reveal reveal-delay-1" data-liquid-panel data-tilt>
+        <div class="panel-heading">
+          <div>
+            <p class="panel-eyebrow">Site</p>
+            <h2>站点结构</h2>
+          </div>
+        </div>
+        <div class="about-copy">
+          <p>
+            基于 <a href="https://astro.build">Astro</a> 构建，所有内容以 Markdown 文件存储在
+            <code>src/content/</code> 下。
           </p>
-          <p class="mt-2 leading-relaxed text-slate-600 dark:text-slate-300">
-            这个站点用来整理技术笔记、记录踩坑经验、沉淀一些值得长期维护的内容。不追求流量和 SEO，只想有一个安静写字的地方。
+          <p>
+            内容分为博客、短笔记和重要记录三类，站点保持静态架构，方便迁移和长期维护。
+          </p>
+          <p>
+            托管在 <a href="https://github.com/Djl1n/blogs">GitHub</a>，通过 Cloudflare Pages 自动部署。
           </p>
         </div>
-      </div>
-    </section>
-
-    <!-- 技能/方向 -->
-    <section class="surface-card">
-      <h2 class="section-title mb-4">技术方向</h2>
-      <div class="flex flex-wrap gap-2">
-        <span class="chip-active">Computer Vision</span>
-        <span class="chip-active">SLAM</span>
-        <span class="chip-active">3D Reconstruction</span>
-        <span class="chip-active">3DGS / NeRF</span>
-        <span class="chip-emerald">Python</span>
-        <span class="chip-emerald">C++</span>
-        <span class="chip-emerald">macOS</span>
-        <span class="chip">Git</span>
-        <span class="chip">Astro</span>
-        <span class="chip">Tailwind CSS</span>
-      </div>
-    </section>
-
-    <!-- 关于站点 -->
-    <section class="surface-card">
-      <h2 class="section-title mb-4">关于这个站点</h2>
-      <div class="space-y-3 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
-        <p>
-          基于 <a href="https://astro.build" class="text-blue-600 hover:underline dark:text-blue-400">Astro</a> 构建的静态站点，
-          所有内容以 Markdown 文件存储在 <code class="rounded bg-slate-100 px-1.5 py-0.5 text-xs dark:bg-slate-800">src/content/</code> 下。
-        </p>
-        <p>
-          三类内容：<strong>博客</strong>（长文）、<strong>笔记</strong>（短内容）、<strong>重要记录</strong>（计划/待办/日志）。
-        </p>
-        <p>
-          托管在 <a href="https://github.com/Djl1n/blogs" class="text-blue-600 hover:underline dark:text-blue-400">GitHub</a>，
-          通过 Cloudflare Pages 自动部署。每次 push 到 main 分支即触发发布。
-        </p>
-      </div>
-    </section>
-
-    <!-- 联系 -->
-    <section class="surface-card">
-      <h2 class="section-title mb-4">找到我</h2>
-      <div class="flex flex-wrap gap-3">
-        <a href="https://github.com/Djl1n" target="_blank" class="btn-secondary text-sm">GitHub</a>
-        <a href="/rss.xml" class="btn-secondary text-sm">RSS 订阅</a>
-      </div>
+      </article>
     </section>
   </div>
 </BaseLayout>
+
+<style>
+  .about-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr);
+    gap: 1rem;
+  }
+
+  .about-copy {
+    display: grid;
+    gap: 0.85rem;
+    color: rgb(71 85 105);
+    font-size: 0.95rem;
+    line-height: 1.8;
+  }
+
+  .about-copy p {
+    margin: 0;
+  }
+
+  .about-copy a {
+    color: rgb(15 118 110);
+    font-weight: 800;
+    text-decoration: none;
+  }
+
+  .about-copy a:hover {
+    text-decoration: underline;
+  }
+
+  .about-copy code {
+    border-radius: 6px;
+    background: rgb(15 23 42 / 0.07);
+    padding: 0.12rem 0.36rem;
+    font-size: 0.84em;
+  }
+
+  :global(.dark) .about-copy {
+    color: rgb(203 213 225);
+  }
+
+  :global(.dark) .about-copy a {
+    color: rgb(94 234 212);
+  }
+
+  :global(.dark) .about-copy code {
+    background: rgb(255 255 255 / 0.08);
+  }
+
+  @media (max-width: 820px) {
+    .about-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

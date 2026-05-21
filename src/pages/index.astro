@@ -1,8 +1,8 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import CategoryList from '../components/CategoryList.astro';
 import PostCard from '../components/PostCard.astro';
 import TagList from '../components/TagList.astro';
-import CategoryList from '../components/CategoryList.astro';
 import { getCollection } from 'astro:content';
 
 const allPosts = [
@@ -14,7 +14,7 @@ const allPosts = [
 const published = allPosts.filter((p) => !p.data.draft);
 const sorted = published.sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
 const recent = sorted.slice(0, 6);
-const heroRecent = sorted.slice(0, 3);
+const heroRecent = sorted.slice(0, 4);
 
 const blogCount = published.filter((p) => p.data.type === 'blog').length;
 const noteCount = published.filter((p) => p.data.type === 'note').length;
@@ -25,7 +25,7 @@ const tags = Array.from(
 ).sort();
 
 const categories = Array.from(
-  new Set(published.map((p) => p.data.category.toLowerCase()))
+  new Set(published.map((p) => p.data.category.toLowerCase()).filter(Boolean))
 ).sort();
 
 const planPost = (await getCollection('important')).find((p) => p.slug === 'long-term-plan');
@@ -41,95 +41,133 @@ const formatDate = (date: Date) =>
   }).format(date);
 
 const metrics = [
-  { label: '文章', value: published.length, tone: 'cyan' },
-  { label: '博客', value: blogCount, tone: 'green' },
+  { label: '全部', value: published.length, tone: 'cyan' },
+  { label: '长文', value: blogCount, tone: 'green' },
   { label: '笔记', value: noteCount, tone: 'amber' },
   { label: '记录', value: importantCount, tone: 'rose' },
 ];
 
 const primaryActions = [
-  { label: '博客', href: '/blog', style: 'btn-primary' },
+  { label: '博客', href: '/blog', style: 'btn-secondary' },
   { label: '笔记', href: '/notes', style: 'btn-secondary' },
   { label: '重要记录', href: '/important', style: 'btn-secondary' },
-  { label: '写作', href: '/editor', style: 'btn-secondary' },
+  { label: '写作入口', href: '/editor', style: 'btn-primary' },
 ];
 
-const focusAreas = [
-  'Computer Vision',
-  'SLAM / 3DGS',
-  'Tooling',
-  'Research Notes',
+const contentLanes = [
+  {
+    title: '长文系统',
+    eyebrow: 'Blog',
+    href: '/blog',
+    count: blogCount,
+    summary: '放系统设计、技术复盘和完整研究脉络，适合需要反复回看的内容。',
+  },
+  {
+    title: '短笔记流',
+    eyebrow: 'Notes',
+    href: '/notes',
+    count: noteCount,
+    summary: '记录命令、坑点、片段和临时灵感，保持轻量、可检索。',
+  },
+  {
+    title: '重要记录',
+    eyebrow: 'Important',
+    href: '/important',
+    count: importantCount,
+    summary: '沉淀配置、计划、决策和关键变更，方便长期追踪。',
+  },
 ];
+
+const focusAreas = ['Computer Vision', 'SLAM / 3DGS', 'Tooling', 'Research Notes'];
 ---
 
 <BaseLayout title="山不见我" description="技术笔记 · 长期写作 · 可迁移的个人站点">
   <canvas id="liquid-field" class="liquid-field" aria-hidden="true"></canvas>
 
   <div class="home-stage">
-    <section class="hero-liquid" id="hero-section">
-      <div class="hero-backplate" aria-hidden="true">
-        <span class="glass-ribbon glass-ribbon-a"></span>
-        <span class="glass-ribbon glass-ribbon-b"></span>
-        <span class="glass-ribbon glass-ribbon-c"></span>
-      </div>
-
-      <div class="hero-copy reveal">
-        <p class="hero-kicker">山不见我，我自见山</p>
-        <h1>
+    <section class="home-command" aria-labelledby="home-title">
+      <div class="hero-core reveal">
+        <p class="panel-eyebrow">Personal Knowledge OS</p>
+        <h1 id="home-title">
           <span>山不见我</span>
-          <span class="hero-title-line">长期知识库</span>
+          <span>长期知识工作台</span>
         </h1>
         <p class="hero-intro">
-          整理技术笔记、研究脉络和重要记录。内容保持静态、可迁移、可长期维护，页面只服务于阅读、检索和沉淀。
+          技术长文、短笔记和重要记录统一沉淀在静态内容库里。第一屏直接服务于检索、进入内容和继续写作。
         </p>
-      </div>
 
-      <div class="hero-actions reveal reveal-delay-1">
-        {primaryActions.map((action) => (
-          <a href={action.href} class={`${action.style} magnetic`}>{action.label}</a>
-        ))}
-      </div>
+        <form class="home-search liquid-control reveal reveal-delay-1" action="/search" method="get" role="search">
+          <label for="home-q" class="sr-only">搜索站内内容</label>
+          <input
+            id="home-q"
+            name="q"
+            type="search"
+            placeholder="搜索标题、摘要、标签或分类"
+            autocomplete="off"
+          />
+          <button type="submit" class="btn-primary magnetic">搜索</button>
+        </form>
 
-      <div class="hero-focus reveal reveal-delay-2" aria-label="关注方向">
-        {focusAreas.map((area) => (
-          <span>{area}</span>
-        ))}
-      </div>
-    </section>
-
-    <section class="signal-grid" aria-label="站点概览">
-      {metrics.map((metric, index) => (
-        <article
-          class={`metric-panel liquid-panel reveal reveal-delay-${Math.min(index + 1, 4)}`}
-          data-liquid-panel
-          data-tilt
-          data-tone={metric.tone}
-        >
-          <p class="metric-value">
-            <span class="counter" data-target={metric.value}>0</span>
-          </p>
-          <p class="metric-label">{metric.label}</p>
-        </article>
-      ))}
-
-      <article class="latest-panel liquid-panel reveal reveal-delay-2" data-liquid-panel data-tilt>
-        <div class="panel-heading">
-          <h2>近期沉淀</h2>
-          <a href="/blog" class="panel-link magnetic">全部</a>
+        <div class="hero-actions reveal reveal-delay-2">
+          {primaryActions.map((action) => (
+            <a href={action.href} class={`${action.style} magnetic`}>{action.label}</a>
+          ))}
         </div>
-        <div class="latest-list">
+
+        <div class="hero-focus reveal reveal-delay-3" aria-label="关注方向">
+          {focusAreas.map((area) => (
+            <span>{area}</span>
+          ))}
+        </div>
+      </div>
+
+      <aside class="command-panel liquid-panel reveal reveal-delay-1" data-liquid-panel data-tilt>
+        <div class="panel-heading">
+          <div>
+            <p class="panel-eyebrow">Live Index</p>
+            <h2>知识库状态</h2>
+          </div>
+          <a href="/search" class="panel-link magnetic">检索</a>
+        </div>
+
+        <div class="metric-strip" aria-label="站点概览">
+          {metrics.map((metric) => (
+            <div class="metric-cell" data-tone={metric.tone}>
+              <span class="metric-value counter" data-target={metric.value}>0</span>
+              <span class="metric-label">{metric.label}</span>
+            </div>
+          ))}
+        </div>
+
+        <div class="console-feed" aria-label="最近更新">
           {heroRecent.length > 0 ? (
             heroRecent.map((post) => (
-              <a href={post.path} class="latest-row">
-                <span class="latest-date">{formatDate(post.data.date)}</span>
-                <span class="latest-title">{post.data.title}</span>
+              <a href={post.path} class="feed-row">
+                <span class="feed-date">{formatDate(post.data.date)}</span>
+                <span class="feed-title">{post.data.title}</span>
               </a>
             ))
           ) : (
             <p class="empty-copy">暂无发布内容。</p>
           )}
         </div>
-      </article>
+      </aside>
+    </section>
+
+    <section class="lane-grid" aria-label="内容入口">
+      {contentLanes.map((lane, index) => (
+        <a
+          href={lane.href}
+          class={`lane-card liquid-panel reveal reveal-delay-${Math.min(index + 1, 3)}`}
+          data-liquid-panel
+          data-tilt
+        >
+          <span class="panel-eyebrow">{lane.eyebrow}</span>
+          <strong>{lane.title}</strong>
+          <p>{lane.summary}</p>
+          <span class="lane-count">{lane.count} 条内容</span>
+        </a>
+      ))}
     </section>
 
     <section class="workbench-grid" aria-label="计划与待办">
@@ -209,7 +247,7 @@ const focusAreas = [
 
       <div class="recent-grid">
         {recent.map((post, i) => (
-          <div class="post-card-wrapper reveal" style={`--reveal-delay: ${120 + (i % 6) * 80}ms`} data-tilt>
+          <div class="post-card-wrapper reveal" style={`--reveal-delay: ${120 + (i % 6) * 80}ms`}>
             <PostCard item={post} href={post.path} />
           </div>
         ))}
@@ -248,163 +286,97 @@ const focusAreas = [
     inset: 0;
     z-index: 0;
     pointer-events: none;
-    opacity: 0.78;
+    opacity: 0.8;
   }
 
   .home-stage {
     position: relative;
     z-index: 1;
     display: grid;
-    gap: 1.5rem;
+    gap: 1.2rem;
     min-width: 0;
-    max-width: 100%;
-    overflow-x: clip;
   }
 
-  .hero-liquid {
-    position: relative;
-    width: 100%;
-    min-width: 0;
-    max-width: 100%;
-    min-height: 520px;
+  .home-command {
     display: grid;
-    align-content: center;
-    gap: 1.4rem;
-    overflow: hidden;
-    padding: clamp(2rem, 5vw, 5.5rem) 0 clamp(2rem, 4vw, 4rem);
-    isolation: isolate;
+    grid-template-columns: minmax(0, 1.1fr) minmax(19rem, 0.82fr);
+    align-items: center;
+    gap: clamp(1rem, 4vw, 3rem);
+    min-height: min(680px, calc(100vh - 7rem));
+    padding: clamp(1.2rem, 4vw, 3.6rem) 0;
   }
 
-  .hero-backplate {
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    overflow: hidden;
-    border-radius: 8px;
-  }
-
-  .hero-backplate::before {
-    content: '';
-    position: absolute;
-    inset: 2.5rem 0 1.5rem;
-    border: 1px solid rgb(255 255 255 / 0.48);
-    border-radius: 8px;
-    background:
-      linear-gradient(120deg, rgb(255 255 255 / 0.5), rgb(255 255 255 / 0.1) 38%, rgb(236 253 245 / 0.25) 74%, rgb(255 247 237 / 0.2)),
-      linear-gradient(180deg, rgb(255 255 255 / 0.44), rgb(255 255 255 / 0.16));
-    box-shadow:
-      inset 0 1px 0 rgb(255 255 255 / 0.8),
-      inset 0 -1px 0 rgb(15 23 42 / 0.08),
-      0 34px 90px rgb(15 23 42 / 0.12);
-    backdrop-filter: blur(28px) saturate(160%) contrast(105%);
-    -webkit-backdrop-filter: blur(28px) saturate(160%) contrast(105%);
-  }
-
-  .dark .hero-backplate::before {
-    border-color: rgb(255 255 255 / 0.12);
-    background:
-      linear-gradient(120deg, rgb(255 255 255 / 0.1), rgb(255 255 255 / 0.04) 40%, rgb(20 184 166 / 0.08) 72%, rgb(251 146 60 / 0.06)),
-      linear-gradient(180deg, rgb(2 6 23 / 0.42), rgb(2 6 23 / 0.16));
-    box-shadow:
-      inset 0 1px 0 rgb(255 255 255 / 0.16),
-      inset 0 -1px 0 rgb(255 255 255 / 0.04),
-      0 34px 90px rgb(0 0 0 / 0.36);
-  }
-
-  .glass-ribbon {
-    position: absolute;
-    display: block;
-    height: 11rem;
-    width: 74rem;
-    left: 50%;
-    border: 1px solid rgb(255 255 255 / 0.34);
-    border-radius: 999px;
-    background: linear-gradient(90deg, rgb(255 255 255 / 0), rgb(255 255 255 / 0.36), rgb(255 255 255 / 0));
-    filter: blur(0.2px);
-    opacity: 0.64;
-    transform-origin: center;
-    animation: glass-drift 12s ease-in-out infinite alternate;
-  }
-
-  .glass-ribbon-a {
-    top: 9%;
-    transform: translateX(-50%) rotate(-8deg);
-  }
-
-  .glass-ribbon-b {
-    top: 39%;
-    animation-delay: -5s;
-    transform: translateX(-50%) rotate(8deg);
-  }
-
-  .glass-ribbon-c {
-    top: 64%;
-    animation-delay: -9s;
-    transform: translateX(-50%) rotate(-3deg);
-  }
-
-  .dark .glass-ribbon {
-    border-color: rgb(255 255 255 / 0.08);
-    background: linear-gradient(90deg, rgb(255 255 255 / 0), rgb(255 255 255 / 0.12), rgb(255 255 255 / 0));
-  }
-
-  .hero-copy {
-    max-width: 56rem;
+  .hero-core {
     min-width: 0;
-    padding: 0 1.4rem;
   }
 
-  .hero-kicker,
-  .panel-eyebrow {
-    margin: 0;
-    color: rgb(20 184 166);
-    font-size: 0.72rem;
-    font-weight: 800;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-  }
-
-  .dark .hero-kicker,
-  .dark .panel-eyebrow {
-    color: rgb(94 234 212);
-  }
-
-  .hero-copy h1 {
-    margin: 0.7rem 0 0;
+  .hero-core h1 {
+    margin: 0.72rem 0 0;
     color: rgb(9 13 18);
-    font-size: clamp(3.15rem, 8vw, 7rem);
+    font-size: clamp(3.1rem, 7vw, 6.35rem);
     font-weight: 950;
-    line-height: 0.92;
+    line-height: 0.9;
     letter-spacing: 0;
   }
 
-  .dark .hero-copy h1 {
+  .hero-core h1 span {
+    display: block;
+  }
+
+  .hero-core h1 span + span {
+    color: transparent;
+    -webkit-text-stroke: 1px rgb(15 23 42 / 0.55);
+  }
+
+  .dark .hero-core h1 {
     color: rgb(248 250 252);
   }
 
-  .hero-title-line {
-    display: block;
-    color: transparent;
-    -webkit-text-stroke: 1px rgb(15 23 42 / 0.5);
-    text-shadow: none;
-  }
-
-  .dark .hero-title-line {
-    -webkit-text-stroke-color: rgb(226 232 240 / 0.46);
+  .dark .hero-core h1 span + span {
+    -webkit-text-stroke-color: rgb(226 232 240 / 0.48);
   }
 
   .hero-intro {
-    max-width: 48rem;
+    max-width: 49rem;
     margin: 1.25rem 0 0;
     color: rgb(51 65 85);
     font-size: 1.03rem;
     line-height: 1.85;
-    overflow-wrap: anywhere;
-    word-break: break-word;
   }
 
   .dark .hero-intro {
     color: rgb(203 213 225);
+  }
+
+  .home-search {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.45rem;
+    width: min(100%, 47rem);
+    margin-top: 1.5rem;
+    padding: 0.45rem;
+  }
+
+  .home-search input {
+    min-width: 0;
+    border: 0;
+    background: transparent;
+    padding: 0 0.75rem;
+    color: rgb(15 23 42);
+    font-size: 0.95rem;
+    outline: none;
+  }
+
+  .home-search input::placeholder {
+    color: rgb(100 116 139);
+  }
+
+  .dark .home-search input {
+    color: rgb(241 245 249);
+  }
+
+  .dark .home-search input::placeholder {
+    color: rgb(148 163 184);
   }
 
   .hero-actions,
@@ -414,15 +386,17 @@ const focusAreas = [
     gap: 0.7rem;
     min-width: 0;
     max-width: 100%;
-    padding: 0 1.4rem;
+    margin-top: 0.9rem;
+  }
+
+  .hero-focus {
+    margin-top: 1rem;
   }
 
   .hero-focus span {
     display: inline-flex;
     align-items: center;
-    flex: 0 1 auto;
     min-height: 2.15rem;
-    max-width: 100%;
     border: 1px solid rgb(15 23 42 / 0.08);
     border-radius: 8px;
     padding: 0.45rem 0.7rem;
@@ -432,7 +406,6 @@ const focusAreas = [
     -webkit-backdrop-filter: blur(18px) saturate(150%);
     font-size: 0.78rem;
     font-weight: 750;
-    overflow-wrap: anywhere;
   }
 
   .dark .hero-focus span {
@@ -441,165 +414,170 @@ const focusAreas = [
     background: rgb(15 23 42 / 0.28);
   }
 
-  .signal-grid {
+  .command-panel {
+    padding: clamp(1rem, 2.5vw, 1.35rem);
+  }
+
+  .metric-strip {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 0.9rem;
-    min-width: 0;
+    gap: 0.55rem;
+    margin-bottom: 1rem;
   }
 
-  .metric-panel {
-    min-height: 8.5rem;
-  }
-
-  .metric-panel::after {
+  .metric-cell {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgb(15 23 42 / 0.08);
+    border-radius: 8px;
+    padding: 0.72rem 0.62rem;
     background:
-      linear-gradient(130deg, transparent 0 35%, rgb(255 255 255 / 0.5) 46%, transparent 58%),
-      radial-gradient(circle at var(--mx, 50%) var(--my, 30%), var(--tone-glow, rgb(20 184 166 / 0.18)), transparent 38%);
+      radial-gradient(150px circle at 28% 12%, var(--tone-glow, rgb(20 184 166 / 0.16)), transparent 66%),
+      rgb(255 255 255 / 0.22);
   }
 
-  .metric-panel[data-tone='cyan'] {
+  .metric-cell[data-tone='cyan'] {
     --tone-glow: rgb(6 182 212 / 0.2);
   }
 
-  .metric-panel[data-tone='green'] {
+  .metric-cell[data-tone='green'] {
     --tone-glow: rgb(34 197 94 / 0.18);
   }
 
-  .metric-panel[data-tone='amber'] {
+  .metric-cell[data-tone='amber'] {
     --tone-glow: rgb(245 158 11 / 0.2);
   }
 
-  .metric-panel[data-tone='rose'] {
+  .metric-cell[data-tone='rose'] {
     --tone-glow: rgb(244 63 94 / 0.16);
   }
 
+  .dark .metric-cell {
+    border-color: rgb(255 255 255 / 0.08);
+    background:
+      radial-gradient(150px circle at 28% 12%, var(--tone-glow, rgb(45 212 191 / 0.12)), transparent 66%),
+      rgb(15 23 42 / 0.22);
+  }
+
   .metric-value {
-    margin: 0;
+    display: block;
     color: rgb(9 13 18);
-    font-size: 2.55rem;
+    font-size: 1.82rem;
     font-weight: 950;
     line-height: 1;
     font-variant-numeric: tabular-nums;
+  }
+
+  .metric-label {
+    display: block;
+    margin-top: 0.45rem;
+    color: rgb(71 85 105);
+    font-size: 0.72rem;
+    font-weight: 780;
   }
 
   .dark .metric-value {
     color: rgb(248 250 252);
   }
 
-  .metric-label {
-    margin: 0.75rem 0 0;
-    color: rgb(71 85 105);
-    font-size: 0.78rem;
-    font-weight: 750;
-  }
-
   .dark .metric-label {
     color: rgb(148 163 184);
   }
 
-  .latest-panel {
-    grid-column: span 4;
-  }
-
-  .panel-heading,
-  .section-heading {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 1rem;
-    margin-bottom: 1.15rem;
-  }
-
-  .panel-heading h2,
-  .section-heading h2 {
-    margin: 0.2rem 0 0;
-    color: rgb(15 23 42);
-    font-size: 1.25rem;
-    font-weight: 900;
-    letter-spacing: 0;
-  }
-
-  .dark .panel-heading h2,
-  .dark .section-heading h2 {
-    color: rgb(248 250 252);
-  }
-
-  .panel-link {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    min-height: 2rem;
-    border: 1px solid rgb(15 23 42 / 0.08);
-    border-radius: 8px;
-    padding: 0.3rem 0.6rem;
-    color: rgb(15 23 42 / 0.72);
-    background: rgb(255 255 255 / 0.2);
-    font-size: 0.78rem;
-    font-weight: 800;
-    text-decoration: none;
-  }
-
-  .panel-link:hover {
-    color: rgb(15 118 110);
-    border-color: rgb(20 184 166 / 0.38);
-  }
-
-  .dark .panel-link {
-    border-color: rgb(255 255 255 / 0.1);
-    color: rgb(226 232 240 / 0.78);
-    background: rgb(15 23 42 / 0.26);
-  }
-
-  .dark .panel-link:hover {
-    color: rgb(94 234 212);
-    border-color: rgb(94 234 212 / 0.34);
-  }
-
-  .latest-list {
+  .console-feed {
     display: grid;
     gap: 0.45rem;
   }
 
-  .latest-row {
+  .feed-row {
     display: grid;
-    grid-template-columns: 8.2rem minmax(0, 1fr);
-    gap: 0.9rem;
+    grid-template-columns: 7.6rem minmax(0, 1fr);
+    gap: 0.72rem;
     align-items: center;
     border-radius: 8px;
-    padding: 0.65rem 0.7rem;
+    padding: 0.62rem 0.66rem;
     text-decoration: none;
   }
 
-  .latest-row:hover {
+  .feed-row:hover {
     background: rgb(255 255 255 / 0.24);
   }
 
-  .dark .latest-row:hover {
+  .dark .feed-row:hover {
     background: rgb(255 255 255 / 0.06);
   }
 
-  .latest-date {
+  .feed-date {
     color: rgb(100 116 139);
-    font-size: 0.77rem;
+    font-size: 0.76rem;
     font-variant-numeric: tabular-nums;
   }
 
-  .latest-title {
+  .feed-title {
     overflow: hidden;
     color: rgb(15 23 42);
-    font-size: 0.94rem;
-    font-weight: 800;
+    font-size: 0.92rem;
+    font-weight: 820;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
-  .dark .latest-date {
+  .dark .feed-date {
     color: rgb(148 163 184);
   }
 
-  .dark .latest-title {
+  .dark .feed-title {
     color: rgb(226 232 240);
+  }
+
+  .lane-grid,
+  .recent-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+    min-width: 0;
+  }
+
+  .lane-card {
+    display: grid;
+    gap: 0.65rem;
+    min-height: 13rem;
+    padding: 1.2rem;
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .lane-card strong {
+    color: rgb(15 23 42);
+    font-size: 1.35rem;
+    font-weight: 930;
+    line-height: 1.12;
+  }
+
+  .lane-card p {
+    margin: 0;
+    color: rgb(71 85 105);
+    font-size: 0.92rem;
+    line-height: 1.72;
+  }
+
+  .lane-count {
+    align-self: end;
+    color: rgb(15 118 110);
+    font-size: 0.78rem;
+    font-weight: 850;
+  }
+
+  .dark .lane-card strong {
+    color: rgb(248 250 252);
+  }
+
+  .dark .lane-card p {
+    color: rgb(148 163 184);
+  }
+
+  .dark .lane-count {
+    color: rgb(94 234 212);
   }
 
   .workbench-grid,
@@ -621,7 +599,6 @@ const focusAreas = [
     display: grid;
     grid-template-columns: 1.1rem minmax(0, 1fr);
     gap: 0.75rem;
-    padding-bottom: 0;
   }
 
   .timeline-dot {
@@ -791,13 +768,6 @@ const focusAreas = [
     gap: 1rem;
   }
 
-  .recent-grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 1rem;
-    min-width: 0;
-  }
-
   .post-card-wrapper {
     perspective: 900px;
   }
@@ -806,98 +776,51 @@ const focusAreas = [
     transition-delay: var(--reveal-delay, 0ms);
   }
 
-  .empty-copy {
-    margin: 0;
-    color: rgb(100 116 139);
-    font-size: 0.9rem;
-    line-height: 1.7;
-  }
-
-  .dark .empty-copy {
-    color: rgb(148 163 184);
-  }
-
-  .reveal {
-    opacity: 0;
-    transform: translateY(22px);
-    transition:
-      opacity 0.72s cubic-bezier(0.22, 1, 0.36, 1),
-      transform 0.72s cubic-bezier(0.22, 1, 0.36, 1);
-  }
-
-  .reveal.visible {
-    opacity: 1;
-    transform: translateY(0);
-  }
-
-  .reveal-delay-1 { transition-delay: 90ms; }
-  .reveal-delay-2 { transition-delay: 160ms; }
-  .reveal-delay-3 { transition-delay: 230ms; }
-  .reveal-delay-4 { transition-delay: 300ms; }
-
-  @keyframes glass-drift {
-    from {
-      translate: -1.5rem 0;
+  @media (max-width: 1080px) {
+    .home-command {
+      grid-template-columns: 1fr;
+      min-height: auto;
     }
-    to {
-      translate: 1.5rem 0.8rem;
+
+    .command-panel {
+      max-width: 100%;
     }
   }
 
-  @media (max-width: 1024px) {
-    .hero-liquid {
-      min-height: 470px;
-    }
-
-    .signal-grid,
+  @media (max-width: 900px) {
+    .lane-grid,
     .recent-grid {
       grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .latest-panel {
-      grid-column: span 2;
     }
   }
 
   @media (max-width: 720px) {
-    .hero-liquid {
-      min-height: auto;
-      padding-top: 2.8rem;
-      max-width: 100%;
-      overflow-x: clip;
+    .home-stage {
+      gap: 1rem;
     }
 
-    .hero-copy {
-      width: 100%;
-      padding: 0 0.2rem;
+    .home-command {
+      padding-top: 1.6rem;
     }
 
-    .hero-copy h1 {
-      font-size: 2.55rem;
+    .hero-core h1 {
+      font-size: 2.62rem;
       line-height: 0.98;
     }
 
     .hero-intro {
-      max-width: 100%;
       font-size: 0.96rem;
     }
 
-    .hero-focus span {
-      max-width: 100%;
-      flex: 0 1 auto;
+    .home-search {
+      grid-template-columns: 1fr;
+    }
+
+    .home-search input {
+      min-height: 2.7rem;
     }
 
     .hero-actions,
-    .hero-focus {
-      padding: 0;
-    }
-
-    .hero-actions {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      width: 100%;
-    }
-
     .hero-focus {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -906,39 +829,24 @@ const focusAreas = [
 
     .hero-focus span {
       justify-content: center;
-      width: 100%;
+      text-align: center;
     }
 
-    .signal-grid,
+    .metric-strip,
+    .lane-grid,
     .workbench-grid,
     .navigation-grid,
     .recent-grid {
       grid-template-columns: 1fr;
     }
 
-    .latest-panel {
-      grid-column: auto;
-    }
-
-    .latest-row {
+    .feed-row {
       grid-template-columns: 1fr;
-      gap: 0.2rem;
+      gap: 0.18rem;
     }
 
-    .latest-title {
+    .feed-title {
       white-space: normal;
-    }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .glass-ribbon {
-      animation: none;
-    }
-
-    .reveal {
-      opacity: 1;
-      transform: none;
-      transition: none;
     }
   }
 </style>
@@ -962,10 +870,11 @@ const focusAreas = [
     let pointerY = -9999;
     let raf = 0;
 
-    const strands = Array.from({ length: 9 }, (_, index) => ({
-      offset: index / 9,
-      speed: 0.00018 + index * 0.000018,
-      amp: 18 + (index % 4) * 7,
+    const strands = Array.from({ length: 11 }, (_, index) => ({
+      offset: index / 11,
+      speed: 0.00016 + index * 0.000017,
+      amp: 14 + (index % 5) * 6,
+      depth: index % 3,
     }));
 
     function resize() {
@@ -982,29 +891,36 @@ const focusAreas = [
     function draw(now: number) {
       ctx.clearRect(0, 0, width, height);
       const isDark = document.documentElement.classList.contains('dark');
-      const baseAlpha = isDark ? 0.13 : 0.16;
-      const accentAlpha = isDark ? 0.2 : 0.18;
+      const baseAlpha = isDark ? 0.1 : 0.12;
+      const accentAlpha = isDark ? 0.2 : 0.19;
 
       strands.forEach((strand, strandIndex) => {
-        const yBase = height * (0.16 + strand.offset * 0.86);
-        const hue = strandIndex % 3 === 0 ? '20 184 166' : strandIndex % 3 === 1 ? '245 158 11' : '244 63 94';
+        const yBase = height * (0.11 + strand.offset * 0.96);
+        const hue = strandIndex % 4 === 0
+          ? '20 184 166'
+          : strandIndex % 4 === 1
+            ? '245 158 11'
+            : strandIndex % 4 === 2
+              ? '244 63 94'
+              : '14 165 233';
+
         ctx.beginPath();
 
-        for (let x = -40; x <= width + 40; x += 22) {
-          const phase = now * strand.speed + x * 0.006 + strand.offset * 5.8;
-          const wave = Math.sin(phase) * strand.amp + Math.sin(phase * 0.43 + strandIndex) * strand.amp * 0.48;
+        for (let x = -48; x <= width + 48; x += 18) {
+          const phase = now * strand.speed + x * 0.006 + strand.offset * 6.2;
+          const wave = Math.sin(phase) * strand.amp + Math.sin(phase * 0.51 + strandIndex) * strand.amp * 0.48;
           const dx = x - pointerX;
           const dy = yBase - pointerY;
           const distance = Math.sqrt(dx * dx + dy * dy);
-          const pull = distance < 220 ? (1 - distance / 220) * 34 : 0;
+          const pull = distance < 240 ? (1 - distance / 240) * (32 + strand.depth * 7) : 0;
           const y = yBase + wave + pull;
 
-          if (x === -40) ctx.moveTo(x, y);
+          if (x === -48) ctx.moveTo(x, y);
           else ctx.lineTo(x, y);
         }
 
         ctx.strokeStyle = `rgb(${hue} / ${strandIndex % 2 === 0 ? accentAlpha : baseAlpha})`;
-        ctx.lineWidth = strandIndex % 2 === 0 ? 1.1 : 0.75;
+        ctx.lineWidth = strand.depth === 0 ? 1.1 : 0.72;
         ctx.stroke();
       });
 
@@ -1027,27 +943,6 @@ const focusAreas = [
     document.addEventListener('astro:before-swap', () => cancelAnimationFrame(raf), { once: true });
   })();
 
-  (function initReveal() {
-    const elements = document.querySelectorAll<HTMLElement>('.reveal');
-    if (!elements.length || reducedMotion) {
-      elements.forEach((element) => element.classList.add('visible'));
-      return;
-    }
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (!entry.isIntersecting) return;
-          entry.target.classList.add('visible');
-          observer.unobserve(entry.target);
-        });
-      },
-      { threshold: 0.08, rootMargin: '0px 0px -42px 0px' }
-    );
-
-    elements.forEach((element) => observer.observe(element));
-  })();
-
   (function initCounters() {
     const counters = document.querySelectorAll<HTMLElement>('.counter');
     if (!counters.length) return;
@@ -1060,7 +955,7 @@ const focusAreas = [
         return;
       }
 
-      const duration = 1100;
+      const duration = 1050;
       const start = performance.now();
       const tick = (now: number) => {
         const progress = Math.min((now - start) / duration, 1);
@@ -1083,44 +978,4 @@ const focusAreas = [
     counters.forEach((counter) => observer.observe(counter));
   })();
 
-  (function initPointerGlass() {
-    const interactiveElements = document.querySelectorAll<HTMLElement>('[data-liquid-panel], [data-tilt]');
-    const magneticElements = document.querySelectorAll<HTMLElement>('.magnetic');
-    if (reducedMotion) return;
-
-    interactiveElements.forEach((element) => {
-      element.addEventListener('pointermove', (event) => {
-        const rect = element.getBoundingClientRect();
-        const x = event.clientX - rect.left;
-        const y = event.clientY - rect.top;
-        const px = x / rect.width - 0.5;
-        const py = y / rect.height - 0.5;
-
-        element.style.setProperty('--mx', `${x}px`);
-        element.style.setProperty('--my', `${y}px`);
-
-        if (!element.hasAttribute('data-tilt')) return;
-        element.style.transform = `perspective(900px) rotateX(${(-py * 5).toFixed(2)}deg) rotateY(${(px * 6).toFixed(2)}deg) translate3d(0, -2px, 0)`;
-      }, { passive: true });
-
-      element.addEventListener('pointerleave', () => {
-        element.style.removeProperty('--mx');
-        element.style.removeProperty('--my');
-        element.style.transform = '';
-      }, { passive: true });
-    });
-
-    magneticElements.forEach((element) => {
-      element.addEventListener('pointermove', (event) => {
-        const rect = element.getBoundingClientRect();
-        const x = event.clientX - rect.left - rect.width / 2;
-        const y = event.clientY - rect.top - rect.height / 2;
-        element.style.transform = `translate(${(x * 0.12).toFixed(1)}px, ${(y * 0.18).toFixed(1)}px)`;
-      }, { passive: true });
-
-      element.addEventListener('pointerleave', () => {
-        element.style.transform = '';
-      }, { passive: true });
-    });
-  })();
 </script>
