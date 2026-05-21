@@ -82,7 +82,9 @@ const focusAreas = ['Computer Vision', 'SLAM / 3DGS', 'Tooling', 'Research Notes
 ---
 
 <BaseLayout title="山不见我" description="技术笔记 · 长期写作 · 可迁移的个人站点">
-  <canvas id="liquid-field" class="liquid-field" aria-hidden="true"></canvas>
+  <div id="three-container" class="liquid-field" aria-hidden="true"></div>
+  <!-- Grain overlay -->
+  <div id="grain" aria-hidden="true" style="position:fixed;inset:0;pointer-events:none;z-index:1;mix-blend-mode:overlay;opacity:0.03;background-image:url(data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E);background-repeat:repeat;background-size:128px"></div>
 
   <div class="home-stage">
     <section class="home-command" aria-labelledby="home-title">
@@ -795,6 +797,10 @@ const focusAreas = ['Computer Vision', 'SLAM / 3DGS', 'Tooling', 'Research Notes
   }
 
   @media (max-width: 720px) {
+    .liquid-field {
+      display: none;
+    }
+
     .home-stage {
       gap: 1rem;
     }
@@ -854,93 +860,101 @@ const focusAreas = ['Computer Vision', 'SLAM / 3DGS', 'Tooling', 'Research Notes
 <script>
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  (function initLiquidField() {
-    const canvasElement = document.getElementById('liquid-field');
-    if (!(canvasElement instanceof HTMLCanvasElement) || reducedMotion) return;
+  // ── 3D Particle Field (Three.js via CDN) ──
+  (function initThreeScene() {
+    const container = document.getElementById('three-container');
+    if (!container || window.matchMedia('(max-width: 720px)').matches || reducedMotion) return;
 
-    const canvas: HTMLCanvasElement = canvasElement;
-    const context = canvas.getContext('2d');
-    if (!context) return;
-    const ctx: CanvasRenderingContext2D = context;
+    // Load Three.js dynamically
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
+    script.onload = () => initThreeSceneWithTHREE();
+    document.head.appendChild(script);
 
-    let width = 0;
-    let height = 0;
-    let dpr = 1;
-    let pointerX = -9999;
-    let pointerY = -9999;
-    let raf = 0;
+    function initThreeSceneWithTHREE() {
+      const THREE = (window as any).THREE;
+      if (!THREE) return;
 
-    const strands = Array.from({ length: 11 }, (_, index) => ({
-      offset: index / 11,
-      speed: 0.00016 + index * 0.000017,
-      amp: 14 + (index % 5) * 6,
-      depth: index % 3,
-    }));
+      const ct = container!;
+      const w = window.innerWidth, h = window.innerHeight;
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(75, w / h, 0.1, 1000);
+      camera.position.z = 30;
 
-    function resize() {
-      dpr = Math.min(window.devicePixelRatio || 1, 2);
-      width = window.innerWidth;
-      height = window.innerHeight;
-      canvas.width = Math.floor(width * dpr);
-      canvas.height = Math.floor(height * dpr);
-      canvas.style.width = `${width}px`;
-      canvas.style.height = `${height}px`;
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    }
+      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setSize(w, h);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      ct.appendChild(renderer.domElement);
 
-    function draw(now: number) {
-      ctx.clearRect(0, 0, width, height);
-      const isDark = document.documentElement.classList.contains('dark');
-      const baseAlpha = isDark ? 0.1 : 0.12;
-      const accentAlpha = isDark ? 0.2 : 0.19;
+      // Particles
+      const count = 600;
+      const positions = new Float32Array(count * 3);
+      const sizes = new Float32Array(count);
+      for (let i = 0; i < count; i++) {
+        positions[i * 3] = (Math.random() - 0.5) * 100;
+        positions[i * 3 + 1] = (Math.random() - 0.5) * 60;
+        positions[i * 3 + 2] = (Math.random() - 10) * 5;
+        sizes[i] = Math.random() * 3 + 1;
+      }
 
-      strands.forEach((strand, strandIndex) => {
-        const yBase = height * (0.11 + strand.offset * 0.96);
-        const hue = strandIndex % 4 === 0
-          ? '20 184 166'
-          : strandIndex % 4 === 1
-            ? '245 158 11'
-            : strandIndex % 4 === 2
-              ? '244 63 94'
-              : '14 165 233';
+      const geometry = new THREE.BufferGeometry();
+      geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
 
-        ctx.beginPath();
-
-        for (let x = -48; x <= width + 48; x += 18) {
-          const phase = now * strand.speed + x * 0.006 + strand.offset * 6.2;
-          const wave = Math.sin(phase) * strand.amp + Math.sin(phase * 0.51 + strandIndex) * strand.amp * 0.48;
-          const dx = x - pointerX;
-          const dy = yBase - pointerY;
-          const distance = Math.sqrt(dx * dx + dy * dy);
-          const pull = distance < 240 ? (1 - distance / 240) * (32 + strand.depth * 7) : 0;
-          const y = yBase + wave + pull;
-
-          if (x === -48) ctx.moveTo(x, y);
-          else ctx.lineTo(x, y);
-        }
-
-        ctx.strokeStyle = `rgb(${hue} / ${strandIndex % 2 === 0 ? accentAlpha : baseAlpha})`;
-        ctx.lineWidth = strand.depth === 0 ? 1.1 : 0.72;
-        ctx.stroke();
+      const material = new THREE.PointsMaterial({
+        color: 0x60a5fa,
+        size: 0.15,
+        transparent: true,
+        opacity: 0.6,
+        blending: THREE.AdditiveBlending,
+        sizeAttenuation: true,
       });
 
-      raf = requestAnimationFrame(draw);
+      const particles = new THREE.Points(geometry, material);
+      scene.add(particles);
+
+      // Mouse tracking
+      let mouseX = 0, mouseY = 0;
+      document.addEventListener('pointermove', (e: MouseEvent) => {
+        mouseX = (e.clientX / w) * 2 - 1;
+        mouseY = -(e.clientY / h) * 2 + 1;
+      }, { passive: true });
+
+      // Resize
+      window.addEventListener('resize', () => {
+        const w2 = window.innerWidth, h2 = window.innerHeight;
+        camera.aspect = w2 / h2;
+        camera.updateProjectionMatrix();
+        renderer.setSize(w2, h2);
+      }, { passive: true });
+
+      function animate() {
+        requestAnimationFrame(animate);
+        // Gentle rotation following mouse
+        particles.rotation.x += (mouseY * 0.05 - particles.rotation.x) * 0.02;
+        particles.rotation.y += (mouseX * 0.05 - particles.rotation.y) * 0.02;
+        renderer.render(scene, camera);
+      }
+      animate();
     }
+  })();
 
-    window.addEventListener('resize', resize, { passive: true });
-    window.addEventListener('pointermove', (event) => {
-      pointerX = event.clientX;
-      pointerY = event.clientY;
-    }, { passive: true });
-    window.addEventListener('pointerleave', () => {
-      pointerX = -9999;
-      pointerY = -9999;
-    }, { passive: true });
-
-    resize();
-    raf = requestAnimationFrame(draw);
-
-    document.addEventListener('astro:before-swap', () => cancelAnimationFrame(raf), { once: true });
+  // ── Scroll Reveal ──
+  (function initReveal() {
+    const els = document.querySelectorAll<HTMLElement>('.reveal');
+    if (!els.length) return;
+    const obs = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            obs.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.06, rootMargin: '0px 0px -30px 0px' }
+    );
+    els.forEach((el) => obs.observe(el));
   })();
 
   (function initCounters() {

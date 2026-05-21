@@ -1,0 +1,105 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getCollection, getEntryBySlug, render } from 'astro:content';
+
+export async function getStaticPaths() {
+  const entries = await getCollection('diary');
+  return entries.filter((e) => !e.data.draft).map((e) => ({ params: { slug: e.slug } }));
+}
+
+function estimateReadingTime(content: string): number {
+  const plainChinese = content.replace(/[^\u4e00-\u9fff]/g, '');
+  const plainEnglish = content.replace(/[^\x00-\x7F]/g, '').trim();
+  const enWords = plainEnglish.length ? plainEnglish.split(/\s+/).filter(Boolean).length : 0;
+  const score = plainChinese.length * 1.2 + enWords;
+  return Math.max(1, Math.round(score / 500));
+}
+
+const { slug } = Astro.params;
+const entry = slug ? await getEntryBySlug('diary', slug) : null;
+if (!entry || entry.data.draft) return Astro.redirect('/diary');
+
+const rendered = await render(entry);
+const { Content, headings = [] } = rendered;
+const readingTime = entry.body ? estimateReadingTime(entry.body) : 3;
+---
+
+<BaseLayout title={`${entry.data.title} · 日记`} description={entry.data.summary}>
+  <meta name="robots" content="noindex" />
+
+  <!-- Password gate -->
+  <section class="mx-auto max-w-lg space-y-6" id="gate-section">
+    <div class="surface-card space-y-3">
+      <p class="text-sm text-amber-600 font-medium">🔒 日记需要密码查看</p>
+      <div id="gate-first" class="space-y-3">
+        <p class="text-sm text-slate-500 dark:text-slate-400">首次使用？<a href="/diary/settings" class="text-amber-600 hover:underline">设置密码</a></p>
+      </div>
+      <div id="gate-login" class="space-y-3 hidden">
+        <label class="block text-sm font-medium text-slate-700 dark:text-slate-200">请输入密码</label>
+        <input id="password-input" type="password" class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-amber-400 focus:outline-none dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100" autocomplete="current-password" />
+        <p id="gate-error" class="text-xs text-rose-500 hidden">密码错误</p>
+        <div class="flex gap-2">
+          <button id="btn-unlock" class="btn-primary text-sm" type="button">解锁</button>
+          <a href="/diary/settings" class="btn-secondary text-sm">密码设置</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Diary content (hidden until unlocked) -->
+  <article id="diary-content" class="hidden prose prose-slate dark:prose-invert mx-auto max-w-[66ch]">
+    <header class="not-prose mb-8">
+      <div class="flex flex-wrap items-center gap-2 text-xs text-slate-500 mb-3">
+        <span class="chip">{entry.data.date.toLocaleDateString('zh-CN')}</span>
+        <span class="chip">{entry.data.category}</span>
+        <span class="chip">重要性 {entry.data.importance}</span>
+        {entry.data.tags.map((t) => <span class="chip">#{t}</span>)}
+      </div>
+      <h1 class="text-3xl font-black">{entry.data.title}</h1>
+      <p class="mt-2 text-sm text-slate-500">{readingTime} 分钟阅读</p>
+      <div class="mt-4 flex gap-2">
+        <a href={`/editor?type=diary&title=${encodeURIComponent(entry.data.title)}&summary=${encodeURIComponent(entry.data.summary)}&category=${encodeURIComponent(entry.data.category)}&tags=${encodeURIComponent(entry.data.tags.join(', '))}&importance=${encodeURIComponent(String(entry.data.importance))}&body=${encodeURIComponent(entry.body || '')}`}
+           class="inline-flex rounded-md border border-amber-200 bg-amber-50 px-3 py-1.5 text-sm font-medium text-amber-700 transition hover:bg-amber-100 dark:border-amber-700 dark:bg-slate-800 dark:text-amber-200">
+          编辑
+        </a>
+        <a href="/diary" class="btn-secondary text-xs py-1.5 px-3">← 返回</a>
+      </div>
+    </header>
+    <Content />
+  </article>
+</BaseLayout>
+
+<script>
+  import { hasPassword, isSessionAuthed, login } from '../../scripts/diary-auth.ts';
+
+  const gateSection = document.getElementById('gate-section')!;
+  const diaryContent = document.getElementById('diary-content')!;
+  const gateFirst = document.getElementById('gate-first')!;
+  const gateLogin = document.getElementById('gate-login')!;
+  const pwInput = document.getElementById('password-input') as HTMLInputElement;
+  const btnUnlock = document.getElementById('btn-unlock')!;
+  const gateError = document.getElementById('gate-error')!;
+
+  function unlock() {
+    gateSection.classList.add('hidden');
+    diaryContent.classList.remove('hidden');
+  }
+
+  if (isSessionAuthed()) {
+    unlock();
+  } else {
+    gateFirst.classList.add('hidden');
+    gateLogin.classList.remove('hidden');
+  }
+
+  btnUnlock.addEventListener('click', async () => {
+    gateError.classList.add('hidden');
+    const ok = await login(pwInput.value);
+    if (ok) unlock();
+    else gateError.classList.remove('hidden');
+  });
+
+  pwInput.addEventListener('keydown', (e: KeyboardEvent) => {
+    if (e.key === 'Enter') btnUnlock.click();
+  });
+</script>

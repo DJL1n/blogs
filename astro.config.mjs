@@ -13,6 +13,8 @@ export default defineConfig({
   integrations: [
     mdx(),
     tailwind(),
-    sitemap()
+    sitemap({
+      filter: (page) => !page.includes('/diary/')
+    })
   ]
 });

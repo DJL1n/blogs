@@ -7,6 +7,7 @@ const TYPE_DIR_MAP = {
   note: 'notes',
   blog: 'blog',
   important: 'important',
+  diary: 'diary',
 };
 
 function sanitizeFileName(value: string) {

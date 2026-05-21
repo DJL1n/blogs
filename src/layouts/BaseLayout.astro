@@ -67,20 +67,26 @@ const resolvedMainClass = mainClass
 
   <script>
     (function() {
-      const root = document.documentElement;
       const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       const hoverSelector = '.btn-primary, .btn-secondary, .liquid-control, .theme-toggle, .panel-link, .post-card, .chip, .copy-code-btn';
+      let hoverFrame = 0;
+      let hoverPoint: { x: number; y: number; target: EventTarget | null } | null = null;
 
       document.addEventListener('pointermove', (e: PointerEvent) => {
-        root.style.setProperty('--page-x', `${e.clientX}px`);
-        root.style.setProperty('--page-y', `${e.clientY}px`);
+        hoverPoint = { x: e.clientX, y: e.clientY, target: e.target };
+        if (hoverFrame) return;
 
-        const el = (e.target as HTMLElement).closest(hoverSelector) as HTMLElement | null;
-        if (!el) return;
+        hoverFrame = window.requestAnimationFrame(() => {
+          hoverFrame = 0;
+          if (!hoverPoint || !(hoverPoint.target instanceof HTMLElement)) return;
 
-        const r = el.getBoundingClientRect();
-        el.style.setProperty('--gx', `${e.clientX - r.left}px`);
-        el.style.setProperty('--gy', `${e.clientY - r.top}px`);
+          const el = hoverPoint.target.closest(hoverSelector) as HTMLElement | null;
+          if (!el) return;
+
+          const r = el.getBoundingClientRect();
+          el.style.setProperty('--gx', `${hoverPoint.x - r.left}px`);
+          el.style.setProperty('--gy', `${hoverPoint.y - r.top}px`);
+        });
       }, { passive: true });
 
       const revealElements = document.querySelectorAll<HTMLElement>('.reveal');

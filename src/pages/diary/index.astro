@@ -1,0 +1,108 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+
+const entries = await getCollection('diary');
+const published = entries.filter((e) => !e.data.draft).sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+---
+
+<BaseLayout title="日记" description="私人日记">
+  <section class="space-y-6">
+    <meta name="robots" content="noindex" />
+
+    <div>
+      <p class="inline-flex rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700 dark:border-amber-800 dark:bg-slate-800 dark:text-amber-200">🔒 Private</p>
+      <h1 class="mt-3 text-4xl font-bold">日记</h1>
+      <p class="mt-2 text-slate-600 dark:text-slate-300">需要密码才能查看和编辑</p>
+    </div>
+
+    <!-- Password gate overlay -->
+    <div id="gate" class="surface-card">
+      <div id="gate-first" class="space-y-3">
+        <p class="text-sm text-slate-500 dark:text-slate-400">首次使用？<a href="/diary/settings" class="text-amber-600 hover:underline">设置密码</a></p>
+      </div>
+      <div id="gate-login" class="space-y-3">
+        <label class="block text-sm font-medium text-slate-700 dark:text-slate-200">请输入密码</label>
+        <input id="password-input" type="password" class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-amber-400 focus:outline-none dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100" placeholder="密码" autocomplete="current-password" />
+        <p id="gate-error" class="text-xs text-rose-500 hidden">密码错误</p>
+        <div class="flex gap-2">
+          <button id="btn-unlock" class="btn-primary text-sm" type="button">解锁</button>
+          <a href="/diary/settings" class="btn-secondary text-sm">密码设置</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Diary content (hidden until unlocked) -->
+    <div id="content" class="hidden space-y-4">
+      <div class="flex items-center justify-between">
+        <p class="text-sm text-slate-500 dark:text-slate-300">共 {published.length} 篇</p>
+        <div class="flex gap-2">
+          <a href="/editor?type=diary" class="btn-primary text-sm">写新日记</a>
+          <a href="/diary/settings" class="btn-secondary text-sm">密码设置</a>
+        </div>
+      </div>
+
+      {published.length > 0 ? (
+        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {published.map((entry) => (
+            <a href={`/diary/${entry.slug}`} class="surface-card block no-underline">
+              <div class="flex items-center gap-2 text-xs text-slate-400 mb-2">
+                <span>{entry.data.date.toLocaleDateString('zh-CN')}</span>
+                <span class="chip">{entry.data.category}</span>
+              </div>
+              <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100">{entry.data.title}</h3>
+              {entry.data.tags.length > 0 && (
+                <p class="mt-2 text-xs text-slate-400">
+                  {entry.data.tags.map((t) => `#${t}`).join(' ')}
+                </p>
+              )}
+            </a>
+          ))}
+        </div>
+      ) : (
+        <p class="text-sm text-slate-400 italic">暂无日记。写一篇？</p>
+      )}
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  import { hasPassword, isSessionAuthed, login } from '../../scripts/diary-auth.ts';
+
+  const gateEl = document.getElementById('gate')!;
+  const contentEl = document.getElementById('content')!;
+  const gateFirst = document.getElementById('gate-first')!;
+  const gateLogin = document.getElementById('gate-login')!;
+  const pwInput = document.getElementById('password-input') as HTMLInputElement;
+  const btnUnlock = document.getElementById('btn-unlock')!;
+  const gateError = document.getElementById('gate-error')!;
+
+  function unlock() {
+    gateEl.classList.add('hidden');
+    contentEl.classList.remove('hidden');
+  }
+
+  // Auto-unlock if session is already authenticated
+  if (isSessionAuthed()) {
+    unlock();
+  } else {
+    if (hasPassword()) {
+      gateFirst.classList.add('hidden');
+      gateLogin.classList.remove('hidden');
+    }
+  }
+
+  btnUnlock.addEventListener('click', async () => {
+    gateError.classList.add('hidden');
+    const ok = await login(pwInput.value);
+    if (ok) {
+      unlock();
+    } else {
+      gateError.classList.remove('hidden');
+    }
+  });
+
+  pwInput.addEventListener('keydown', (e: KeyboardEvent) => {
+    if (e.key === 'Enter') btnUnlock.click();
+  });
+</script>

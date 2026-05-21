@@ -26,6 +26,13 @@ const notes = defineCollection({
   })
 });
 
+const diary = defineCollection({
+  type: 'content',
+  schema: baseSchema.extend({
+    type: z.literal('diary')
+  })
+});
+
 const important = defineCollection({
   type: 'content',
   schema: baseSchema.extend({
@@ -51,5 +58,6 @@ const important = defineCollection({
 export const collections = {
   blog,
   notes,
-  important
+  important,
+  diary
 };

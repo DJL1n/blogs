@@ -1,0 +1,129 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="日记 · 设置密码" description="设置日记访问密码">
+  <section class="mx-auto max-w-lg space-y-6">
+    <div>
+      <p class="inline-flex rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700 dark:border-amber-800 dark:bg-slate-800 dark:text-amber-200">🔒 Private</p>
+      <h1 class="mt-3 text-3xl font-bold">日记密码设置</h1>
+      <p id="desc" class="mt-2 text-sm text-slate-600 dark:text-slate-300"></p>
+    </div>
+
+    <div class="surface-card space-y-4">
+      <!-- Set password form -->
+      <div id="form-set">
+        <label class="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">设置密码</label>
+        <input id="pw1" type="password" class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-amber-400 focus:outline-none dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100" placeholder="输入密码" autocomplete="new-password" />
+        <input id="pw2" type="password" class="mt-2 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-amber-400 focus:outline-none dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100" placeholder="再次输入密码" autocomplete="new-password" />
+        <p id="pw-error" class="mt-1 text-xs text-rose-500 hidden"></p>
+        <button id="btn-set" class="mt-3 btn-primary text-sm" type="button">保存密码</button>
+        <p id="pw-success" class="mt-2 text-xs text-emerald-600 hidden"></p>
+      </div>
+
+      <!-- Change password form (shown only when password exists) -->
+      <div id="form-change" class="hidden space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">当前密码</label>
+          <input id="old-pw" type="password" class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-amber-400 focus:outline-none dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100" autocomplete="current-password" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">新密码</label>
+          <input id="npw1" type="password" class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-amber-400 focus:outline-none dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100" autocomplete="new-password" />
+          <input id="npw2" type="password" class="mt-2 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-amber-400 focus:outline-none dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100" placeholder="再次输入新密码" autocomplete="new-password" />
+        </div>
+        <p id="change-error" class="text-xs text-rose-500 hidden"></p>
+        <div class="flex gap-2">
+          <button id="btn-change" class="btn-primary text-sm" type="button">修改密码</button>
+          <button id="btn-clear" class="btn-secondary text-sm" type="button">清除密码（取消保护）</button>
+        </div>
+        <p id="change-success" class="text-xs text-emerald-600 hidden"></p>
+      </div>
+    </div>
+
+    <div class="text-center">
+      <a href="/diary" class="text-sm text-slate-500 hover:text-amber-600 transition-colors">← 返回日记</a>
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  import { hasPassword, setPassword, verifyPassword, login, clearSession } from '../../scripts/diary-auth.ts';
+
+  const desc = document.getElementById('desc')!;
+  const formSet = document.getElementById('form-set')!;
+  const formChange = document.getElementById('form-change')!;
+  const pw1 = document.getElementById('pw1') as HTMLInputElement;
+  const pw2 = document.getElementById('pw2') as HTMLInputElement;
+  const oldPw = document.getElementById('old-pw') as HTMLInputElement;
+  const npw1 = document.getElementById('npw1') as HTMLInputElement;
+  const npw2 = document.getElementById('npw2') as HTMLInputElement;
+  const btnSet = document.getElementById('btn-set')!;
+  const btnChange = document.getElementById('btn-change')!;
+  const btnClear = document.getElementById('btn-clear')!;
+  const pwError = document.getElementById('pw-error')!;
+  const pwSuccess = document.getElementById('pw-success')!;
+  const changeError = document.getElementById('change-error')!;
+  const changeSuccess = document.getElementById('change-success')!;
+
+  function showError(el: HTMLElement, msg: string) {
+    el.textContent = msg;
+    el.classList.remove('hidden');
+  }
+
+  function hideError(el: HTMLElement) { el.classList.add('hidden'); }
+
+  function showSuccess(el: HTMLElement, msg: string) {
+    el.textContent = msg;
+    el.classList.remove('hidden');
+    setTimeout(() => el.classList.add('hidden'), 3000);
+  }
+
+  // Init: show correct form
+  if (hasPassword()) {
+    desc.textContent = '密码已设置。你可以修改密码或清除密码保护。';
+    formSet.classList.add('hidden');
+    formChange.classList.remove('hidden');
+  } else {
+    desc.textContent = '首次使用：设置一个密码来保护你的日记。';
+  }
+
+  // Set password
+  btnSet.addEventListener('click', async () => {
+    hideError(pwError);
+    if (pw1.value.length < 4) { showError(pwError, '密码至少 4 个字符'); return; }
+    if (pw1.value !== pw2.value) { showError(pwError, '两次输入的密码不一致'); return; }
+    await setPassword(pw1.value);
+    // Auto-login
+    await login(pw1.value);
+    showSuccess(pwSuccess, '密码已设置！');
+    setTimeout(() => { window.location.href = '/diary'; }, 1000);
+  });
+
+  // Change password
+  btnChange.addEventListener('click', async () => {
+    hideError(changeError);
+    const ok = await verifyPassword(oldPw.value);
+    if (!ok) { showError(changeError, '当前密码错误'); return; }
+    if (npw1.value.length < 4) { showError(changeError, '新密码至少 4 个字符'); return; }
+    if (npw1.value !== npw2.value) { showError(changeError, '两次输入的新密码不一致'); return; }
+    await setPassword(npw1.value);
+    await login(npw1.value);
+    showSuccess(changeSuccess, '密码已修改！');
+  });
+
+  // Clear password
+  btnClear.addEventListener('click', async () => {
+    hideError(changeError);
+    const ok = await verifyPassword(oldPw.value);
+    if (!ok) { showError(changeError, '请输入当前密码以确认清除'); return; }
+    localStorage.removeItem('kb-diary-hash');
+    clearSession();
+    showSuccess(changeSuccess, '密码已清除（日记不再受保护）');
+    setTimeout(() => { window.location.href = '/diary'; }, 1000);
+  });
+
+  // Enter key support
+  [pw1, pw2].forEach(el => el.addEventListener('keydown', (e: KeyboardEvent) => { if (e.key === 'Enter') btnSet.click(); }));
+  [npw1, npw2].forEach(el => el.addEventListener('keydown', (e: KeyboardEvent) => { if (e.key === 'Enter') btnChange.click(); }));
+</script>
