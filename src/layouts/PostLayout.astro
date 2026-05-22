@@ -92,9 +92,8 @@ const editorQuery = bodyForEditor
     </article>
 
     {
-      hasToc ? (
+      hasToc && (
         <aside class="post-toc">
-          <div class="decoration-sphere" id="decoration-sphere"></div>
           <p class="panel-eyebrow">Outline</p>
           <h2>目录</h2>
           <ul>
@@ -106,10 +105,6 @@ const editorQuery = bodyForEditor
               </li>
             ))}
           </ul>
-        </aside>
-      ) : (
-        <aside class="post-toc post-toc--empty" aria-hidden="true">
-          <div class="decoration-sphere" id="decoration-sphere"></div>
         </aside>
       )
     }
@@ -185,127 +180,6 @@ const editorQuery = bodyForEditor
 
     window.addEventListener('scroll', onScroll, { passive: true });
     onScroll();
-  })();
-</script>
-
-<script is:inline>
-  const rm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-  (async function initSphereCluster() {
-    const container = document.getElementById('decoration-sphere');
-    if (!container || window.matchMedia('(max-width: 1200px)').matches || rm) return;
-
-    const THREE = await import('three');
-
-    function isDark() { return document.documentElement.classList.contains('dark'); }
-
-    const rect = container.getBoundingClientRect();
-    if (rect.width < 50 || rect.height < 50) return;
-
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(40, rect.width / rect.height, 0.1, 20);
-    camera.position.set(0, 0.3, 3.6);
-
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setSize(rect.width, rect.height);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.0;
-    container.appendChild(renderer.domElement);
-
-    scene.add(new THREE.AmbientLight('#ffffff', 0.5));
-    const dir = new THREE.DirectionalLight('#ffffff', 0.8);
-    dir.position.set(2, 3, 4); scene.add(dir);
-    const back = new THREE.DirectionalLight('#38bdf8', 0.3);
-    back.position.set(-2, -1, -3); scene.add(back);
-
-    // ── Sphere cluster (Fibonacci distribution) ──
-    const count = 80;
-    const clusterR = 1.0;
-    const geo = new THREE.SphereGeometry(0.08, 8, 6);
-    const spheres: THREE.Mesh[] = [];
-    const basePos: { x: number; y: number; z: number }[] = [];
-
-    const phi = Math.PI * (3 - Math.sqrt(5));
-    for (let i = 0; i < count; i++) {
-      const y = 1 - (i / (count - 1)) * 2;
-      const r = Math.sqrt(1 - y * y);
-      const theta = phi * i;
-      const p = { x: clusterR * r * Math.cos(theta), y: clusterR * y, z: clusterR * r * Math.sin(theta) };
-      basePos.push(p);
-
-      const mat = new THREE.MeshStandardMaterial({
-        color: isDark() ? '#4b5563' : '#93c5fd',
-        roughness: 0.25, metalness: 0.15,
-        transparent: true, opacity: 0.7,
-      });
-      const m = new THREE.Mesh(geo, mat);
-      m.position.set(p.x, p.y, p.z);
-      spheres.push(m);
-    }
-
-    const group = new THREE.Group();
-    spheres.forEach((s) => group.add(s));
-    scene.add(group);
-
-    // ── Raycaster hover ──
-    const raycaster = new THREE.Raycaster();
-    const pointer = new THREE.Vector2();
-    let hoverId = -1;
-
-    container.addEventListener('pointermove', (e) => {
-      const r = container.getBoundingClientRect();
-      pointer.x = ((e.clientX - r.left) / r.width) * 2 - 1;
-      pointer.y = -((e.clientY - r.top) / r.height) * 2 + 1;
-      raycaster.setFromCamera(pointer, camera);
-      const hits = raycaster.intersectObjects(spheres);
-      hoverId = hits.length > 0 ? spheres.indexOf(hits[0].object as THREE.Mesh) : -1;
-    }, { passive: true });
-
-    container.addEventListener('pointerleave', () => { hoverId = -1; }, { passive: true });
-
-    // ── Observers ──
-    const themeObs = new MutationObserver(() => {
-      const c = isDark() ? '#4b5563' : '#93c5fd';
-      spheres.forEach((s, i) => { if (i !== hoverId) (s.material as THREE.MeshStandardMaterial).color.set(c); });
-    });
-    themeObs.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
-
-    const resizeObs = new ResizeObserver(() => {
-      const r = container.getBoundingClientRect();
-      if (r.width < 50 || r.height < 50) return;
-      camera.aspect = r.width / r.height; camera.updateProjectionMatrix();
-      renderer.setSize(r.width, r.height);
-    });
-    resizeObs.observe(container);
-
-    let sceneActive = true;
-    const visObs = new IntersectionObserver(([e]) => { sceneActive = e.isIntersecting; }, { threshold: 0.1 });
-    visObs.observe(container);
-
-    // ── Animation ──
-    const clock = new THREE.Clock();
-
-    function animate() {
-      requestAnimationFrame(animate);
-      if (!sceneActive) { renderer.render(scene, camera); return; }
-
-      const t = clock.getElapsedTime();
-      group.rotation.y += 0.004;
-      group.rotation.x = Math.sin(t * 0.08) * 0.08;
-
-      const normalC = isDark() ? '#4b5563' : '#93c5fd';
-      spheres.forEach((s, i) => {
-        const isHover = i === hoverId;
-        const targetScale = isHover ? 2.5 : 1;
-        const sc = s.scale.x + (targetScale - s.scale.x) * 0.08;
-        s.scale.set(sc, sc, sc);
-        (s.material as THREE.MeshStandardMaterial).color.set(isHover ? '#14b8a6' : normalC);
-      });
-
-      renderer.render(scene, camera);
-    }
-    animate();
   })();
 </script>
 
@@ -464,31 +338,6 @@ const editorQuery = bodyForEditor
   .post-toc a:not(.is-active):hover {
     color: rgb(71 85 105);
     border-left-color: rgb(148 163 184);
-  }
-
-  /* ── Decoration sphere ── */
-  .decoration-sphere {
-    width: 100%;
-    height: 180px;
-    position: relative;
-    overflow: hidden;
-    margin-bottom: 0.5rem;
-  }
-  .decoration-sphere canvas {
-    display: block;
-    width: 100% !important;
-    height: 100% !important;
-  }
-
-  .post-toc--empty {
-    position: sticky;
-    top: 5.5rem;
-    border: none;
-    background: none;
-    box-shadow: none;
-    padding: 0;
-    display: flex;
-    align-items: flex-start;
   }
 
   /* ── Dark mode ── */
