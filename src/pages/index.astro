@@ -75,7 +75,6 @@ const focusAreas = ['Computer Vision', 'SLAM / 3DGS', 'Tooling', 'Research Notes
 ---
 
 <BaseLayout title="山不见我" description="技术笔记 · 长期写作 · 可迁移的个人站点">
-  <div id="three-container" class="liquid-field" aria-hidden="true"></div>
   <!-- Grain overlay -->
   <div id="grain" aria-hidden="true" style="position:fixed;inset:0;pointer-events:none;z-index:1;mix-blend-mode:overlay;opacity:0.03;background-image:url(data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E);background-repeat:repeat;background-size:128px"></div>
 
@@ -115,6 +114,8 @@ const focusAreas = ['Computer Vision', 'SLAM / 3DGS', 'Tooling', 'Research Notes
           ))}
         </div>
       </div>
+
+      <div id="hero-3d" class="hero-3d-section reveal reveal-delay-1" aria-hidden="true"></div>
 
       <aside class="command-panel liquid-panel reveal reveal-delay-1" data-liquid-panel data-tilt>
         <div class="panel-heading">
@@ -276,14 +277,6 @@ const focusAreas = ['Computer Vision', 'SLAM / 3DGS', 'Tooling', 'Research Notes
 </BaseLayout>
 
 <style is:global>
-  .liquid-field {
-    position: fixed;
-    inset: 0;
-    z-index: 0;
-    pointer-events: none;
-    opacity: 0.8;
-  }
-
   .home-stage {
     position: relative;
     z-index: 1;
@@ -294,11 +287,24 @@ const focusAreas = ['Computer Vision', 'SLAM / 3DGS', 'Tooling', 'Research Notes
 
   .home-command {
     display: grid;
-    grid-template-columns: minmax(0, 1.1fr) minmax(19rem, 0.82fr);
+    grid-template-columns: minmax(0, 1.1fr) 360px minmax(19rem, 0.82fr);
     align-items: center;
-    gap: clamp(1rem, 4vw, 3rem);
+    gap: clamp(1rem, 2vw, 2rem);
     min-height: min(680px, calc(100vh - 7rem));
     padding: clamp(1.2rem, 4vw, 3.6rem) 0;
+  }
+
+  .hero-3d-section {
+    position: relative;
+    width: 100%;
+    min-height: 380px;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  .hero-3d-section canvas {
+    display: block;
+    width: 100% !important;
+    height: 100% !important;
   }
 
   .hero-core {
@@ -777,6 +783,10 @@ const focusAreas = ['Computer Vision', 'SLAM / 3DGS', 'Tooling', 'Research Notes
       min-height: auto;
     }
 
+    .hero-3d-section {
+      min-height: 300px;
+    }
+
     .command-panel {
       max-width: 100%;
     }
@@ -790,12 +800,12 @@ const focusAreas = ['Computer Vision', 'SLAM / 3DGS', 'Tooling', 'Research Notes
   }
 
   @media (max-width: 720px) {
-    .liquid-field {
-      display: none;
-    }
-
     .home-stage {
       gap: 1rem;
+    }
+
+    .hero-3d-section {
+      min-height: 200px;
     }
 
     .home-command {
@@ -853,73 +863,215 @@ const focusAreas = ['Computer Vision', 'SLAM / 3DGS', 'Tooling', 'Research Notes
 <script>
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  // ── 3D Particle Field (Three.js) ──
-  (function initThreeScene() {
-    const container = document.getElementById('three-container');
+  // ── Interactive 3D Hero Object: R4X Bot (Three.js) ──
+  (async function initHeroScene() {
+    const container = document.getElementById('hero-3d');
     if (!container || window.matchMedia('(max-width: 720px)').matches || reducedMotion) return;
 
-    import('three').then((THREE) => {
-      const ct = container!;
-      const w = window.innerWidth, h = window.innerHeight;
-      const scene = new THREE.Scene();
-      const camera = new THREE.PerspectiveCamera(75, w / h, 0.1, 1000);
-      camera.position.z = 30;
+    const THREE = await import('three');
 
-      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-      renderer.setSize(w, h);
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-      ct.appendChild(renderer.domElement);
+    function isDark() { return document.documentElement.classList.contains('dark'); }
 
-      // Particles
-      const count = 600;
-      const positions = new Float32Array(count * 3);
-      const sizes = new Float32Array(count);
-      for (let i = 0; i < count; i++) {
-        positions[i * 3] = (Math.random() - 0.5) * 100;
-        positions[i * 3 + 1] = (Math.random() - 0.5) * 60;
-        positions[i * 3 + 2] = (Math.random() - 10) * 5;
-        sizes[i] = Math.random() * 3 + 1;
+    const rect = container.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) return;
+
+    // ── Scene Setup ──
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(30, rect.width / rect.height, 0.1, 50);
+    camera.position.set(0, 1.0, 6.5);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(rect.width, rect.height);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.0;
+    container.appendChild(renderer.domElement);
+
+    // ── Canvas texture for BB-8 body ──
+    function createBodyTexture(dark: boolean) {
+      const c = document.createElement('canvas'); c.width = 512; c.height = 512;
+      const ctx = c.getContext('2d')!;
+      ctx.fillStyle = dark ? '#374151' : '#f1f5f9';
+      ctx.fillRect(0, 0, 512, 512);
+
+      // Orange circular panels (BB-8 signature patterns)
+      ctx.save();
+      // Large panel 1
+      ctx.beginPath(); ctx.arc(310, 180, 130, 0, Math.PI * 2);
+      ctx.fillStyle = '#f97316'; ctx.fill();
+      ctx.strokeStyle = dark ? '#fbbf24' : '#ea580c'; ctx.lineWidth = 5; ctx.stroke();
+      // Panel inner highlight
+      ctx.beginPath(); ctx.arc(290, 160, 50, 0, Math.PI * 2);
+      ctx.fillStyle = '#fb923c'; ctx.fill();
+      // Large panel 2
+      ctx.beginPath(); ctx.arc(130, 370, 90, 0, Math.PI * 2);
+      ctx.fillStyle = '#fb923c'; ctx.fill();
+      ctx.strokeStyle = dark ? '#fbbf24' : '#ea580c'; ctx.lineWidth = 4; ctx.stroke();
+      // Accent dots
+      for (const [x, y] of [[400, 340], [90, 130], [420, 120], [200, 250]]) {
+        ctx.beginPath(); ctx.arc(x, y, 18, 0, Math.PI * 2);
+        ctx.fillStyle = '#f97316'; ctx.fill();
       }
+      // Panel division lines
+      ctx.globalAlpha = 0.3;
+      ctx.strokeStyle = dark ? '#6b7280' : '#94a3b8'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(300, 300, 200, 0.2, Math.PI * 0.9); ctx.stroke();
+      ctx.beginPath(); ctx.arc(200, 200, 170, Math.PI * 1.1, Math.PI * 1.8); ctx.stroke();
+      ctx.restore();
+      return new THREE.CanvasTexture(c);
+    }
 
-      const geometry = new THREE.BufferGeometry();
-      geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-      geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+    // ── Build R4X Robot ──
+    const robot = new THREE.Group();
+    scene.add(robot);
 
-      const material = new THREE.PointsMaterial({
-        color: 0x60a5fa,
-        size: 0.15,
-        transparent: true,
-        opacity: 0.6,
-        blending: THREE.AdditiveBlending,
-        sizeAttenuation: true,
-      });
+    // Body sphere (large, BB-8 style)
+    const bodyGeo = new THREE.SphereGeometry(1.35, 48, 48);
+    const bodyTex = createBodyTexture(isDark());
+    const bodyMat = new THREE.MeshStandardMaterial({ map: bodyTex, roughness: 0.35, metalness: 0.1 });
+    const body = new THREE.Mesh(bodyGeo, bodyMat);
+    body.position.y = 0;
+    robot.add(body);
 
-      const particles = new THREE.Points(geometry, material);
-      scene.add(particles);
+    // Neck ring
+    const neckGeo = new THREE.TorusGeometry(0.42, 0.07, 12, 24);
+    const neckMat = new THREE.MeshStandardMaterial({ color: '#64748b', roughness: 0.3, metalness: 0.6 });
+    const neck = new THREE.Mesh(neckGeo, neckMat);
+    neck.position.y = 1.2;
+    neck.rotation.x = Math.PI / 2;
+    robot.add(neck);
 
-      // Mouse tracking
-      let mouseX = 0, mouseY = 0;
-      document.addEventListener('pointermove', (e) => {
-        mouseX = (e.clientX / w) * 2 - 1;
-        mouseY = -(e.clientY / h) * 2 + 1;
-      }, { passive: true });
-
-      // Resize
-      window.addEventListener('resize', () => {
-        const w2 = window.innerWidth, h2 = window.innerHeight;
-        camera.aspect = w2 / h2;
-        camera.updateProjectionMatrix();
-        renderer.setSize(w2, h2);
-      }, { passive: true });
-
-      function animate() {
-        requestAnimationFrame(animate);
-        particles.rotation.x += (mouseY * 0.05 - particles.rotation.x) * 0.02;
-        particles.rotation.y += (mouseX * 0.05 - particles.rotation.y) * 0.02;
-        renderer.render(scene, camera);
-      }
-      animate();
+    // Head sphere (smaller, silver)
+    const headGeo = new THREE.SphereGeometry(0.55, 32, 32);
+    const headMat = new THREE.MeshStandardMaterial({
+      color: isDark() ? '#94a3b8' : '#e2e8f0', roughness: 0.2, metalness: 0.6,
     });
+    const head = new THREE.Mesh(headGeo, headMat);
+    head.position.y = 1.55;
+    robot.add(head);
+
+    // Antenna stick
+    const antGeo = new THREE.CylinderGeometry(0.02, 0.02, 0.35, 6);
+    const antMat = new THREE.MeshStandardMaterial({ color: '#64748b', roughness: 0.3, metalness: 0.5 });
+    const ant = new THREE.Mesh(antGeo, antMat);
+    ant.position.set(0, 1.9, 0.25); ant.rotation.z = 0.12;
+    robot.add(ant);
+
+    // Antenna tip (glowing blue)
+    const tipGeo = new THREE.SphereGeometry(0.07, 12, 12);
+    const tipMat = new THREE.MeshStandardMaterial({ color: '#60a5fa', roughness: 0.1, metalness: 0.3 });
+    const tip = new THREE.Mesh(tipGeo, tipMat);
+    tip.position.set(0.04, 2.1, 0.3);
+    robot.add(tip);
+
+    // Ground shadow
+    const shadowGeo = new THREE.RingGeometry(0.3, 1.5, 24);
+    const shadowMat = new THREE.MeshBasicMaterial({
+      color: '#000000', transparent: true, opacity: 0.08,
+      side: THREE.DoubleSide,
+    });
+    const shadow = new THREE.Mesh(shadowGeo, shadowMat);
+    shadow.rotation.x = -Math.PI / 2;
+    shadow.position.y = -1.35;
+    robot.add(shadow);
+
+    // ── Lights ──
+    scene.add(new THREE.AmbientLight('#ffffff', 0.55));
+    const dir = new THREE.DirectionalLight('#ffffff', 1.0);
+    dir.position.set(4, 6, 5); scene.add(dir);
+    const mouseLight = new THREE.PointLight(isDark() ? '#34d399' : '#38bdf8', 2.0, 15);
+    mouseLight.position.set(0, 0, 4); scene.add(mouseLight);
+
+    // ── Orbiting particles ──
+    const pCount = 60;
+    const pos = new Float32Array(pCount * 3);
+    for (let i = 0; i < pCount; i++) {
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.acos(2 * Math.random() - 1);
+      const r = 2.8 + Math.random() * 2;
+      pos[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+      pos[i * 3 + 1] = r * Math.cos(phi) * 0.6;
+      pos[i * 3 + 2] = r * Math.sin(phi) * Math.sin(theta);
+    }
+    const pGeo = new THREE.BufferGeometry();
+    pGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    const pMat = new THREE.PointsMaterial({
+      size: 0.04, color: isDark() ? '#34d399' : '#38bdf8',
+      transparent: true, opacity: 0.4, blending: THREE.AdditiveBlending, sizeAttenuation: true,
+    });
+    const particles = new THREE.Points(pGeo, pMat);
+    scene.add(particles);
+
+    // ── Interactive tracking ──
+    let targetMX = 0, targetMY = 0;
+    container.addEventListener('pointermove', (e) => {
+      const r = container.getBoundingClientRect();
+      targetMX = ((e.clientX - r.left) / r.width) * 2 - 1;
+      targetMY = -((e.clientY - r.top) / r.height) * 2 + 1;
+    }, { passive: true });
+
+    // Dark mode observer
+    const themeObs = new MutationObserver(() => {
+      const dk = isDark();
+      headMat.color.set(dk ? '#94a3b8' : '#e2e8f0');
+      bodyMat.map = createBodyTexture(dk);
+      bodyMat.needsUpdate = true;
+      pMat.color.set(dk ? '#34d399' : '#38bdf8');
+      mouseLight.color.set(dk ? '#34d399' : '#38bdf8');
+    });
+    themeObs.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+
+    // ResizeObserver
+    const resizeObs = new ResizeObserver(() => {
+      const r = container.getBoundingClientRect();
+      if (r.width === 0 || r.height === 0) return;
+      camera.aspect = r.width / r.height; camera.updateProjectionMatrix();
+      renderer.setSize(r.width, r.height);
+    });
+    resizeObs.observe(container);
+
+    // IntersectionObserver
+    let sceneActive = true;
+    const visObs = new IntersectionObserver(([e]) => { sceneActive = e.isIntersecting; }, { threshold: 0.1 });
+    visObs.observe(container);
+
+    // ── Animation Loop ──
+    const clock = new THREE.Clock();
+    let mx = 0, my = 0;
+
+    function animate() {
+      requestAnimationFrame(animate);
+      if (!sceneActive) { renderer.render(scene, camera); return; }
+
+      const t = clock.getElapsedTime();
+      mx += (targetMX - mx) * 0.05;
+      my += (targetMY - my) * 0.05;
+
+      // Body rolls: vertical mouse → forward/back, horizontal → lean
+      body.rotation.x += (my * 0.35 - body.rotation.x) * 0.03;
+      body.rotation.z += (-mx * 0.18 - body.rotation.z) * 0.03;
+
+      // Head tracks cursor independently
+      head.rotation.x += (my * 0.2 - head.rotation.x) * 0.04;
+      head.rotation.z += (-mx * 0.25 - head.rotation.z) * 0.04;
+
+      // Antenna wobble
+      ant.rotation.x = Math.sin(t * 2.0) * 0.04 + my * 0.05;
+
+      // Floating
+      robot.position.y = Math.sin(t * 0.6) * 0.15;
+
+      // Mouse light follows cursor
+      mouseLight.position.x = mx * 2.5;
+      mouseLight.position.y = my * 2.5 + 0.5;
+
+      // Particles drift slowly
+      particles.rotation.y += 0.002;
+      particles.rotation.x = Math.sin(t * 0.1) * 0.1;
+
+      renderer.render(scene, camera);
+    }
+    animate();
   })();
 
   // ── Scroll Reveal ──
