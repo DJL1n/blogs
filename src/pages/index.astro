@@ -79,6 +79,7 @@ const focusAreas = ['Computer Vision', 'SLAM / 3DGS', 'Tooling', 'Research Notes
   <div id="grain" aria-hidden="true" style="position:fixed;inset:0;pointer-events:none;z-index:1;mix-blend-mode:overlay;opacity:0.03;background-image:url(data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E);background-repeat:repeat;background-size:128px"></div>
 
   <div class="home-stage">
+    <div id="hero-bg" class="hero-bg-decoration" aria-hidden="true"></div>
     <section class="home-command" aria-labelledby="home-title">
       <div class="hero-core reveal">
         <p class="panel-eyebrow">Personal Knowledge OS</p>
@@ -114,8 +115,6 @@ const focusAreas = ['Computer Vision', 'SLAM / 3DGS', 'Tooling', 'Research Notes
           ))}
         </div>
       </div>
-
-      <div id="hero-3d" class="hero-3d-section reveal reveal-delay-1" aria-hidden="true"></div>
 
       <aside class="command-panel liquid-panel reveal reveal-delay-1" data-liquid-panel data-tilt>
         <div class="panel-heading">
@@ -287,24 +286,28 @@ const focusAreas = ['Computer Vision', 'SLAM / 3DGS', 'Tooling', 'Research Notes
 
   .home-command {
     display: grid;
-    grid-template-columns: minmax(0, 1.1fr) 360px minmax(19rem, 0.82fr);
+    grid-template-columns: minmax(0, 1.1fr) minmax(19rem, 0.82fr);
     align-items: center;
-    gap: clamp(1rem, 2vw, 2rem);
+    gap: clamp(1rem, 3vw, 3rem);
     min-height: min(680px, calc(100vh - 7rem));
     padding: clamp(1.2rem, 4vw, 3.6rem) 0;
   }
 
-  .hero-3d-section {
-    position: relative;
-    width: 100%;
-    min-height: 380px;
-    user-select: none;
-    -webkit-user-select: none;
+  .hero-bg-decoration {
+    position: absolute;
+    right: -4rem;
+    top: 0;
+    width: 55%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
+    overflow: visible;
   }
-  .hero-3d-section canvas {
+  .hero-bg-decoration canvas {
     display: block;
     width: 100% !important;
     height: 100% !important;
+    object-fit: contain;
   }
 
   .hero-core {
@@ -783,8 +786,10 @@ const focusAreas = ['Computer Vision', 'SLAM / 3DGS', 'Tooling', 'Research Notes
       min-height: auto;
     }
 
-    .hero-3d-section {
-      min-height: 300px;
+    .hero-bg-decoration {
+      right: -2rem;
+      width: 70%;
+      opacity: 0.5;
     }
 
     .command-panel {
@@ -800,8 +805,8 @@ const focusAreas = ['Computer Vision', 'SLAM / 3DGS', 'Tooling', 'Research Notes
   }
 
   @media (max-width: 720px) {
-    .hero-3d-section {
-      min-height: 200px;
+    .hero-bg-decoration {
+      display: none;
     }
 
     .home-stage {
@@ -863,144 +868,124 @@ const focusAreas = ['Computer Vision', 'SLAM / 3DGS', 'Tooling', 'Research Notes
 <script>
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  // ── Interactive 3D Hero Object: TorusKnot (Three.js) ──
-  (async function initHeroScene() {
-    const container = document.getElementById('hero-3d');
+  // ── Sphere Cluster Background (Three.js) ──
+  (async function initSphereBg() {
+    const container = document.getElementById('hero-bg');
     if (!container || window.matchMedia('(max-width: 720px)').matches || reducedMotion) return;
 
     const THREE = await import('three');
 
-    /*** Procedural env map for reflections ***/
-    function makeEnvMap(pmremGen: any) {
-      const c = document.createElement('canvas'); c.width = 512; c.height = 256;
-      const ctx = c.getContext('2d');
-      if (!ctx) return pmremGen.fromScene(new THREE.Scene()).texture;
-      const g = ctx.createLinearGradient(0, 0, 0, 256);
-      g.addColorStop(0, '#c7d2fe'); g.addColorStop(0.5, '#dbeafe'); g.addColorStop(1, '#ccfbf1');
-      ctx.fillStyle = g; ctx.fillRect(0, 0, 512, 256);
-      return pmremGen.fromEquirectangular(new THREE.CanvasTexture(c)).texture;
-    }
+    function isDark() { return document.documentElement.classList.contains('dark'); }
 
     const rect = container.getBoundingClientRect();
-    if (rect.width === 0 || rect.height === 0) return;
+    if (rect.width < 50 || rect.height < 50) return;
 
-    // Scene
+    // ── Scene ──
     const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(35, rect.width / rect.height, 0.1, 30);
+    camera.position.set(1, 0.5, 5.5);
+    camera.lookAt(0, 0, 0);
 
-    // Camera
-    const camera = new THREE.PerspectiveCamera(30, rect.width / rect.height, 0.1, 50);
-    camera.position.set(0, 0.2, 6.5);
-
-    // Renderer
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(rect.width, rect.height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.0;
+    renderer.toneMappingExposure = 1.2;
     container.appendChild(renderer.domElement);
 
-    // Environment reflections
-    const pmrem = new THREE.PMREMGenerator(renderer);
-    scene.environment = makeEnvMap(pmrem);
-    pmrem.dispose();
-
-    // ── Torus Knot ──
-    const geo = new THREE.TorusKnotGeometry(1.3, 0.42, 200, 32);
-
-    function isDark() { return document.documentElement.classList.contains('dark'); }
-
-    const lightColor = new THREE.Color('#38bdf8');
-    const darkColor = new THREE.Color('#34d399');
-
-    const mat = new THREE.MeshPhysicalMaterial({
-      roughness: 0.1,
-      metalness: 0,
-      clearcoat: 0.5,
-      clearcoatRoughness: 0.08,
-      color: isDark() ? darkColor : lightColor,
-      envMapIntensity: 1.8,
-      transparent: true,
-      opacity: 0.92,
-    });
-
-    const mesh = new THREE.Mesh(geo, mat);
-    scene.add(mesh);
-
     // ── Lights ──
-    scene.add(new THREE.AmbientLight('#ffffff', 0.4));
-    const hemi = new THREE.HemisphereLight('#a5b4fc', '#444444', 0.5);
-    scene.add(hemi);
+    scene.add(new THREE.AmbientLight('#ffffff', 0.5));
+    const dir = new THREE.DirectionalLight('#ffffff', 0.7);
+    dir.position.set(3, 4, 5); scene.add(dir);
+    const fill = new THREE.DirectionalLight('#38bdf8', 0.3);
+    fill.position.set(-2, -1, -3); scene.add(fill);
 
-    const dir = new THREE.DirectionalLight('#ffffff', 1.2);
-    dir.position.set(4, 6, 5);
-    scene.add(dir);
+    // ── Sphere cluster (Fibonacci distribution) ──
+    const count = 120;
+    const clusterR = 2.2;
+    const sphereGeo = new THREE.SphereGeometry(0.1, 8, 6);
+    const spheres: THREE.Mesh[] = [];
+    const basePositions: { x: number; y: number; z: number }[] = [];
 
-    const rim = new THREE.DirectionalLight('#fbbf24', 0.6);
-    rim.position.set(-3, 1, -4);
-    scene.add(rim);
+    const phi = Math.PI * (3 - Math.sqrt(5));
+    for (let i = 0; i < count; i++) {
+      const y = 1 - (i / (count - 1)) * 2;
+      const r = Math.sqrt(1 - y * y);
+      const theta = phi * i;
+      const p = { x: clusterR * r * Math.cos(theta), y: clusterR * y, z: clusterR * r * Math.sin(theta) };
+      basePositions.push(p);
 
-    const mouseLight = new THREE.PointLight(isDark() ? '#34d399' : '#38bdf8', 2.5, 15);
-    mouseLight.position.set(0, 0, 4);
-    scene.add(mouseLight);
-
-    // ── Orbiting particles ──
-    const pCount = 120;
-    const pos = new Float32Array(pCount * 3);
-    for (let i = 0; i < pCount; i++) {
-      const theta = Math.random() * Math.PI * 2;
-      const phi = Math.acos(2 * Math.random() - 1);
-      const r = 3 + Math.random() * 2;
-      pos[i * 3] = r * Math.sin(phi) * Math.cos(theta);
-      pos[i * 3 + 1] = r * Math.cos(phi) * Math.sin(theta * 0.3);
-      pos[i * 3 + 2] = r * Math.sin(phi) * Math.sin(theta);
+      const mat = new THREE.MeshStandardMaterial({
+        color: isDark() ? '#4b5563' : '#7dd3fc',
+        emissive: isDark() ? '#1e293b' : '#0369a1',
+        emissiveIntensity: 0.15,
+        roughness: 0.2,
+        metalness: 0.1,
+        transparent: true,
+        opacity: isDark() ? 0.6 : 0.55,
+      });
+      const m = new THREE.Mesh(sphereGeo, mat);
+      m.position.set(p.x, p.y, p.z);
+      spheres.push(m);
     }
-    const pGeo = new THREE.BufferGeometry();
-    pGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-    const pMat = new THREE.PointsMaterial({
-      size: 0.035,
-      color: isDark() ? '#34d399' : '#38bdf8',
-      transparent: true, opacity: 0.45,
-      blending: THREE.AdditiveBlending,
-      sizeAttenuation: true,
-    });
-    const particles = new THREE.Points(pGeo, pMat);
-    scene.add(particles);
 
-    // ── Interactive tracking ──
-    let targetMX = 0, targetMY = 0;
-    container.addEventListener('pointermove', (e) => {
-      const r = container.getBoundingClientRect();
-      targetMX = ((e.clientX - r.left) / r.width) * 2 - 1;
-      targetMY = -((e.clientY - r.top) / r.height) * 2 + 1;
+    const group = new THREE.Group();
+    spheres.forEach((s) => group.add(s));
+    scene.add(group);
+
+    // ── Outer glow ring (subtle) ──
+    const ringGeo = new THREE.RingGeometry(2.3, 2.8, 48);
+    const ringMat = new THREE.MeshBasicMaterial({
+      color: isDark() ? '#14b8a6' : '#38bdf8',
+      transparent: true, opacity: 0.06,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+    });
+    const ring = new THREE.Mesh(ringGeo, ringMat);
+    ring.rotation.x = -0.3;
+    ring.position.z = -0.2;
+    group.add(ring);
+
+    // ── Mouse tracking (document-level) ──
+    let mx = 0, my = 0;
+    document.addEventListener('pointermove', (e) => {
+      mx = (e.clientX / window.innerWidth) * 2 - 1;
+      my = -(e.clientY / window.innerHeight) * 2 + 1;
     }, { passive: true });
 
-    // Dark mode observer
+    // ── Hover-like interaction ──
+    let hoverIndex = -1;
+    let hoverSmooth = 0;
+
+    // ── Observers ──
     const themeObs = new MutationObserver(() => {
       const dk = isDark();
-      mat.color.set(dk ? darkColor : lightColor);
-      pMat.color.set(dk ? '#34d399' : '#38bdf8');
-      mouseLight.color.set(dk ? '#34d399' : '#38bdf8');
+      const c = dk ? '#4b5563' : '#7dd3fc';
+      const e = dk ? '#1e293b' : '#0369a1';
+      spheres.forEach((s, i) => {
+        if (i !== hoverIndex) {
+          const m = s.material as THREE.MeshStandardMaterial;
+          m.color.set(c); m.emissive.set(e);
+        }
+      });
+      ringMat.color.set(dk ? '#14b8a6' : '#38bdf8');
     });
     themeObs.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
 
-    // ResizeObserver
     const resizeObs = new ResizeObserver(() => {
       const r = container.getBoundingClientRect();
-      if (r.width === 0 || r.height === 0) return;
-      camera.aspect = r.width / r.height;
-      camera.updateProjectionMatrix();
+      if (r.width < 50 || r.height < 50) return;
+      camera.aspect = r.width / r.height; camera.updateProjectionMatrix();
       renderer.setSize(r.width, r.height);
     });
     resizeObs.observe(container);
 
-    // IntersectionObserver — pause when off-screen
     let sceneActive = true;
     const visObs = new IntersectionObserver(([e]) => { sceneActive = e.isIntersecting; }, { threshold: 0.1 });
     visObs.observe(container);
 
-    // ── Animation loop ──
+    // ── Animation ──
     const clock = new THREE.Clock();
-    let mx = 0, my = 0;
 
     function animate() {
       requestAnimationFrame(animate);
@@ -1008,25 +993,51 @@ const focusAreas = ['Computer Vision', 'SLAM / 3DGS', 'Tooling', 'Research Notes
 
       const t = clock.getElapsedTime();
 
-      // Smooth spring follow
-      mx += (targetMX - mx) * 0.05;
-      my += (targetMY - my) * 0.05;
+      // Stable slow rotation + subtle mouse tilt
+      group.rotation.y += 0.003;
+      group.rotation.x += (mx * 0.05 - group.rotation.x) * 0.015;
+      group.rotation.z += (-my * 0.03 - group.rotation.z) * 0.015;
 
-      // Rotate toward mouse + constant spin
-      mesh.rotation.x += (my * 0.25 - mesh.rotation.x) * 0.03;
-      mesh.rotation.y += (mx * 0.4 - mesh.rotation.y) * 0.03;
-      mesh.rotation.y += 0.004; // constant rotation
+      // Ring pulsing
+      ring.scale.setScalar(1 + Math.sin(t * 0.5) * 0.03);
 
-      // Floating
-      mesh.position.y = Math.sin(t * 0.7) * 0.2;
+      // Project mouse to 3D to find nearest sphere
+      const mouse3D = new THREE.Vector3(mx * 3, my * 2 + 0.5, 0);
+      let minDist = Infinity;
+      let closest = -1;
+      spheres.forEach((s, i) => {
+        const wp = new THREE.Vector3();
+        s.getWorldPosition(wp);
+        const d = wp.distanceTo(mouse3D);
+        if (d < minDist) { minDist = d; closest = i; }
+      });
 
-      // Mouse light follows cursor
-      mouseLight.position.x = mx * 2.5;
-      mouseLight.position.y = my * 2.5;
+      hoverIndex = minDist < 2.5 ? closest : -1;
+      hoverSmooth += ((hoverIndex >= 0 ? 1 : 0) - hoverSmooth) * 0.05;
 
-      // Particles follow rotation
-      particles.rotation.y = mesh.rotation.y * 0.6;
-      particles.rotation.x = mesh.rotation.x * 0.4;
+      const normalC = isDark() ? '#4b5563' : '#7dd3fc';
+      const normalE = isDark() ? '#1e293b' : '#0369a1';
+      spheres.forEach((s, i) => {
+        const isHover = i === hoverIndex && hoverSmooth > 0.1;
+        const targetScale = isHover ? 2.8 : 1;
+        const sc = s.scale.x + (targetScale - s.scale.x) * 0.06;
+        s.scale.set(sc, sc, sc);
+        const m = s.material as THREE.MeshStandardMaterial;
+        if (isHover) {
+          m.color.set('#14b8a6');
+          m.emissive.set('#0d9488');
+          m.emissiveIntensity = 0.4;
+          m.opacity = 0.9;
+        } else {
+          const fade = hoverSmooth;
+          // Nearby spheres get a hint of glow
+          const dist = i === hoverIndex ? 0 : Infinity;
+          m.color.set(normalC);
+          m.emissive.set(normalE);
+          m.emissiveIntensity = 0.15;
+          m.opacity = isDark() ? 0.6 : 0.55;
+        }
+      });
 
       renderer.render(scene, camera);
     }
