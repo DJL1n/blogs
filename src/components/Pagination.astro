@@ -1,0 +1,98 @@
+---
+const { page, base } = Astro.props as {
+  page: { current: number; last: number; url: { current: string; next?: string; prev?: string } };
+  base: string;
+};
+
+const { current, last, url } = page;
+if (last <= 1) return;
+---
+
+<nav class="pagination-shell" aria-label="分页导航">
+  <a href={url.prev || base} class="pagination-link" aria-disabled={!url.prev ? 'true' : undefined}>
+    ← 上一页
+  </a>
+
+  <div class="pagination-pages">
+    {Array.from({ length: last }, (_, i) => {
+      const n = i + 1;
+      const href = n === 1 ? base : `${base}/${n}`;
+      return (
+        <a href={href} class={`pagination-link pagination-num ${n === current ? 'pagination-active' : ''}`} aria-current={n === current ? 'page' : undefined}>
+          {n}
+        </a>
+      );
+    })}
+  </div>
+
+  <a href={url.next || '#'} class="pagination-link" aria-disabled={!url.next ? 'true' : undefined}>
+    下一页 →
+  </a>
+</nav>
+
+<style>
+  .pagination-shell {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 1.2rem 0 0.5rem;
+  }
+
+  .pagination-pages {
+    display: flex;
+    gap: 0.3rem;
+  }
+
+  .pagination-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2.2rem;
+    height: 2.2rem;
+    border: 1px solid rgb(15 23 42 / 0.1);
+    border-radius: 6px;
+    padding: 0 0.55rem;
+    color: rgb(51 65 85);
+    background: rgb(255 255 255 / 0.24);
+    font-size: 0.82rem;
+    font-weight: 780;
+    text-decoration: none;
+    transition: all 160ms ease;
+  }
+
+  .pagination-link:hover {
+    border-color: rgb(20 184 166 / 0.34);
+    color: rgb(15 118 110);
+  }
+
+  .pagination-link[aria-disabled='true'] {
+    opacity: 0.32;
+    pointer-events: none;
+  }
+
+  .pagination-active {
+    border-color: rgb(20 184 166 / 0.42);
+    color: rgb(15 118 110);
+    background: rgb(240 253 250 / 0.46);
+    font-weight: 850;
+  }
+
+  .dark .pagination-link {
+    border-color: rgb(255 255 255 / 0.1);
+    color: rgb(203 213 225);
+    background: rgb(15 23 42 / 0.22);
+  }
+
+  .dark .pagination-link:hover {
+    border-color: rgb(94 234 212 / 0.28);
+    color: rgb(94 234 212);
+  }
+
+  .dark .pagination-active {
+    border-color: rgb(94 234 212 / 0.34);
+    color: rgb(94 234 212);
+    background: rgb(20 184 166 / 0.1);
+  }
+</style>

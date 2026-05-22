@@ -1,11 +1,19 @@
 ---
+import type { Page } from 'astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import PageHeader from '../../components/PageHeader.astro';
 import PostCard from '../../components/PostCard.astro';
-import { getCollection } from 'astro:content';
+import Pagination from '../../components/Pagination.astro';
+import { getCollection, type CollectionEntry } from 'astro:content';
 
-const posts = (await getCollection('important')).filter((post) => !post.data.draft);
-posts.sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+export async function getStaticPaths({ paginate }: { paginate: Function }) {
+  const posts = (await getCollection('important')).filter((post) => !post.data.draft);
+  posts.sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+  return paginate(posts, { pageSize: 12 });
+}
+
+const { page } = Astro.props as { page: Page<CollectionEntry<'important'>> };
+const { data: posts } = page;
 ---
 
 <BaseLayout title="重要事项" description="决策记录与变更日志">
@@ -14,12 +22,14 @@ posts.sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
       eyebrow="Important Log"
       title="重要事项"
       description="计划、待办、部署、配置和关键决策记录放在这里，保持低频但可信。"
-      meta={[`${posts.length} 条记录`, '决策日志', '配置记录']}
+      meta={[`${page.total} 条记录`, '决策日志', '配置记录']}
       actions={[{ label: '写重要记录', href: '/editor?type=important', primary: true }]}
     />
 
     <div class="collection-grid">
       {posts.map((post) => <PostCard item={post} href={`/important/${post.slug}`} />)}
     </div>
+
+    <Pagination {page} base="/important" />
   </section>
 </BaseLayout>

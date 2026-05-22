@@ -1,11 +1,19 @@
 ---
+import type { Page } from 'astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import PageHeader from '../../components/PageHeader.astro';
 import PostCard from '../../components/PostCard.astro';
-import { getCollection } from 'astro:content';
+import Pagination from '../../components/Pagination.astro';
+import { getCollection, type CollectionEntry } from 'astro:content';
 
-const posts = (await getCollection('notes')).filter((post) => !post.data.draft);
-posts.sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+export async function getStaticPaths({ paginate }: { paginate: Function }) {
+  const posts = (await getCollection('notes')).filter((post) => !post.data.draft);
+  posts.sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+  return paginate(posts, { pageSize: 12 });
+}
+
+const { page } = Astro.props as { page: Page<CollectionEntry<'notes'>> };
+const { data: posts } = page;
 ---
 
 <BaseLayout title="短笔记" description="简短记录与常用命令">
@@ -14,12 +22,14 @@ posts.sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
       eyebrow="Quick Notes"
       title="短笔记"
       description="常用命令、踩坑记录和灵感片段集中在这里，短内容也保持清晰分类和可检索。"
-      meta={[`${posts.length} 条笔记`, '快速记录', '随时补充']}
+      meta={[`${page.total} 条笔记`, '快速记录', '随时补充']}
       actions={[{ label: '写新笔记', href: '/editor?type=note', primary: true }]}
     />
 
     <div class="collection-grid">
       {posts.map((post) => <PostCard item={post} href={`/notes/${post.slug}`} />)}
     </div>
+
+    <Pagination {page} base="/notes" />
   </section>
 </BaseLayout>

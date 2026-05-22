@@ -1,24 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import PageHeader from '../components/PageHeader.astro';
-import { getCollection } from 'astro:content';
-
-const normalizedPosts = [
-  ...(await getCollection('blog')).filter((post) => !post.data.draft),
-  ...(await getCollection('notes')).filter((post) => !post.data.draft),
-  ...(await getCollection('important')).filter((post) => !post.data.draft)
-]
-  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
-  .map((post) => ({
-    title: post.data.title,
-    summary: post.data.summary,
-    tags: post.data.tags,
-    category: post.data.category,
-    collection: post.collection,
-    slug: post.slug,
-    date: post.data.date.toISOString(),
-    updated: post.data.updated.toISOString()
-  }));
 ---
 
 <BaseLayout title="搜索" description="站内文章快速检索">
@@ -27,7 +9,7 @@ const normalizedPosts = [
       eyebrow="Search"
       title="站内搜索"
       description="标题、摘要、标签和分类会被一起匹配。搜索结果即时更新，也会同步到地址栏。"
-      meta={[`${normalizedPosts.length} 条可检索内容`, '实时过滤']}
+      meta={['站内全文检索', '实时过滤']}
       actions={[{ label: '回到首页', href: '/' }]}
     />
 
@@ -42,16 +24,28 @@ const normalizedPosts = [
       <button type="submit" class="btn-primary magnetic">搜索</button>
     </form>
 
-    <p id="count" class="search-count" aria-live="polite"></p>
+    <p id="count" class="search-count" aria-live="polite">加载索引中…</p>
     <div id="search-result" class="collection-grid" aria-live="polite"></div>
   </section>
 
-  <script is:inline define:vars={{ postsJson: JSON.stringify(normalizedPosts) }}>
-    const allPosts = JSON.parse(postsJson);
+  <script is:inline>
+    let allPosts = [];
     const input = document.getElementById('search-input');
     const result = document.getElementById('search-result');
     const count = document.getElementById('count');
     const form = document.getElementById('search-form');
+
+    // Load search index
+    fetch('/search-index.json')
+      .then((r) => r.json())
+      .then((data) => {
+        allPosts = data;
+        count.textContent = `共 ${allPosts.length} 条内容`;
+        syncFromQuery();
+      })
+      .catch(() => {
+        count.textContent = '索引加载失败';
+      });
 
     function toUrl(post) {
       if (post.collection === 'blog') return `/blog/${post.slug}`;
@@ -93,17 +87,18 @@ const normalizedPosts = [
     }
 
     function render() {
+      if (!allPosts.length) return;
       const query = textLower(input.value).trim();
       const listToRender = filterPosts(query);
       count.textContent = query ? `命中 ${listToRender.length} 条结果` : `共 ${listToRender.length} 条内容`;
-      result.classList.toggle('collection-grid', listToRender.length > 0);
-      result.classList.toggle('search-empty', listToRender.length === 0);
-
       if (listToRender.length === 0) {
+        result.classList.remove('collection-grid');
+        result.classList.add('search-empty');
         result.innerHTML = '<p class="empty-copy">未命中内容，建议缩短关键词或换一个主题词。</p>';
         return;
       }
 
+      result.classList.add('collection-grid');
       result.innerHTML = listToRender
         .map((post) => {
           const tags = post.tags.map((tag) => `<span class="chip">#${escapeHtml(tag)}</span>`).join('');

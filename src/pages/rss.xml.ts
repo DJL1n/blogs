@@ -11,7 +11,7 @@ export async function GET(context: { site: string }) {
   return rss({
     title: '山不见我',
     description: '技术笔记 · 长期写作 · 个人站点',
-    site: context.site || 'https://example.com',
+    site: context.site,
     items: posts.map((post) => ({
       title: post.data.title,
       description: post.data.summary,

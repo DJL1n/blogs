@@ -1,11 +1,19 @@
 ---
+import type { Page } from 'astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import PageHeader from '../../components/PageHeader.astro';
 import PostCard from '../../components/PostCard.astro';
-import { getCollection } from 'astro:content';
+import Pagination from '../../components/Pagination.astro';
+import { getCollection, type CollectionEntry } from 'astro:content';
 
-const posts = (await getCollection('blog')).filter((post) => !post.data.draft);
-posts.sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+export async function getStaticPaths({ paginate }: { paginate: Function }) {
+  const posts = (await getCollection('blog')).filter((post) => !post.data.draft);
+  posts.sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+  return paginate(posts, { pageSize: 12 });
+}
+
+const { page } = Astro.props as { page: Page<CollectionEntry<'blog'>> };
+const { data: posts } = page;
 ---
 
 <BaseLayout title="博客" description="长文与复盘内容">
@@ -14,12 +22,14 @@ posts.sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
       eyebrow="Long Form"
       title="博客"
       description="系统设计、技术复盘与完整研究脉络都放在这里，优先保证可读、可迁移、可长期回看。"
-      meta={[`${posts.length} 篇长文`, 'Markdown / MDX', '长期维护']}
+      meta={[`${page.total} 篇长文`, 'Markdown / MDX', '长期维护']}
       actions={[{ label: '写长文', href: '/editor?type=blog', primary: true }, { label: '站内搜索', href: '/search' }]}
     />
 
     <div class="collection-grid">
       {posts.map((post) => <PostCard item={post} href={`/blog/${post.slug}`} />)}
     </div>
+
+    <Pagination {page} base="/blog" />
   </section>
 </BaseLayout>

@@ -33,13 +33,6 @@ const todoPost = (await getCollection('important')).find((p) => p.slug === 'shor
 const longTermPlan = planPost?.data.plan ?? [];
 const shortTermTodos = todoPost?.data.todos ?? [];
 
-const formatDate = (date: Date) =>
-  new Intl.DateTimeFormat('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(date);
-
 const metrics = [
   { label: '全部', value: published.length, tone: 'cyan' },
   { label: '长文', value: blogCount, tone: 'green' },
@@ -145,7 +138,7 @@ const focusAreas = ['Computer Vision', 'SLAM / 3DGS', 'Tooling', 'Research Notes
           {heroRecent.length > 0 ? (
             heroRecent.map((post) => (
               <a href={post.path} class="feed-row">
-                <span class="feed-date">{formatDate(post.data.date)}</span>
+                <span class="feed-date">{post.data.date.toLocaleDateString('zh-CN')}</span>
                 <span class="feed-title">{post.data.title}</span>
               </a>
             ))
@@ -860,21 +853,12 @@ const focusAreas = ['Computer Vision', 'SLAM / 3DGS', 'Tooling', 'Research Notes
 <script>
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  // ── 3D Particle Field (Three.js via CDN) ──
+  // ── 3D Particle Field (Three.js) ──
   (function initThreeScene() {
     const container = document.getElementById('three-container');
     if (!container || window.matchMedia('(max-width: 720px)').matches || reducedMotion) return;
 
-    // Load Three.js dynamically
-    const script = document.createElement('script');
-    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
-    script.onload = () => initThreeSceneWithTHREE();
-    document.head.appendChild(script);
-
-    function initThreeSceneWithTHREE() {
-      const THREE = (window as any).THREE;
-      if (!THREE) return;
-
+    import('three').then((THREE) => {
       const ct = container!;
       const w = window.innerWidth, h = window.innerHeight;
       const scene = new THREE.Scene();
@@ -915,7 +899,7 @@ const focusAreas = ['Computer Vision', 'SLAM / 3DGS', 'Tooling', 'Research Notes
 
       // Mouse tracking
       let mouseX = 0, mouseY = 0;
-      document.addEventListener('pointermove', (e: MouseEvent) => {
+      document.addEventListener('pointermove', (e) => {
         mouseX = (e.clientX / w) * 2 - 1;
         mouseY = -(e.clientY / h) * 2 + 1;
       }, { passive: true });
@@ -930,32 +914,16 @@ const focusAreas = ['Computer Vision', 'SLAM / 3DGS', 'Tooling', 'Research Notes
 
       function animate() {
         requestAnimationFrame(animate);
-        // Gentle rotation following mouse
         particles.rotation.x += (mouseY * 0.05 - particles.rotation.x) * 0.02;
         particles.rotation.y += (mouseX * 0.05 - particles.rotation.y) * 0.02;
         renderer.render(scene, camera);
       }
       animate();
-    }
+    });
   })();
 
   // ── Scroll Reveal ──
-  (function initReveal() {
-    const els = document.querySelectorAll<HTMLElement>('.reveal');
-    if (!els.length) return;
-    const obs = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('visible');
-            obs.unobserve(entry.target);
-          }
-        });
-      },
-      { threshold: 0.06, rootMargin: '0px 0px -30px 0px' }
-    );
-    els.forEach((el) => obs.observe(el));
-  })();
+  // Handled by BaseLayout globally.
 
   (function initCounters() {
     const counters = document.querySelectorAll<HTMLElement>('.counter');

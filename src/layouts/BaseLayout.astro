@@ -1,8 +1,9 @@
 ---
-const { title = '山不见我', description = '', mainClass } = Astro.props as {
+const { title = '山不见我', description = '', mainClass, noindex } = Astro.props as {
   title?: string;
   description?: string;
   mainClass?: string;
+  noindex?: boolean;
 };
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
@@ -49,6 +50,7 @@ const resolvedMainClass = mainClass
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{title}</title>
     <meta name="description" content={description} />
+    {noindex && <meta name="robots" content="noindex" />}
     <script is:inline>
       (function () {
         const theme = localStorage.getItem('theme') || 'system';

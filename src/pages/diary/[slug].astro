@@ -1,18 +1,11 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { getCollection, getEntryBySlug, render } from 'astro:content';
+import { estimateReadingTime } from '../../utils/reading-time';
 
 export async function getStaticPaths() {
   const entries = await getCollection('diary');
   return entries.filter((e) => !e.data.draft).map((e) => ({ params: { slug: e.slug } }));
-}
-
-function estimateReadingTime(content: string): number {
-  const plainChinese = content.replace(/[^\u4e00-\u9fff]/g, '');
-  const plainEnglish = content.replace(/[^\x00-\x7F]/g, '').trim();
-  const enWords = plainEnglish.length ? plainEnglish.split(/\s+/).filter(Boolean).length : 0;
-  const score = plainChinese.length * 1.2 + enWords;
-  return Math.max(1, Math.round(score / 500));
 }
 
 const { slug } = Astro.params;
@@ -24,9 +17,7 @@ const { Content, headings = [] } = rendered;
 const readingTime = entry.body ? estimateReadingTime(entry.body) : 3;
 ---
 
-<BaseLayout title={`${entry.data.title} · 日记`} description={entry.data.summary}>
-  <meta name="robots" content="noindex" />
-
+<BaseLayout title={`${entry.data.title} · 日记`} description={entry.data.summary} noindex>
   <!-- Password gate -->
   <section class="mx-auto max-w-lg space-y-6" id="gate-section">
     <div class="surface-card space-y-3">

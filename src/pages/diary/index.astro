@@ -6,10 +6,8 @@ const entries = await getCollection('diary');
 const published = entries.filter((e) => !e.data.draft).sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
 ---
 
-<BaseLayout title="日记" description="私人日记">
+<BaseLayout title="日记" description="私人日记" noindex>
   <section class="space-y-6">
-    <meta name="robots" content="noindex" />
-
     <div>
       <p class="inline-flex rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700 dark:border-amber-800 dark:bg-slate-800 dark:text-amber-200">🔒 Private</p>
       <h1 class="mt-3 text-4xl font-bold">日记</h1>
