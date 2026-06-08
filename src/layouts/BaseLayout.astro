@@ -7,7 +7,7 @@ const { title = '山不见我', description = '', mainClass, noindex } = Astro.p
 };
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
-import SplashCursor from '../components/SplashCursor';
+import CustomCursor from '../components/CustomCursor';
 import '../styles/global.css';
 import { ViewTransitions } from 'astro:transitions';
 
@@ -74,12 +74,11 @@ const resolvedMainClass = mainClass
   </head>
 <body class="[word-break:break-word]">
   <Header />
+  <CustomCursor client:only="react" />
   <main class={`content-shell py-8 lg:py-10 ${resolvedMainClass}`}>
     <slot />
   </main>
   <Footer />
-
-  {path === '/' && <SplashCursor client:visible />}
 
   <script>
     (function () {
@@ -116,21 +115,6 @@ const resolvedMainClass = mainClass
 
       document.addEventListener('astro:page-load', () => {
         bindReveal();
-      });
-
-      // ── Magnetic hover ──
-      document.querySelectorAll('.magnetic').forEach((el) => {
-        el.addEventListener('mousemove', (e: Event) => {
-          const me = e as MouseEvent;
-          const rect = el.getBoundingClientRect();
-          const x = me.clientX - rect.left - rect.width / 2;
-          const y = me.clientY - rect.top - rect.height / 2;
-          (el as HTMLElement).style.transform = `translate(${x * 0.15}px, ${y * 0.15}px)`;
-        });
-        el.addEventListener('mouseleave', () => {
-          (el as HTMLElement).style.transform = '';
-          (el as HTMLElement).style.transition = 'transform 0.3s ease';
-        });
       });
     })();
   </script>

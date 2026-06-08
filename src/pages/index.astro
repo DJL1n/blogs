@@ -4,6 +4,7 @@ import CategoryList from '../components/CategoryList.astro';
 import PostCard from '../components/PostCard.astro';
 import TagList from '../components/TagList.astro';
 import TiltedCard from '../components/TiltedCard';
+import HeroScene from '../components/HeroScene';
 import { getCollection } from 'astro:content';
 
 const allPosts = [
@@ -71,6 +72,8 @@ const focusAreas = ['Computer Vision', 'SLAM / 3DGS', 'Tooling', 'Research Notes
 
 <BaseLayout title="山不见我" description="技术笔记 · 长期写作 · 可迁移的个人站点">
   <div class="home-stage" transition:animate="slide">
+    <div class="hero-bg-wrap">
+    <HeroScene client:only="react" />
     <section class="hero-section reveal" aria-labelledby="home-title">
       <p class="hero-eyebrow">Personal Knowledge OS — 共 {totalCount} 篇内容</p>
       <h1 id="home-title">山不见我</h1>
@@ -102,6 +105,7 @@ const focusAreas = ['Computer Vision', 'SLAM / 3DGS', 'Tooling', 'Research Notes
         ))}
       </div>
     </section>
+    </div>
 
     <section class="lane-grid" aria-label="内容入口">
       {contentLanes.map((lane, index) => (
@@ -234,6 +238,12 @@ const focusAreas = ['Computer Vision', 'SLAM / 3DGS', 'Tooling', 'Research Notes
     display: grid;
     gap: 1.2rem;
     min-width: 0;
+  }
+
+  /* ── Hero background wrapper ── */
+  .hero-bg-wrap {
+    position: relative;
+    overflow: hidden;
   }
 
   /* ── Hero section ── */
