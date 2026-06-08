@@ -7,7 +7,7 @@
  *
  * Source → Target mapping:
  *   40_Knowledge/References/  →  src/content/notes/   (type: "note")
- *   50_Writing/               →  src/content/blog/     (type: "blog")
+ *   50_Diary/               →  src/content/blog/     (type: "blog")
  *
  * - Skips INDEX.md files.
  * - Generates YAML frontmatter matching the Astro content schema.
@@ -25,7 +25,7 @@ const BLOG_ROOT = path.resolve(import.meta.dirname, '..');
 
 const SOURCE_ROOTS = {
   notes: '/Users/a0000/Documents/Obsidian/HermesBrain/40_Knowledge/References',
-  blog:  '/Users/a0000/Documents/Obsidian/HermesBrain/50_Writing',
+  blog:  '/Users/a0000/Documents/Obsidian/HermesBrain/50_Diary',
 };
 
 const OUTPUT_DIRS = {
@@ -282,7 +282,7 @@ function syncFile(srcPath, destDir, syncType) {
     if (syncType === 'note') {
       category = '文献笔记';
     } else {
-      // For blog: use subdirectory name relative to 50_Writing/
+      // For blog: use subdirectory name relative to 50_Diary/
       const srcDir = path.dirname(srcPath);
       const base = SOURCE_ROOTS.blog;
       const subDir = path.relative(base, srcDir);

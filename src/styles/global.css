@@ -121,6 +121,25 @@
       inset 0 1px 0 rgba(255,255,255,0.05);
   }
 
+  /* ── TiltedCard lane-card 3D depth ── */
+  .lane-card {
+    transform-style: preserve-3d;
+    transition: box-shadow 0.3s ease;
+  }
+  .lane-card:hover {
+    box-shadow: 0 12px 40px rgba(0,0,0,0.08);
+  }
+  .dark .lane-card:hover {
+    box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+  }
+
+  .lane-card strong,
+  .lane-card p,
+  .lane-card .lane-eyebrow,
+  .lane-card .lane-count {
+    transform: translateZ(20px);
+  }
+
   /* ── Chip ── */
   .chip {
     display: inline-flex;
@@ -556,35 +575,7 @@
     color: #E5E5E5;
   }
 
-  /* ── Aurora background — slow drifting gradient ── */
-  .aurora-bg {
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    z-index: -1;
-    overflow: hidden;
-  }
-  .aurora-bg::before {
-    content: '';
-    position: absolute;
-    inset: -50%;
-    background:
-      radial-gradient(ellipse 80% 60% at 20% 30%, rgba(142, 155, 142, 0.08) 0%, transparent 60%),
-      radial-gradient(ellipse 60% 50% at 80% 70%, rgba(165, 175, 165, 0.06) 0%, transparent 50%),
-      radial-gradient(ellipse 70% 40% at 50% 50%, rgba(200, 195, 185, 0.05) 0%, transparent 50%);
-    animation: aurora-drift 20s ease-in-out infinite alternate;
-  }
-  @keyframes aurora-drift {
-    0% { transform: translate(0, 0) rotate(0deg) scale(1); }
-    50% { transform: translate(5%, 3%) rotate(3deg) scale(1.05); }
-    100% { transform: translate(-3%, -2%) rotate(-2deg) scale(0.95); }
-  }
-  .dark .aurora-bg::before {
-    background:
-      radial-gradient(ellipse 80% 60% at 20% 30%, rgba(122, 139, 122, 0.06) 0%, transparent 60%),
-      radial-gradient(ellipse 60% 50% at 80% 70%, rgba(140, 150, 140, 0.04) 0%, transparent 50%);
-    animation-duration: 30s;
-  }
+  /* ── (Aurora removed — pure background) ── */
 
   .empty-copy {
     margin: 0;

@@ -1,13 +1,26 @@
-# Task Resume
-
-DO NOT DELETE. This file records in-flight tasks across sessions.
-
-## Auto-Resume Rule
-When the user returns after a gap of 30+ minutes, and their new message is project-related, auto-resume CC without asking.
+# Task: React Bits Aurora + Build Fix
 
 ## Status
-**Active task**: Second round visual upgrade
-- Fix: too plain after Morandi palette
-- Add: serif headings, warm shadows, glass nav, ambient spotlight
-- Spec: .hermes/scripts/cc-visual-v2.txt
-- Then: screenshot + Kimi review
+CC delegation needed. Current state:
+- `@astrojs/react` installed, configured in astro.config.mjs
+- React Bits Aurora.tsx + Aurora.css downloaded to `src/components/react-bits/Aurora/`
+- React Bits Magnet.tsx downloaded to `src/components/react-bits/Magnet/` (type imports fixed)
+- MagnetProvider.tsx created for magnetic hover
+- AuroraWrapper.astro created
+- BaseLayout.astro updated to use AuroraWrapper instead of CSS aurora
+- global.css updated: .aurora-bg removed, .aurora-container added
+- ScrollReveal directory still exists in `src/components/react-bits/ScrollReveal/` (has gsap errors)
+
+## What needs to be done by CC
+1. Remove `src/components/react-bits/ScrollReveal/` directory
+2. Run `npm run build` to verify clean build
+3. If build passes, start dev server and let me know the URL
+
+## Files that are correct and should NOT be modified
+- src/components/react-bits/Aurora/Aurora.tsx
+- src/components/react-bits/Aurora/Aurora.css
+- src/components/react-bits/Magnet/Magnet.tsx
+- src/components/react-bits/MagnetProvider.tsx
+- src/components/react-bits/AuroraWrapper.astro
+- src/layouts/BaseLayout.astro (already patched)
+- src/styles/global.css (already patched)

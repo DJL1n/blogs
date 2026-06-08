@@ -7,6 +7,7 @@ const { title = '山不见我', description = '', mainClass, noindex } = Astro.p
 };
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
+import SplashCursor from '../components/SplashCursor';
 import '../styles/global.css';
 import { ViewTransitions } from 'astro:transitions';
 
@@ -72,12 +73,13 @@ const resolvedMainClass = mainClass
     </script>
   </head>
 <body class="[word-break:break-word]">
-  <div class="aurora-bg" aria-hidden="true"></div>
   <Header />
   <main class={`content-shell py-8 lg:py-10 ${resolvedMainClass}`}>
     <slot />
   </main>
   <Footer />
+
+  {path === '/' && <SplashCursor client:visible />}
 
   <script>
     (function () {

@@ -1,6 +1,7 @@
 ---
 import ThemeToggle from './ThemeToggle.astro';
 import SearchBox from './SearchBox.astro';
+import Magnet from './react-bits/Magnet/Magnet';
 
 const pathname = Astro.url.pathname.replace(/\/$/, '') || '/';
 const links = [
@@ -27,13 +28,15 @@ const isActive = (href: string) => pathname === href || pathname.startsWith(`${h
 
     <nav class="nav-cluster" aria-label="主导航">
       {links.map((link) => (
-        <a
-          href={link.href}
-          class={`nav-link ${isActive(link.href) ? 'nav-link-active' : ''}`}
-          aria-current={isActive(link.href) ? 'page' : undefined}
-        >
-          {link.label}
-        </a>
+        <Magnet padding={60} magnetStrength={3} wrapperClassName="inline-flex" client:idle>
+          <a
+            href={link.href}
+            class={`nav-link ${isActive(link.href) ? 'nav-link-active' : ''}`}
+            aria-current={isActive(link.href) ? 'page' : undefined}
+          >
+            {link.label}
+          </a>
+        </Magnet>
       ))}
 
       <div class="header-tools">
