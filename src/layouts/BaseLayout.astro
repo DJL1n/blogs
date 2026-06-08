@@ -10,6 +10,15 @@ import Footer from '../components/Footer.astro';
 import '../styles/global.css';
 import { ViewTransitions } from 'astro:transitions';
 
+// ── Fonts ──
+import '@fontsource/noto-serif-sc/300.css';
+import '@fontsource/noto-serif-sc/400.css';
+import '@fontsource/noto-serif-sc/700.css';
+import '@fontsource/inter/400.css';
+import '@fontsource/inter/500.css';
+import '@fontsource/inter/600.css';
+import '@fontsource/inter/700.css';
+
 const path = Astro.url.pathname.replace(/\/$/, '') || '/';
 const resolvedMainClass = mainClass
   ? mainClass
@@ -63,6 +72,7 @@ const resolvedMainClass = mainClass
     </script>
   </head>
 <body class="[word-break:break-word]">
+  <div class="ambient-light" aria-hidden="true"></div>
   <Header />
   <main class={`content-shell py-8 lg:py-10 ${resolvedMainClass}`}>
     <slot />
@@ -103,6 +113,19 @@ const resolvedMainClass = mainClass
 
       document.addEventListener('astro:page-load', () => {
         bindReveal();
+      });
+
+      // ── Ambient spotlight: mouse-following light ──
+      let ambientTicking = false;
+      document.addEventListener('mousemove', (e) => {
+        if (!ambientTicking) {
+          requestAnimationFrame(() => {
+            document.documentElement.style.setProperty('--x', `${e.clientX}px`);
+            document.documentElement.style.setProperty('--y', `${e.clientY}px`);
+            ambientTicking = false;
+          });
+          ambientTicking = true;
+        }
       });
     })();
   </script>

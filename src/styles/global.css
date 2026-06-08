@@ -19,9 +19,17 @@
 
   html {
     background: #F4F3EF;
+    font-family: 'Inter', 'PingFang SC', system-ui, -apple-system, sans-serif;
   }
   html.dark {
     background: #1A1C20;
+  }
+
+  /* ── Serif headings: magazine-grade typography ── */
+  :where(h1, h2, .page-title) {
+    font-family: 'Noto Serif SC', 'Source Han Serif SC', 'Noto Serif CJK SC', serif;
+    font-weight: 400;
+    letter-spacing: 0.05em;
   }
 
   body {
@@ -81,27 +89,36 @@
     @apply mx-auto w-full max-w-[66ch] lg:max-w-[70ch];
   }
 
-  /* ── Card — updated morandi style ── */
+  /* ── Card — warm shadows & pressed-paper inner highlight ── */
   .card {
     background: #FFFFFF;
     border: 1px solid #E0DDD5;
     border-radius: 0.75rem;
     padding: 1.25rem;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+    box-shadow:
+      0 4px 20px rgba(142, 155, 142, 0.08),
+      0 1px 2px rgba(0,0,0,0.02),
+      inset 0 1px 0 rgba(255,255,255,0.8);
     transition: box-shadow 200ms ease, transform 200ms ease, background 200ms ease;
   }
   .card:hover {
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+    box-shadow:
+      0 20px 40px -10px rgba(142, 155, 142, 0.15),
+      inset 0 1px 0 rgba(255,255,255,0.8);
     transform: translateY(-2px);
   }
 
   .dark .card {
     border-color: #33353B;
     background: #25272D;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    box-shadow:
+      0 4px 20px rgba(0, 0, 0, 0.2),
+      inset 0 1px 0 rgba(255,255,255,0.05);
   }
   .dark .card:hover {
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+    box-shadow:
+      0 20px 40px -10px rgba(0, 0, 0, 0.35),
+      inset 0 1px 0 rgba(255,255,255,0.05);
   }
 
   /* ── Chip ── */
@@ -148,22 +165,27 @@
     line-height: 1.25rem;
     text-decoration: none;
     white-space: nowrap;
-    transition: background 180ms ease, color 180ms ease;
+    border: 1px solid transparent;
+    transition: background 180ms ease, color 180ms ease, transform 180ms ease, border-color 180ms ease;
   }
   .tag:hover,
   a[href*='/tags/']:hover {
     background: #8E9B8E;
     color: #FFFFFF;
+    transform: scale(1.05);
+    border-color: rgba(142, 155, 142, 0.3);
   }
   .dark .tag,
   .dark a[href*='/tags/'] {
     background: #2D2F35;
     color: #E5E5E5;
+    border-color: transparent;
   }
   .dark .tag:hover,
   .dark a[href*='/tags/']:hover {
     background: #7A8B7A;
     color: #FFFFFF;
+    border-color: rgba(122, 139, 122, 0.3);
   }
 
   /* ── Buttons ── */
@@ -236,10 +258,11 @@
   .page-hero h1 {
     margin: 0.5rem 0 0;
     color: #3D404A;
+    font-family: 'Noto Serif SC', 'Source Han Serif SC', serif;
     font-size: clamp(1.75rem, 3.5vw, 2.5rem);
-    font-weight: 800;
+    font-weight: 400;
     line-height: 1.15;
-    letter-spacing: 0;
+    letter-spacing: 0.05em;
   }
   .page-hero p {
     max-width: 48rem;
@@ -311,19 +334,19 @@
 }
 
 @layer components {
-  /* ── Header — glass navigation ── */
+  /* ── Header — frosted glass navigation ── */
   .site-header {
     position: sticky;
     top: 0;
     z-index: 30;
-    background: rgba(255, 255, 255, 0.8);
+    background: rgba(244, 243, 239, 0.75);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border-bottom: 1px solid #E0DDD5;
+    border-bottom: 1px solid rgba(255,255,255,0.6);
   }
   .dark .site-header {
-    background: rgba(26, 28, 32, 0.8);
-    border-bottom-color: #33353B;
+    background: rgba(26, 28, 32, 0.75);
+    border-bottom-color: rgba(255,255,255,0.06);
   }
 
   .header-shell {
@@ -522,6 +545,7 @@
   .section-title {
     @apply flex items-center gap-3 text-lg font-bold tracking-tight;
     color: #3D404A;
+    font-family: 'Noto Serif SC', 'Source Han Serif SC', serif;
   }
   .section-title::before {
     content: '';
@@ -530,6 +554,31 @@
   }
   .dark .section-title {
     color: #E5E5E5;
+  }
+
+  /* ── Ambient spotlight: mouse-following light ── */
+  .ambient-light {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: -1;
+    background: radial-gradient(
+      600px circle at var(--x, 50%) var(--y, 50%),
+      rgba(142, 155, 142, 0.12),
+      transparent 40%
+    );
+    opacity: 0.6;
+    transition: background 0.1s ease;
+  }
+  .dark .ambient-light {
+    background: radial-gradient(
+      600px circle at var(--x, 50%) var(--y, 50%),
+      rgba(122, 139, 122, 0.08),
+      transparent 40%
+    );
   }
 
   .empty-copy {
