@@ -37,7 +37,7 @@ const editorQuery = bodyForEditor
 ---
 
 <BaseLayout title={post.data.title} description={post.data.summary} shellless>
-  <section class={`post-shell post-layout-grid ${hasToc ? 'has-toc' : ''}`}>
+  <section class={`post-shell post-layout-grid ${hasToc ? 'has-toc' : ''}`} transition:animate="fade">
     <article class="article-column reading-shell mx-auto min-w-0">
       <header class="post-hero card reveal">
         <div class="post-meta-chips">

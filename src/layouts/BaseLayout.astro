@@ -72,7 +72,7 @@ const resolvedMainClass = mainClass
     </script>
   </head>
 <body class="[word-break:break-word]">
-  <div class="ambient-light" aria-hidden="true"></div>
+  <div class="aurora-bg" aria-hidden="true"></div>
   <Header />
   <main class={`content-shell py-8 lg:py-10 ${resolvedMainClass}`}>
     <slot />
@@ -83,25 +83,26 @@ const resolvedMainClass = mainClass
     (function () {
       const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-      let revealObserver: IntersectionObserver | null = null;
+      // ── Scroll Reveal ──
       function bindReveal() {
-        if (revealObserver) revealObserver.disconnect();
-        const els = document.querySelectorAll<HTMLElement>('.reveal');
-        if (!els.length || reducedMotion) {
-          els.forEach((el) => el.classList.add('visible'));
+        const els = document.querySelectorAll('.reveal');
+        if (!els.length) return;
+        if (reducedMotion) {
+          els.forEach((el) => el.classList.add('revealed'));
           return;
         }
-        revealObserver = new IntersectionObserver(
+        const observer = new IntersectionObserver(
           (entries) => {
             entries.forEach((entry) => {
-              if (!entry.isIntersecting) return;
-              entry.target.classList.add('visible');
-              revealObserver!.unobserve(entry.target);
+              if (entry.isIntersecting) {
+                entry.target.classList.add('revealed');
+                observer.unobserve(entry.target);
+              }
             });
           },
-          { threshold: 0.08, rootMargin: '0px 0px -15px 0px' }
+          { threshold: 0.1, rootMargin: '0px 0px -50px 0px' }
         );
-        els.forEach((el) => revealObserver!.observe(el));
+        els.forEach((el) => observer.observe(el));
       }
 
       bindReveal();
@@ -115,17 +116,19 @@ const resolvedMainClass = mainClass
         bindReveal();
       });
 
-      // ── Ambient spotlight: mouse-following light ──
-      let ambientTicking = false;
-      document.addEventListener('mousemove', (e) => {
-        if (!ambientTicking) {
-          requestAnimationFrame(() => {
-            document.documentElement.style.setProperty('--x', `${e.clientX}px`);
-            document.documentElement.style.setProperty('--y', `${e.clientY}px`);
-            ambientTicking = false;
-          });
-          ambientTicking = true;
-        }
+      // ── Magnetic hover ──
+      document.querySelectorAll('.magnetic').forEach((el) => {
+        el.addEventListener('mousemove', (e: Event) => {
+          const me = e as MouseEvent;
+          const rect = el.getBoundingClientRect();
+          const x = me.clientX - rect.left - rect.width / 2;
+          const y = me.clientY - rect.top - rect.height / 2;
+          (el as HTMLElement).style.transform = `translate(${x * 0.15}px, ${y * 0.15}px)`;
+        });
+        el.addEventListener('mouseleave', () => {
+          (el as HTMLElement).style.transform = '';
+          (el as HTMLElement).style.transition = 'transform 0.3s ease';
+        });
       });
     })();
   </script>
