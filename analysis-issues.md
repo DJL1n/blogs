@@ -41,10 +41,10 @@
 - **状态**: ✅ 已修复
 
 ### #6 `editor.astro` 体积过大
-- **文件**: `editor.astro`（1475 行 / 52KB）
+- **文件**: `editor.astro`（1475 行 → ~300 行）
 - **问题**: 单个组件涵盖解析、渲染、工具栏、保存、上传的全部逻辑。
-- **修复**: 拆分为多个子组件。
-- **状态**: ⏭️ 暂缓
+- **修复**: 拆分为 `src/editor/markdown.ts`、`slash-menu.ts`、`EditorToolbar.astro`、`EditorMeta.astro`，核心脚本从 ~1007 行精简至 ~160 行。
+- **状态**: ✅ 已修复
 
 ### #7 关联文章解析只在 notes 详情页实现
 - **文件**: `notes/[slug].astro` 有内联的 `resolveRelatedPosts`，`blog`、`important` 缺失

@@ -15,7 +15,7 @@ const published = entries.filter((e) => !e.data.draft).sort((a, b) => b.data.dat
     </div>
 
     <!-- Password gate overlay -->
-    <div id="gate" class="surface-card">
+    <div id="gate" class="card">
       <div id="gate-first" class="space-y-3">
         <p class="text-sm text-slate-500 dark:text-slate-400">首次使用？<a href="/diary/settings" class="text-amber-600 hover:underline">设置密码</a></p>
       </div>
@@ -43,7 +43,7 @@ const published = entries.filter((e) => !e.data.draft).sort((a, b) => b.data.dat
       {published.length > 0 ? (
         <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {published.map((entry) => (
-            <a href={`/diary/${entry.slug}`} class="surface-card block no-underline">
+            <a href={`/diary/${entry.slug}`} class="card block no-underline">
               <div class="flex items-center gap-2 text-xs text-slate-400 mb-2">
                 <span>{entry.data.date.toLocaleDateString('zh-CN')}</span>
                 <span class="chip">{entry.data.category}</span>

@@ -17,7 +17,7 @@ import PageHeader from '../components/PageHeader.astro';
     />
 
     <section class="about-grid">
-      <article class="liquid-panel reveal" data-liquid-panel data-tilt>
+      <article class="card reveal">
         <div class="panel-heading">
           <div>
             <p class="panel-eyebrow">Focus</p>
@@ -25,19 +25,19 @@ import PageHeader from '../components/PageHeader.astro';
           </div>
         </div>
         <div class="flex flex-wrap gap-2">
-          <span class="chip-active">Computer Vision</span>
-          <span class="chip-active">SLAM</span>
-          <span class="chip-active">3D Reconstruction</span>
-          <span class="chip-active">3DGS / NeRF</span>
-          <span class="chip-emerald">Python</span>
-          <span class="chip-emerald">C++</span>
+          <span class="tag">Computer Vision</span>
+          <span class="tag">SLAM</span>
+          <span class="tag">3D Reconstruction</span>
+          <span class="tag">3DGS / NeRF</span>
+          <span class="tag">Python</span>
+          <span class="tag">C++</span>
           <span class="chip">Git</span>
           <span class="chip">Astro</span>
           <span class="chip">Tailwind CSS</span>
         </div>
       </article>
 
-      <article class="liquid-panel reveal reveal-delay-1" data-liquid-panel data-tilt>
+      <article class="card reveal reveal-delay-1">
         <div class="panel-heading">
           <div>
             <p class="panel-eyebrow">Site</p>
@@ -81,7 +81,7 @@ import PageHeader from '../components/PageHeader.astro';
   }
 
   .about-copy a {
-    color: rgb(15 118 110);
+    color: #8E9B8E;
     font-weight: 800;
     text-decoration: none;
   }
@@ -102,7 +102,7 @@ import PageHeader from '../components/PageHeader.astro';
   }
 
   :global(.dark) .about-copy a {
-    color: rgb(94 234 212);
+    color: #7A8B7A;
   }
 
   :global(.dark) .about-copy code {

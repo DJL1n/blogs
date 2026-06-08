@@ -14,7 +14,7 @@ const {
 };
 ---
 
-<header class="page-hero liquid-panel reveal" data-liquid-panel>
+<header class="page-hero card">
   <div class="page-hero-copy">
     <p class="panel-eyebrow">{eyebrow}</p>
     <h1>{title}</h1>
@@ -34,7 +34,7 @@ const {
       {actions.length > 0 && (
         <div class="page-hero-actions">
           {actions.map((action) => (
-            <a href={action.href} class={action.primary ? 'btn-primary magnetic' : 'btn-secondary magnetic'}>
+            <a href={action.href} class={action.primary ? 'btn-primary' : 'btn-secondary'}>
               {action.label}
             </a>
           ))}

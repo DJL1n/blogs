@@ -1,0 +1,37 @@
+---
+---
+
+<div id="format-bar" class="flex flex-wrap items-center gap-0.5 border-b border-slate-100 pb-3 dark:border-slate-800">
+  <button data-cmd="undo" class="fmt-btn" title="撤销" type="button">↩</button>
+  <button data-cmd="redo" class="fmt-btn" title="重做" type="button">↪</button>
+  <span class="mx-1 text-slate-300 dark:text-slate-600">|</span>
+  <button data-cmd="bold" class="fmt-btn font-bold" title="加粗" type="button"><b>B</b></button>
+  <button data-cmd="italic" class="fmt-btn" title="斜体" type="button"><i>I</i></button>
+  <button data-cmd="strike" class="fmt-btn" title="删除线" type="button"><s>S</s></button>
+  <button data-cmd="code" class="fmt-btn" title="行内代码" type="button">&lt;/&gt;</button>
+  <span class="mx-1 text-slate-300 dark:text-slate-600">|</span>
+  <button data-cmd="h1" class="fmt-btn" title="一级标题" type="button">H1</button>
+  <button data-cmd="h2" class="fmt-btn" title="二级标题" type="button">H2</button>
+  <button data-cmd="h3" class="fmt-btn" title="三级标题" type="button">H3</button>
+  <span class="mx-1 text-slate-300 dark:text-slate-600">|</span>
+  <button data-cmd="bulletList" class="fmt-btn" title="无序列表" type="button">• 列表</button>
+  <button data-cmd="orderedList" class="fmt-btn" title="有序列表" type="button">1. 列表</button>
+  <button data-cmd="taskList" class="fmt-btn" title="任务列表" type="button">☑ 任务</button>
+  <button data-cmd="blockquote" class="fmt-btn" title="引用" type="button">〝</button>
+  <button data-cmd="codeBlock" class="fmt-btn" title="代码块" type="button">&lt;/&gt; 代码</button>
+  <span id="lang-wrapper" class="hidden items-center gap-1 ml-1">
+    <span class="text-[10px] text-slate-400 uppercase">语言</span>
+    <select id="lang-select" class="text-xs rounded border border-slate-200 bg-white px-1.5 py-0.5 focus:outline-none dark:bg-slate-800 dark:border-slate-600 dark:text-slate-200">
+      <option value="">纯文本</option>
+      <option value="javascript">JavaScript</option>
+      <option value="typescript">TypeScript</option>
+      <option value="python">Python</option>
+      <option value="html">HTML</option>
+      <option value="css">CSS</option>
+      <option value="bash">Bash</option>
+      <option value="json">JSON</option>
+      <option value="sql">SQL</option>
+    </select>
+  </span>
+  <button data-cmd="horizontalRule" class="fmt-btn" title="分割线" type="button">—</button>
+</div>

@@ -1,23 +1,29 @@
 <footer class="mt-14 py-10 text-sm">
   <div class="content-shell">
-    <div class="liquid-panel flex flex-col items-center gap-4 sm:flex-row sm:justify-between">
-      <div class="flex items-center gap-2 text-slate-600 dark:text-slate-300">
+    <div class="card flex flex-col items-center gap-4 sm:flex-row sm:justify-between">
+      <div class="flex items-center gap-2" style="color: #8A8F99">
         <span class="brand-mark h-6 w-6 text-[10px]">山</span>
         <span>山不见我 · 技术笔记与个人站点</span>
       </div>
       <nav class="flex flex-wrap justify-center gap-2 text-xs">
-        <a href="/blog" class="panel-link">博客</a>
-        <a href="/notes" class="panel-link">笔记</a>
-        <a href="/important" class="panel-link">重要事项</a>
-        <a href="/tags" class="panel-link">标签</a>
-        <a href="/categories" class="panel-link">分类</a>
-        <a href="/editor" class="panel-link">写作</a>
-        <a href="/about" class="panel-link">关于</a>
-        <a href="/rss.xml" class="panel-link">RSS</a>
+        <a href="/blog" class="panel-link" style="color: #8A8F99; text-decoration: none; transition: color 180ms ease">博客</a>
+        <a href="/notes" class="panel-link" style="color: #8A8F99; text-decoration: none; transition: color 180ms ease">笔记</a>
+        <a href="/important" class="panel-link" style="color: #8A8F99; text-decoration: none; transition: color 180ms ease">重要事项</a>
+        <a href="/tags" class="panel-link" style="color: #8A8F99; text-decoration: none; transition: color 180ms ease">标签</a>
+        <a href="/categories" class="panel-link" style="color: #8A8F99; text-decoration: none; transition: color 180ms ease">分类</a>
+        <a href="/editor" class="panel-link" style="color: #8A8F99; text-decoration: none; transition: color 180ms ease">写作</a>
+        <a href="/about" class="panel-link" style="color: #8A8F99; text-decoration: none; transition: color 180ms ease">关于</a>
+        <a href="/rss.xml" class="panel-link" style="color: #8A8F99; text-decoration: none; transition: color 180ms ease">RSS</a>
       </nav>
     </div>
-    <p class="mt-5 text-center text-xs text-slate-500 dark:text-slate-500">
+    <p class="mt-5 text-center text-xs" style="color: #8A8F99">
       Astro · Markdown · GitHub · Cloudflare Pages
     </p>
   </div>
 </footer>
+
+<style>
+  .panel-link:hover {
+    color: #8E9B8E !important;
+  }
+</style>

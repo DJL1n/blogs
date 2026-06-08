@@ -1,7 +1,10 @@
 import type { APIContext } from 'astro';
 import { mkdir, writeFile } from 'node:fs/promises';
-import { execSync } from 'node:child_process';
+import { exec } from 'node:child_process';
+import { promisify } from 'node:util';
 import path from 'node:path';
+
+const asyncExec = promisify(exec);
 
 const TYPE_DIR_MAP = {
   note: 'notes',
@@ -43,9 +46,10 @@ export async function POST({ request }: APIContext) {
     // Auto-commit
     let commitHash = '';
     try {
-      execSync(`git add "${targetFile}"`, { cwd: repoRoot, stdio: 'pipe' });
-      execSync(`git commit -m "feat(editor): save ${path.basename(filename)}"`, { cwd: repoRoot, stdio: 'pipe' });
-      commitHash = execSync('git rev-parse --short HEAD', { cwd: repoRoot, stdio: 'pipe' }).toString().trim();
+      await asyncExec(`git add "${targetFile}"`, { cwd: repoRoot });
+      await asyncExec(`git commit -m "feat(editor): save ${path.basename(filename)}"`, { cwd: repoRoot });
+      const { stdout } = await asyncExec('git rev-parse --short HEAD', { cwd: repoRoot });
+      commitHash = stdout.trim();
     } catch {
       // non-blocking: save succeeded even if commit fails
     }

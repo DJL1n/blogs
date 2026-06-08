@@ -8,6 +8,7 @@ const { title = '山不见我', description = '', mainClass, noindex } = Astro.p
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import '../styles/global.css';
+import { ViewTransitions } from 'astro:transitions';
 
 const path = Astro.url.pathname.replace(/\/$/, '') || '/';
 const resolvedMainClass = mainClass
@@ -51,6 +52,7 @@ const resolvedMainClass = mainClass
     <title>{title}</title>
     <meta name="description" content={description} />
     {noindex && <meta name="robots" content="noindex" />}
+    <ViewTransitions />
     <script is:inline>
       (function () {
         const theme = localStorage.getItem('theme') || 'system';
@@ -62,89 +64,45 @@ const resolvedMainClass = mainClass
   </head>
 <body class="[word-break:break-word]">
   <Header />
-  <main class={`content-shell py-8 lg:py-10 main-shell ${resolvedMainClass}`}>
+  <main class={`content-shell py-8 lg:py-10 ${resolvedMainClass}`}>
     <slot />
   </main>
   <Footer />
 
   <script>
-    (function() {
+    (function () {
       const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      const hoverSelector = '.btn-primary, .btn-secondary, .liquid-control, .theme-toggle, .panel-link, .post-card, .chip, .copy-code-btn';
-      let hoverFrame = 0;
-      let hoverPoint: { x: number; y: number; target: EventTarget | null } | null = null;
 
-      document.addEventListener('pointermove', (e: PointerEvent) => {
-        hoverPoint = { x: e.clientX, y: e.clientY, target: e.target };
-        if (hoverFrame) return;
-
-        hoverFrame = window.requestAnimationFrame(() => {
-          hoverFrame = 0;
-          if (!hoverPoint || !(hoverPoint.target instanceof HTMLElement)) return;
-
-          const el = hoverPoint.target.closest(hoverSelector) as HTMLElement | null;
-          if (!el) return;
-
-          const r = el.getBoundingClientRect();
-          el.style.setProperty('--gx', `${hoverPoint.x - r.left}px`);
-          el.style.setProperty('--gy', `${hoverPoint.y - r.top}px`);
-        });
-      }, { passive: true });
-
-      const revealElements = document.querySelectorAll<HTMLElement>('.reveal');
-      if (!revealElements.length || reducedMotion) {
-        revealElements.forEach((element) => element.classList.add('visible'));
-      } else {
-        const revealObserver = new IntersectionObserver(
+      let revealObserver: IntersectionObserver | null = null;
+      function bindReveal() {
+        if (revealObserver) revealObserver.disconnect();
+        const els = document.querySelectorAll<HTMLElement>('.reveal');
+        if (!els.length || reducedMotion) {
+          els.forEach((el) => el.classList.add('visible'));
+          return;
+        }
+        revealObserver = new IntersectionObserver(
           (entries) => {
             entries.forEach((entry) => {
               if (!entry.isIntersecting) return;
               entry.target.classList.add('visible');
-              revealObserver.unobserve(entry.target);
+              revealObserver!.unobserve(entry.target);
             });
           },
-          { threshold: 0.08, rootMargin: '0px 0px -42px 0px' }
+          { threshold: 0.08, rootMargin: '0px 0px -15px 0px' }
         );
-        revealElements.forEach((element) => revealObserver.observe(element));
+        els.forEach((el) => revealObserver!.observe(el));
       }
 
-      if (reducedMotion) return;
+      bindReveal();
 
-      const interactiveElements = document.querySelectorAll<HTMLElement>('[data-liquid-panel], [data-tilt]');
-      interactiveElements.forEach((element) => {
-        element.addEventListener('pointermove', (event) => {
-          const rect = element.getBoundingClientRect();
-          const x = event.clientX - rect.left;
-          const y = event.clientY - rect.top;
-          const px = x / rect.width - 0.5;
-          const py = y / rect.height - 0.5;
-
-          element.style.setProperty('--mx', `${x}px`);
-          element.style.setProperty('--my', `${y}px`);
-
-          if (!element.hasAttribute('data-tilt')) return;
-          element.style.transform = `perspective(900px) rotateX(${(-py * 4.2).toFixed(2)}deg) rotateY(${(px * 5.2).toFixed(2)}deg) translate3d(0, -2px, 0)`;
-        }, { passive: true });
-
-        element.addEventListener('pointerleave', () => {
-          element.style.removeProperty('--mx');
-          element.style.removeProperty('--my');
-          element.style.transform = '';
-        }, { passive: true });
+      document.addEventListener('astro:before-swap', (e: any) => {
+        const isDark = document.documentElement.classList.contains('dark');
+        if (isDark) e.newDocument.documentElement.classList.add('dark');
       });
 
-      const magneticElements = document.querySelectorAll<HTMLElement>('.magnetic');
-      magneticElements.forEach((element) => {
-        element.addEventListener('pointermove', (event) => {
-          const rect = element.getBoundingClientRect();
-          const x = event.clientX - rect.left - rect.width / 2;
-          const y = event.clientY - rect.top - rect.height / 2;
-          element.style.transform = `translate(${(x * 0.11).toFixed(1)}px, ${(y * 0.16).toFixed(1)}px)`;
-        }, { passive: true });
-
-        element.addEventListener('pointerleave', () => {
-          element.style.transform = '';
-        }, { passive: true });
+      document.addEventListener('astro:page-load', () => {
+        bindReveal();
       });
     })();
   </script>

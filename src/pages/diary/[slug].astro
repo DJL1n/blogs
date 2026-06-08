@@ -13,14 +13,14 @@ const entry = slug ? await getEntryBySlug('diary', slug) : null;
 if (!entry || entry.data.draft) return Astro.redirect('/diary');
 
 const rendered = await render(entry);
-const { Content, headings = [] } = rendered;
+const { Content } = rendered;
 const readingTime = entry.body ? estimateReadingTime(entry.body) : 3;
 ---
 
 <BaseLayout title={`${entry.data.title} · 日记`} description={entry.data.summary} noindex>
   <!-- Password gate -->
   <section class="mx-auto max-w-lg space-y-6" id="gate-section">
-    <div class="surface-card space-y-3">
+    <div class="card space-y-3">
       <p class="text-sm text-amber-600 font-medium">🔒 日记需要密码查看</p>
       <div id="gate-first" class="space-y-3">
         <p class="text-sm text-slate-500 dark:text-slate-400">首次使用？<a href="/diary/settings" class="text-amber-600 hover:underline">设置密码</a></p>
@@ -78,7 +78,7 @@ const readingTime = entry.body ? estimateReadingTime(entry.body) : 3;
 
   if (isSessionAuthed()) {
     unlock();
-  } else {
+  } else if (hasPassword()) {
     gateFirst.classList.add('hidden');
     gateLogin.classList.remove('hidden');
   }

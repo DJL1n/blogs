@@ -14,7 +14,6 @@ const allPosts = [
 const published = allPosts.filter((p) => !p.data.draft);
 const sorted = published.sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
 const recent = sorted.slice(0, 6);
-const heroRecent = sorted.slice(0, 4);
 
 const blogCount = published.filter((p) => p.data.type === 'blog').length;
 const noteCount = published.filter((p) => p.data.type === 'note').length;
@@ -33,12 +32,7 @@ const todoPost = (await getCollection('important')).find((p) => p.slug === 'shor
 const longTermPlan = planPost?.data.plan ?? [];
 const shortTermTodos = todoPost?.data.todos ?? [];
 
-const metrics = [
-  { label: '全部', value: published.length, tone: 'cyan' },
-  { label: '长文', value: blogCount, tone: 'green' },
-  { label: '笔记', value: noteCount, tone: 'amber' },
-  { label: '记录', value: importantCount, tone: 'rose' },
-];
+const totalCount = published.length;
 
 const primaryActions = [
   { label: '博客', href: '/blog', style: 'btn-secondary' },
@@ -75,89 +69,46 @@ const focusAreas = ['Computer Vision', 'SLAM / 3DGS', 'Tooling', 'Research Notes
 ---
 
 <BaseLayout title="山不见我" description="技术笔记 · 长期写作 · 可迁移的个人站点">
-  <!-- Grain overlay -->
-  <div id="grain" aria-hidden="true" style="position:fixed;inset:0;pointer-events:none;z-index:1;mix-blend-mode:overlay;opacity:0.03;background-image:url(data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E);background-repeat:repeat;background-size:128px"></div>
-
   <div class="home-stage">
-    <div id="hero-bg" class="hero-bg-decoration" aria-hidden="true"></div>
-    <section class="home-command" aria-labelledby="home-title">
-      <div class="hero-core reveal">
-        <p class="panel-eyebrow">Personal Knowledge OS</p>
-        <h1 id="home-title">
-          <span>山不见我</span>
-          <span>长期知识工作台</span>
-        </h1>
-        <p class="hero-intro">
-          技术长文、短笔记和重要记录统一沉淀在静态内容库里。第一屏直接服务于检索、进入内容和继续写作。
-        </p>
+    <section class="hero-section reveal" aria-labelledby="home-title">
+      <p class="hero-eyebrow">Personal Knowledge OS — 共 {totalCount} 篇内容</p>
+      <h1 id="home-title">山不见我</h1>
+      <p class="hero-intro">
+        技术长文、短笔记和重要记录统一沉淀在静态内容库里。第一屏直接服务于检索、进入内容和继续写作。
+      </p>
 
-        <form class="home-search liquid-control reveal reveal-delay-1" action="/search" method="get" role="search">
-          <label for="home-q" class="sr-only">搜索站内内容</label>
-          <input
-            id="home-q"
-            name="q"
-            type="search"
-            placeholder="搜索标题、摘要、标签或分类"
-            autocomplete="off"
-          />
-          <button type="submit" class="btn-primary magnetic">搜索</button>
-        </form>
+      <form class="home-search" action="/search" method="get" role="search">
+        <label for="home-q" class="sr-only">搜索站内内容</label>
+        <input
+          id="home-q"
+          name="q"
+          type="search"
+          placeholder="搜索标题、摘要、标签或分类"
+          autocomplete="off"
+        />
+        <button type="submit" class="btn-primary">搜索</button>
+      </form>
 
-        <div class="hero-actions reveal reveal-delay-2">
-          {primaryActions.map((action) => (
-            <a href={action.href} class={`${action.style} magnetic`}>{action.label}</a>
-          ))}
-        </div>
-
-        <div class="hero-focus reveal reveal-delay-3" aria-label="关注方向">
-          {focusAreas.map((area) => (
-            <span>{area}</span>
-          ))}
-        </div>
+      <div class="hero-actions">
+        {primaryActions.map((action) => (
+          <a href={action.href} class={action.style}>{action.label}</a>
+        ))}
       </div>
 
-      <aside class="command-panel liquid-panel reveal reveal-delay-1" data-liquid-panel data-tilt>
-        <div class="panel-heading">
-          <div>
-            <p class="panel-eyebrow">Live Index</p>
-            <h2>知识库状态</h2>
-          </div>
-          <a href="/search" class="panel-link magnetic">检索</a>
-        </div>
-
-        <div class="metric-strip" aria-label="站点概览">
-          {metrics.map((metric) => (
-            <div class="metric-cell" data-tone={metric.tone}>
-              <span class="metric-value counter" data-target={metric.value}>0</span>
-              <span class="metric-label">{metric.label}</span>
-            </div>
-          ))}
-        </div>
-
-        <div class="console-feed" aria-label="最近更新">
-          {heroRecent.length > 0 ? (
-            heroRecent.map((post) => (
-              <a href={post.path} class="feed-row">
-                <span class="feed-date">{post.data.date.toLocaleDateString('zh-CN')}</span>
-                <span class="feed-title">{post.data.title}</span>
-              </a>
-            ))
-          ) : (
-            <p class="empty-copy">暂无发布内容。</p>
-          )}
-        </div>
-      </aside>
+      <div class="hero-focus" aria-label="关注方向">
+        {focusAreas.map((area) => (
+          <span>{area}</span>
+        ))}
+      </div>
     </section>
 
     <section class="lane-grid" aria-label="内容入口">
       {contentLanes.map((lane, index) => (
         <a
           href={lane.href}
-          class={`lane-card liquid-panel reveal reveal-delay-${Math.min(index + 1, 3)}`}
-          data-liquid-panel
-          data-tilt
+          class={`lane-card card reveal reveal-delay-${Math.min(index + 1, 3)}`}
         >
-          <span class="panel-eyebrow">{lane.eyebrow}</span>
+          <span class="lane-eyebrow">{lane.eyebrow}</span>
           <strong>{lane.title}</strong>
           <p>{lane.summary}</p>
           <span class="lane-count">{lane.count} 条内容</span>
@@ -166,7 +117,7 @@ const focusAreas = ['Computer Vision', 'SLAM / 3DGS', 'Tooling', 'Research Notes
     </section>
 
     <section class="workbench-grid" aria-label="计划与待办">
-      <article class="liquid-panel reveal" data-liquid-panel data-tilt>
+      <article class="card reveal">
         <div class="panel-heading">
           <div>
             <p class="panel-eyebrow">Roadmap</p>
@@ -175,7 +126,7 @@ const focusAreas = ['Computer Vision', 'SLAM / 3DGS', 'Tooling', 'Research Notes
           <a
             href="https://github.com/Djl1n/blogs/edit/main/src/content/important/long-term-plan.md"
             target="_blank"
-            class="panel-link magnetic"
+            class="btn-secondary"
           >编辑</a>
         </div>
 
@@ -201,7 +152,7 @@ const focusAreas = ['Computer Vision', 'SLAM / 3DGS', 'Tooling', 'Research Notes
         )}
       </article>
 
-      <article class="liquid-panel reveal reveal-delay-1" data-liquid-panel data-tilt>
+      <article class="card reveal reveal-delay-1">
         <div class="panel-heading">
           <div>
             <p class="panel-eyebrow">Now</p>
@@ -210,7 +161,7 @@ const focusAreas = ['Computer Vision', 'SLAM / 3DGS', 'Tooling', 'Research Notes
           <a
             href="https://github.com/Djl1n/blogs/edit/main/src/content/important/short-term-todo.md"
             target="_blank"
-            class="panel-link magnetic"
+            class="btn-secondary"
           >编辑</a>
         </div>
 
@@ -230,13 +181,13 @@ const focusAreas = ['Computer Vision', 'SLAM / 3DGS', 'Tooling', 'Research Notes
     </section>
 
     <section class="content-section">
-      <div class="section-heading reveal">
+      <div class="section-heading">
         <div>
           <p class="panel-eyebrow">Recent</p>
           <h2>最近更新</h2>
         </div>
         {published.length > 6 && (
-          <a href="/blog" class="panel-link magnetic">查看全部 {published.length} 篇</a>
+          <a href="/blog" class="btn-secondary">查看全部 {published.length} 篇</a>
         )}
       </div>
 
@@ -250,24 +201,24 @@ const focusAreas = ['Computer Vision', 'SLAM / 3DGS', 'Tooling', 'Research Notes
     </section>
 
     <section class="navigation-grid" aria-label="快速导航">
-      <article class="liquid-panel reveal" data-liquid-panel data-tilt>
+      <article class="card reveal">
         <div class="panel-heading">
           <div>
             <p class="panel-eyebrow">Index</p>
             <h2>分类</h2>
           </div>
-          <a href="/categories" class="panel-link magnetic">全部</a>
+          <a href="/categories" class="btn-secondary">全部</a>
         </div>
         <CategoryList categories={categories} />
       </article>
 
-      <article class="liquid-panel reveal reveal-delay-1" data-liquid-panel data-tilt>
+      <article class="card reveal reveal-delay-1">
         <div class="panel-heading">
           <div>
             <p class="panel-eyebrow">Tags</p>
             <h2>标签</h2>
           </div>
-          <a href="/tags" class="panel-link magnetic">全部</a>
+          <a href="/tags" class="btn-secondary">全部</a>
         </div>
         <TagList tags={tags} />
       </article>
@@ -275,90 +226,72 @@ const focusAreas = ['Computer Vision', 'SLAM / 3DGS', 'Tooling', 'Research Notes
   </div>
 </BaseLayout>
 
-<style is:global>
+<style>
   .home-stage {
-    position: relative;
-    z-index: 1;
     display: grid;
     gap: 1.2rem;
     min-width: 0;
   }
 
-  .home-command {
-    display: grid;
-    grid-template-columns: minmax(0, 1.1fr) minmax(19rem, 0.82fr);
-    align-items: center;
-    gap: clamp(1rem, 3vw, 3rem);
-    min-height: min(680px, calc(100vh - 7rem));
-    padding: clamp(1.2rem, 4vw, 3.6rem) 0;
+  /* ── Hero section ── */
+  .hero-section {
+    min-height: min(480px, calc(100vh - 9rem));
+    padding: clamp(2rem, 5vw, 4rem) 0 1.5rem;
   }
 
-  .hero-bg-decoration {
-    position: absolute;
-    right: -4rem;
-    top: 0;
-    width: 55%;
-    height: 100%;
-    pointer-events: none;
-    z-index: 0;
-    overflow: visible;
-  }
-  .hero-bg-decoration canvas {
-    display: block;
-    width: 100% !important;
-    height: 100% !important;
-    object-fit: contain;
+  .hero-eyebrow {
+    margin: 0;
+    color: #8E9B8E;
+    font-size: 0.78rem;
+    font-weight: 650;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
   }
 
-  .hero-core {
-    min-width: 0;
+  .dark .hero-eyebrow {
+    color: #7A8B7A;
   }
 
-  .hero-core h1 {
-    margin: 0.72rem 0 0;
-    color: rgb(9 13 18);
-    font-size: clamp(3.1rem, 7vw, 6.35rem);
-    font-weight: 950;
-    line-height: 0.9;
-    letter-spacing: 0;
+  .hero-section h1 {
+    margin: 0.65rem 0 0;
+    color: #3D404A;
+    font-size: clamp(2.5rem, 5vw, 3.5rem);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.01em;
   }
 
-  .hero-core h1 span {
-    display: block;
-  }
-
-  .hero-core h1 span + span {
-    color: transparent;
-    -webkit-text-stroke: 1px rgb(15 23 42 / 0.55);
-  }
-
-  .dark .hero-core h1 {
-    color: rgb(248 250 252);
-  }
-
-  .dark .hero-core h1 span + span {
-    -webkit-text-stroke-color: rgb(226 232 240 / 0.48);
+  .dark .hero-section h1 {
+    color: #E5E5E5;
   }
 
   .hero-intro {
-    max-width: 49rem;
-    margin: 1.25rem 0 0;
-    color: rgb(51 65 85);
-    font-size: 1.03rem;
-    line-height: 1.85;
+    max-width: 42rem;
+    margin: 0.85rem 0 0;
+    color: #8A8F99;
+    font-size: 1rem;
+    line-height: 1.75;
   }
 
   .dark .hero-intro {
-    color: rgb(203 213 225);
+    color: #8A8F99;
   }
 
   .home-search {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
     gap: 0.45rem;
-    width: min(100%, 47rem);
+    width: min(100%, 36rem);
     margin-top: 1.5rem;
-    padding: 0.45rem;
+    border: 1px solid #E0DDD5;
+    border-radius: 0.75rem;
+    background: #FFFFFF;
+    padding: 0.4rem;
+    transition: border-color 180ms ease, box-shadow 180ms ease;
+  }
+  .home-search:focus-within {
+    border-color: #8E9B8E;
+    box-shadow: 0 0 0 2px rgba(142, 155, 142, 0.2);
   }
 
   .home-search input {
@@ -366,31 +299,35 @@ const focusAreas = ['Computer Vision', 'SLAM / 3DGS', 'Tooling', 'Research Notes
     border: 0;
     background: transparent;
     padding: 0 0.75rem;
-    color: rgb(15 23 42);
-    font-size: 0.95rem;
+    color: #3D404A;
+    font-size: 0.9rem;
     outline: none;
   }
-
   .home-search input::placeholder {
-    color: rgb(100 116 139);
+    color: #8A8F99;
   }
 
+  .dark .home-search {
+    border-color: #33353B;
+    background: #25272D;
+  }
+  .dark .home-search:focus-within {
+    border-color: #7A8B7A;
+    box-shadow: 0 0 0 2px rgba(122, 139, 122, 0.2);
+  }
   .dark .home-search input {
-    color: rgb(241 245 249);
+    color: #E5E5E5;
   }
-
   .dark .home-search input::placeholder {
-    color: rgb(148 163 184);
+    color: #8A8F99;
   }
 
   .hero-actions,
   .hero-focus {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.7rem;
-    min-width: 0;
-    max-width: 100%;
-    margin-top: 0.9rem;
+    gap: 0.6rem;
+    margin-top: 0.85rem;
   }
 
   .hero-focus {
@@ -400,140 +337,22 @@ const focusAreas = ['Computer Vision', 'SLAM / 3DGS', 'Tooling', 'Research Notes
   .hero-focus span {
     display: inline-flex;
     align-items: center;
-    min-height: 2.15rem;
-    border: 1px solid rgb(15 23 42 / 0.08);
-    border-radius: 8px;
-    padding: 0.45rem 0.7rem;
-    color: rgb(51 65 85);
-    background: rgb(255 255 255 / 0.28);
-    backdrop-filter: blur(18px) saturate(150%);
-    -webkit-backdrop-filter: blur(18px) saturate(150%);
+    border: 1px solid #E0DDD5;
+    border-radius: 6px;
+    padding: 0.35rem 0.65rem;
+    color: #8A8F99;
+    background: #FFFFFF;
     font-size: 0.78rem;
-    font-weight: 750;
+    font-weight: 550;
   }
 
   .dark .hero-focus span {
-    border-color: rgb(255 255 255 / 0.1);
-    color: rgb(203 213 225);
-    background: rgb(15 23 42 / 0.28);
+    border-color: #33353B;
+    color: #8A8F99;
+    background: #25272D;
   }
 
-  .command-panel {
-    padding: clamp(1rem, 2.5vw, 1.35rem);
-  }
-
-  .metric-strip {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 0.55rem;
-    margin-bottom: 1rem;
-  }
-
-  .metric-cell {
-    position: relative;
-    overflow: hidden;
-    border: 1px solid rgb(15 23 42 / 0.08);
-    border-radius: 8px;
-    padding: 0.72rem 0.62rem;
-    background:
-      radial-gradient(150px circle at 28% 12%, var(--tone-glow, rgb(20 184 166 / 0.16)), transparent 66%),
-      rgb(255 255 255 / 0.22);
-  }
-
-  .metric-cell[data-tone='cyan'] {
-    --tone-glow: rgb(6 182 212 / 0.2);
-  }
-
-  .metric-cell[data-tone='green'] {
-    --tone-glow: rgb(34 197 94 / 0.18);
-  }
-
-  .metric-cell[data-tone='amber'] {
-    --tone-glow: rgb(245 158 11 / 0.2);
-  }
-
-  .metric-cell[data-tone='rose'] {
-    --tone-glow: rgb(244 63 94 / 0.16);
-  }
-
-  .dark .metric-cell {
-    border-color: rgb(255 255 255 / 0.08);
-    background:
-      radial-gradient(150px circle at 28% 12%, var(--tone-glow, rgb(45 212 191 / 0.12)), transparent 66%),
-      rgb(15 23 42 / 0.22);
-  }
-
-  .metric-value {
-    display: block;
-    color: rgb(9 13 18);
-    font-size: 1.82rem;
-    font-weight: 950;
-    line-height: 1;
-    font-variant-numeric: tabular-nums;
-  }
-
-  .metric-label {
-    display: block;
-    margin-top: 0.45rem;
-    color: rgb(71 85 105);
-    font-size: 0.72rem;
-    font-weight: 780;
-  }
-
-  .dark .metric-value {
-    color: rgb(248 250 252);
-  }
-
-  .dark .metric-label {
-    color: rgb(148 163 184);
-  }
-
-  .console-feed {
-    display: grid;
-    gap: 0.45rem;
-  }
-
-  .feed-row {
-    display: grid;
-    grid-template-columns: 7.6rem minmax(0, 1fr);
-    gap: 0.72rem;
-    align-items: center;
-    border-radius: 8px;
-    padding: 0.62rem 0.66rem;
-    text-decoration: none;
-  }
-
-  .feed-row:hover {
-    background: rgb(255 255 255 / 0.24);
-  }
-
-  .dark .feed-row:hover {
-    background: rgb(255 255 255 / 0.06);
-  }
-
-  .feed-date {
-    color: rgb(100 116 139);
-    font-size: 0.76rem;
-    font-variant-numeric: tabular-nums;
-  }
-
-  .feed-title {
-    overflow: hidden;
-    color: rgb(15 23 42);
-    font-size: 0.92rem;
-    font-weight: 820;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .dark .feed-date {
-    color: rgb(148 163 184);
-  }
-
-  .dark .feed-title {
-    color: rgb(226 232 240);
-  }
-
+  /* ── Content lane cards ── */
   .lane-grid,
   .recent-grid {
     display: grid;
@@ -544,46 +363,57 @@ const focusAreas = ['Computer Vision', 'SLAM / 3DGS', 'Tooling', 'Research Notes
 
   .lane-card {
     display: grid;
-    gap: 0.65rem;
-    min-height: 13rem;
-    padding: 1.2rem;
+    gap: 0.5rem;
+    min-height: 11rem;
     color: inherit;
     text-decoration: none;
   }
 
+  .lane-eyebrow {
+    margin: 0;
+    color: #8E9B8E;
+    font-size: 0.72rem;
+    font-weight: 650;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .dark .lane-eyebrow {
+    color: #7A8B7A;
+  }
+
   .lane-card strong {
-    color: rgb(15 23 42);
-    font-size: 1.35rem;
-    font-weight: 930;
-    line-height: 1.12;
+    color: #3D404A;
+    font-size: 1.2rem;
+    font-weight: 750;
+    line-height: 1.15;
   }
 
   .lane-card p {
     margin: 0;
-    color: rgb(71 85 105);
-    font-size: 0.92rem;
-    line-height: 1.72;
+    color: #8A8F99;
+    font-size: 0.88rem;
+    line-height: 1.65;
   }
 
   .lane-count {
     align-self: end;
-    color: rgb(15 118 110);
+    color: #8E9B8E;
     font-size: 0.78rem;
-    font-weight: 850;
+    font-weight: 650;
   }
 
   .dark .lane-card strong {
-    color: rgb(248 250 252);
+    color: #E5E5E5;
   }
-
   .dark .lane-card p {
-    color: rgb(148 163 184);
+    color: #8A8F99;
   }
-
   .dark .lane-count {
-    color: rgb(94 234 212);
+    color: #7A8B7A;
   }
 
+  /* ── Workbench & navigation grids ── */
   .workbench-grid,
   .navigation-grid {
     display: grid;
@@ -592,38 +422,72 @@ const focusAreas = ['Computer Vision', 'SLAM / 3DGS', 'Tooling', 'Research Notes
     min-width: 0;
   }
 
+  .panel-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .panel-heading h2 {
+    margin: 0.15rem 0 0;
+    color: #3D404A;
+    font-size: 1.15rem;
+    font-weight: 700;
+    letter-spacing: 0;
+  }
+
+  .dark .panel-heading h2 {
+    color: #E5E5E5;
+  }
+
+  .panel-eyebrow {
+    margin: 0;
+    color: #8E9B8E;
+    font-size: 0.72rem;
+    font-weight: 650;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .dark .panel-eyebrow {
+    color: #7A8B7A;
+  }
+
+  /* ── Timeline ── */
   .timeline-list,
   .todo-list {
     display: grid;
-    gap: 0.9rem;
+    gap: 0.8rem;
   }
 
   .timeline-item {
     position: relative;
     display: grid;
-    grid-template-columns: 1.1rem minmax(0, 1fr);
-    gap: 0.75rem;
+    grid-template-columns: 1rem minmax(0, 1fr);
+    gap: 0.65rem;
   }
 
   .timeline-dot {
     position: relative;
     top: 0.2rem;
-    width: 0.7rem;
-    height: 0.7rem;
-    border: 2px solid rgb(20 184 166);
+    width: 0.6rem;
+    height: 0.6rem;
+    border: 2px solid #8E9B8E;
     border-radius: 999px;
-    background: rgb(255 255 255 / 0.8);
-    box-shadow: 0 0 0 5px rgb(20 184 166 / 0.12);
+    background: #FFFFFF;
+    box-shadow: 0 0 0 4px rgba(142, 155, 142, 0.1);
   }
 
   .timeline-dot::after {
     content: '';
     position: absolute;
-    top: 0.75rem;
+    top: 0.65rem;
     left: 50%;
     width: 1px;
-    height: calc(100% + 3.1rem);
-    background: linear-gradient(rgb(20 184 166 / 0.28), rgb(245 158 11 / 0.18));
+    height: calc(100% + 2.8rem);
+    background: #E0DDD5;
     transform: translateX(-50%);
   }
 
@@ -633,147 +497,162 @@ const focusAreas = ['Computer Vision', 'SLAM / 3DGS', 'Tooling', 'Research Notes
 
   .timeline-dot.done {
     border-color: rgb(34 197 94);
-    box-shadow: 0 0 0 5px rgb(34 197 94 / 0.12);
+    box-shadow: 0 0 0 4px rgb(34 197 94 / 0.1);
   }
-
   .timeline-dot.active {
     border-color: rgb(245 158 11);
-    box-shadow: 0 0 0 5px rgb(245 158 11 / 0.14);
+    box-shadow: 0 0 0 4px rgb(245 158 11 / 0.12);
   }
 
   .dark .timeline-dot {
-    background: rgb(15 23 42 / 0.82);
+    background: #25272D;
+  }
+  .dark .timeline-dot::after {
+    background: #33353B;
   }
 
   .timeline-head {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 0.45rem;
+    gap: 0.4rem;
   }
 
   .timeline-head h3 {
     margin: 0;
-    color: rgb(15 23 42);
-    font-size: 0.95rem;
-    font-weight: 850;
+    color: #3D404A;
+    font-size: 0.92rem;
+    font-weight: 700;
   }
 
   .timeline-item p {
-    margin: 0.35rem 0 0;
-    color: rgb(71 85 105);
-    font-size: 0.84rem;
-    line-height: 1.7;
+    margin: 0.3rem 0 0;
+    color: #8A8F99;
+    font-size: 0.82rem;
+    line-height: 1.6;
   }
 
   .dark .timeline-head h3 {
-    color: rgb(241 245 249);
+    color: #E5E5E5;
   }
-
   .dark .timeline-item p {
-    color: rgb(148 163 184);
+    color: #8A8F99;
   }
 
   .status-pill {
     border-radius: 999px;
-    padding: 0.13rem 0.45rem;
-    font-size: 0.68rem;
-    font-weight: 850;
+    padding: 0.1rem 0.4rem;
+    font-size: 0.65rem;
+    font-weight: 700;
   }
-
   .status-pill.done {
     color: rgb(22 101 52);
-    background: rgb(220 252 231 / 0.78);
+    background: rgb(220 252 231);
   }
-
   .status-pill.active {
     color: rgb(146 64 14);
-    background: rgb(254 243 199 / 0.82);
+    background: rgb(254 243 199);
   }
-
   .status-pill.planned {
-    color: rgb(71 85 105);
-    background: rgb(226 232 240 / 0.78);
+    color: #3D404A;
+    background: #EAE8E1;
   }
 
   .dark .status-pill.done {
     color: rgb(134 239 172);
-    background: rgb(22 101 52 / 0.28);
+    background: rgb(22 101 52 / 0.25);
   }
-
   .dark .status-pill.active {
     color: rgb(253 186 116);
-    background: rgb(154 52 18 / 0.26);
+    background: rgb(154 52 18 / 0.25);
   }
-
   .dark .status-pill.planned {
-    color: rgb(203 213 225);
-    background: rgb(71 85 105 / 0.28);
+    color: #E5E5E5;
+    background: #2D2F35;
   }
 
+  /* ── Todo ── */
   .todo-item {
     display: grid;
-    grid-template-columns: 1.25rem minmax(0, 1fr);
-    gap: 0.75rem;
+    grid-template-columns: 1.1rem minmax(0, 1fr);
+    gap: 0.65rem;
     align-items: start;
-    border-radius: 8px;
-    padding: 0.62rem 0.65rem;
-    color: rgb(51 65 85);
-    font-size: 0.9rem;
-    line-height: 1.65;
+    border-radius: 6px;
+    padding: 0.55rem 0.6rem;
+    color: #8A8F99;
+    font-size: 0.88rem;
+    line-height: 1.6;
+    transition: background 150ms ease;
   }
-
   .todo-item:hover {
-    background: rgb(255 255 255 / 0.22);
+    background: #F4F3EF;
   }
 
   .dark .todo-item {
-    color: rgb(203 213 225);
+    color: #8A8F99;
   }
-
   .dark .todo-item:hover {
-    background: rgb(255 255 255 / 0.06);
+    background: rgba(255, 255, 255, 0.03);
   }
 
   .todo-check {
     position: relative;
-    top: 0.22rem;
-    width: 1rem;
-    height: 1rem;
-    border: 1px solid rgb(100 116 139 / 0.6);
-    border-radius: 4px;
-    background: rgb(255 255 255 / 0.36);
+    top: 0.2rem;
+    width: 0.9rem;
+    height: 0.9rem;
+    border: 1px solid rgba(138, 143, 153, 0.5);
+    border-radius: 3px;
+    background: #FFFFFF;
   }
-
   .todo-check.done {
-    border-color: rgb(20 184 166);
-    background: rgb(20 184 166);
+    border-color: #8E9B8E;
+    background: #8E9B8E;
   }
-
   .todo-check.done::after {
     content: '';
     position: absolute;
-    top: 0.16rem;
-    left: 0.29rem;
-    width: 0.32rem;
-    height: 0.55rem;
+    top: 0.12rem;
+    left: 0.25rem;
+    width: 0.28rem;
+    height: 0.48rem;
     border: solid white;
     border-width: 0 2px 2px 0;
     transform: rotate(45deg);
   }
 
   .todo-item .is-done {
-    color: rgb(100 116 139);
+    color: #8A8F99;
     text-decoration: line-through;
   }
 
+  .dark .todo-check {
+    background: #25272D;
+    border-color: rgba(138, 143, 153, 0.4);
+  }
+
+  /* ── Content section ── */
   .content-section {
     display: grid;
     gap: 1rem;
   }
 
-  .post-card-wrapper {
-    perspective: 900px;
+  .section-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.2rem;
+  }
+
+  .section-heading h2 {
+    margin: 0.15rem 0 0;
+    color: #3D404A;
+    font-size: 1.15rem;
+    font-weight: 700;
+  }
+
+  .dark .section-heading h2 {
+    color: #E5E5E5;
   }
 
   .post-card-wrapper.reveal {
@@ -781,19 +660,8 @@ const focusAreas = ['Computer Vision', 'SLAM / 3DGS', 'Tooling', 'Research Notes
   }
 
   @media (max-width: 1080px) {
-    .home-command {
-      grid-template-columns: 1fr;
+    .hero-section {
       min-height: auto;
-    }
-
-    .hero-bg-decoration {
-      right: -2rem;
-      width: 70%;
-      opacity: 0.5;
-    }
-
-    .command-panel {
-      max-width: 100%;
     }
   }
 
@@ -805,281 +673,33 @@ const focusAreas = ['Computer Vision', 'SLAM / 3DGS', 'Tooling', 'Research Notes
   }
 
   @media (max-width: 720px) {
-    .hero-bg-decoration {
-      display: none;
+    .hero-section h1 {
+      font-size: 2rem;
     }
-
-    .home-stage {
-      gap: 1rem;
-    }
-
-    .home-command {
-      padding-top: 1.6rem;
-    }
-
-    .hero-core h1 {
-      font-size: 2.62rem;
-      line-height: 0.98;
-    }
-
     .hero-intro {
-      font-size: 0.96rem;
+      font-size: 0.92rem;
     }
-
     .home-search {
       grid-template-columns: 1fr;
     }
-
     .home-search input {
-      min-height: 2.7rem;
+      min-height: 2.5rem;
     }
-
     .hero-actions,
     .hero-focus {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
       width: 100%;
     }
-
     .hero-focus span {
       justify-content: center;
       text-align: center;
     }
-
-    .metric-strip,
     .lane-grid,
     .workbench-grid,
     .navigation-grid,
     .recent-grid {
       grid-template-columns: 1fr;
     }
-
-    .feed-row {
-      grid-template-columns: 1fr;
-      gap: 0.18rem;
-    }
-
-    .feed-title {
-      white-space: normal;
-    }
   }
 </style>
-
-<script>
-  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-  // ── Sphere Cluster Background (Three.js) ──
-  (async function initSphereBg() {
-    const container = document.getElementById('hero-bg');
-    if (!container || window.matchMedia('(max-width: 720px)').matches || reducedMotion) return;
-
-    const THREE = await import('three');
-
-    function isDark() { return document.documentElement.classList.contains('dark'); }
-
-    const rect = container.getBoundingClientRect();
-    if (rect.width < 50 || rect.height < 50) return;
-
-    // ── Scene ──
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(35, rect.width / rect.height, 0.1, 30);
-    camera.position.set(1, 0.5, 5.5);
-    camera.lookAt(0, 0, 0);
-
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setSize(rect.width, rect.height);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.2;
-    container.appendChild(renderer.domElement);
-
-    // ── Lights ──
-    scene.add(new THREE.AmbientLight('#ffffff', 0.5));
-    const dir = new THREE.DirectionalLight('#ffffff', 0.7);
-    dir.position.set(3, 4, 5); scene.add(dir);
-    const fill = new THREE.DirectionalLight('#38bdf8', 0.3);
-    fill.position.set(-2, -1, -3); scene.add(fill);
-
-    // ── Sphere cluster (Fibonacci distribution) ──
-    const count = 120;
-    const clusterR = 2.2;
-    const sphereGeo = new THREE.SphereGeometry(0.1, 8, 6);
-    const spheres: THREE.Mesh[] = [];
-    const basePositions: { x: number; y: number; z: number }[] = [];
-
-    const phi = Math.PI * (3 - Math.sqrt(5));
-    for (let i = 0; i < count; i++) {
-      const y = 1 - (i / (count - 1)) * 2;
-      const r = Math.sqrt(1 - y * y);
-      const theta = phi * i;
-      const p = { x: clusterR * r * Math.cos(theta), y: clusterR * y, z: clusterR * r * Math.sin(theta) };
-      basePositions.push(p);
-
-      const mat = new THREE.MeshStandardMaterial({
-        color: isDark() ? '#4b5563' : '#7dd3fc',
-        emissive: isDark() ? '#1e293b' : '#0369a1',
-        emissiveIntensity: 0.15,
-        roughness: 0.2,
-        metalness: 0.1,
-        transparent: true,
-        opacity: isDark() ? 0.6 : 0.55,
-      });
-      const m = new THREE.Mesh(sphereGeo, mat);
-      m.position.set(p.x, p.y, p.z);
-      spheres.push(m);
-    }
-
-    const group = new THREE.Group();
-    spheres.forEach((s) => group.add(s));
-    scene.add(group);
-
-    // ── Outer glow ring (subtle) ──
-    const ringGeo = new THREE.RingGeometry(2.3, 2.8, 48);
-    const ringMat = new THREE.MeshBasicMaterial({
-      color: isDark() ? '#14b8a6' : '#38bdf8',
-      transparent: true, opacity: 0.06,
-      side: THREE.DoubleSide,
-      depthWrite: false,
-    });
-    const ring = new THREE.Mesh(ringGeo, ringMat);
-    ring.rotation.x = -0.3;
-    ring.position.z = -0.2;
-    group.add(ring);
-
-    // ── Mouse tracking (document-level) ──
-    let mx = 0, my = 0;
-    document.addEventListener('pointermove', (e) => {
-      mx = (e.clientX / window.innerWidth) * 2 - 1;
-      my = -(e.clientY / window.innerHeight) * 2 + 1;
-    }, { passive: true });
-
-    // ── Hover-like interaction ──
-    let hoverIndex = -1;
-    let hoverSmooth = 0;
-
-    // ── Observers ──
-    const themeObs = new MutationObserver(() => {
-      const dk = isDark();
-      const c = dk ? '#4b5563' : '#7dd3fc';
-      const e = dk ? '#1e293b' : '#0369a1';
-      spheres.forEach((s, i) => {
-        if (i !== hoverIndex) {
-          const m = s.material as THREE.MeshStandardMaterial;
-          m.color.set(c); m.emissive.set(e);
-        }
-      });
-      ringMat.color.set(dk ? '#14b8a6' : '#38bdf8');
-    });
-    themeObs.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
-
-    const resizeObs = new ResizeObserver(() => {
-      const r = container.getBoundingClientRect();
-      if (r.width < 50 || r.height < 50) return;
-      camera.aspect = r.width / r.height; camera.updateProjectionMatrix();
-      renderer.setSize(r.width, r.height);
-    });
-    resizeObs.observe(container);
-
-    let sceneActive = true;
-    const visObs = new IntersectionObserver(([e]) => { sceneActive = e.isIntersecting; }, { threshold: 0.1 });
-    visObs.observe(container);
-
-    // ── Animation ──
-    const clock = new THREE.Clock();
-
-    function animate() {
-      requestAnimationFrame(animate);
-      if (!sceneActive) { renderer.render(scene, camera); return; }
-
-      const t = clock.getElapsedTime();
-
-      // Stable slow rotation + subtle mouse tilt
-      group.rotation.y += 0.003;
-      group.rotation.x += (mx * 0.05 - group.rotation.x) * 0.015;
-      group.rotation.z += (-my * 0.03 - group.rotation.z) * 0.015;
-
-      // Ring pulsing
-      ring.scale.setScalar(1 + Math.sin(t * 0.5) * 0.03);
-
-      // Project mouse to 3D to find nearest sphere
-      const mouse3D = new THREE.Vector3(mx * 3, my * 2 + 0.5, 0);
-      let minDist = Infinity;
-      let closest = -1;
-      spheres.forEach((s, i) => {
-        const wp = new THREE.Vector3();
-        s.getWorldPosition(wp);
-        const d = wp.distanceTo(mouse3D);
-        if (d < minDist) { minDist = d; closest = i; }
-      });
-
-      hoverIndex = minDist < 2.5 ? closest : -1;
-      hoverSmooth += ((hoverIndex >= 0 ? 1 : 0) - hoverSmooth) * 0.05;
-
-      const normalC = isDark() ? '#4b5563' : '#7dd3fc';
-      const normalE = isDark() ? '#1e293b' : '#0369a1';
-      spheres.forEach((s, i) => {
-        const isHover = i === hoverIndex && hoverSmooth > 0.1;
-        const targetScale = isHover ? 2.8 : 1;
-        const sc = s.scale.x + (targetScale - s.scale.x) * 0.06;
-        s.scale.set(sc, sc, sc);
-        const m = s.material as THREE.MeshStandardMaterial;
-        if (isHover) {
-          m.color.set('#14b8a6');
-          m.emissive.set('#0d9488');
-          m.emissiveIntensity = 0.4;
-          m.opacity = 0.9;
-        } else {
-          const fade = hoverSmooth;
-          // Nearby spheres get a hint of glow
-          const dist = i === hoverIndex ? 0 : Infinity;
-          m.color.set(normalC);
-          m.emissive.set(normalE);
-          m.emissiveIntensity = 0.15;
-          m.opacity = isDark() ? 0.6 : 0.55;
-        }
-      });
-
-      renderer.render(scene, camera);
-    }
-    animate();
-  })();
-
-  // ── Scroll Reveal ──
-  // Handled by BaseLayout globally.
-
-  (function initCounters() {
-    const counters = document.querySelectorAll<HTMLElement>('.counter');
-    if (!counters.length) return;
-
-    const runCounter = (element: HTMLElement) => {
-      const target = Number.parseInt(element.dataset.target || '0', 10);
-      if (!Number.isFinite(target)) return;
-      if (reducedMotion) {
-        element.textContent = String(target);
-        return;
-      }
-
-      const duration = 1050;
-      const start = performance.now();
-      const tick = (now: number) => {
-        const progress = Math.min((now - start) / duration, 1);
-        const eased = 1 - Math.pow(1 - progress, 3);
-        element.textContent = String(Math.round(eased * target));
-        if (progress < 1) requestAnimationFrame(tick);
-        else element.textContent = String(target);
-      };
-      requestAnimationFrame(tick);
-    };
-
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (!entry.isIntersecting) return;
-        runCounter(entry.target as HTMLElement);
-        observer.unobserve(entry.target);
-      });
-    }, { threshold: 0.5 });
-
-    counters.forEach((counter) => observer.observe(counter));
-  })();
-
-</script>

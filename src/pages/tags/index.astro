@@ -22,7 +22,7 @@ const tags = Array.from(new Set(posts.flatMap((item) => item.data.tags).map((tag
       actions={[{ label: '站内搜索', href: '/search' }]}
     />
 
-    <div class="liquid-panel index-panel reveal" data-liquid-panel>
+    <div class="card index-panel reveal">
       <TagList tags={tags} />
     </div>
   </section>

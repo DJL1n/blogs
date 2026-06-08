@@ -9,7 +9,7 @@ if (last <= 1) return;
 ---
 
 <nav class="pagination-shell" aria-label="分页导航">
-  <a href={url.prev || base} class="pagination-link" aria-disabled={!url.prev ? 'true' : undefined}>
+  <a href={url.prev || '#'} class="pagination-link" aria-disabled={!url.prev ? 'true' : undefined}>
     ← 上一页
   </a>
 
@@ -51,11 +51,11 @@ if (last <= 1) return;
     justify-content: center;
     min-width: 2.2rem;
     height: 2.2rem;
-    border: 1px solid rgb(15 23 42 / 0.1);
+    border: 1px solid rgba(61, 64, 74, 0.1);
     border-radius: 6px;
     padding: 0 0.55rem;
-    color: rgb(51 65 85);
-    background: rgb(255 255 255 / 0.24);
+    color: #3D404A;
+    background: rgba(255, 255, 255, 0.24);
     font-size: 0.82rem;
     font-weight: 780;
     text-decoration: none;
@@ -63,8 +63,8 @@ if (last <= 1) return;
   }
 
   .pagination-link:hover {
-    border-color: rgb(20 184 166 / 0.34);
-    color: rgb(15 118 110);
+    border-color: rgba(142, 155, 142, 0.34);
+    color: #8E9B8E;
   }
 
   .pagination-link[aria-disabled='true'] {
@@ -73,26 +73,26 @@ if (last <= 1) return;
   }
 
   .pagination-active {
-    border-color: rgb(20 184 166 / 0.42);
-    color: rgb(15 118 110);
-    background: rgb(240 253 250 / 0.46);
+    border-color: rgba(142, 155, 142, 0.42);
+    color: #8E9B8E;
+    background: rgba(142, 155, 142, 0.08);
     font-weight: 850;
   }
 
   .dark .pagination-link {
-    border-color: rgb(255 255 255 / 0.1);
-    color: rgb(203 213 225);
-    background: rgb(15 23 42 / 0.22);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: #E5E5E5;
+    background: rgba(26, 28, 32, 0.22);
   }
 
   .dark .pagination-link:hover {
-    border-color: rgb(94 234 212 / 0.28);
-    color: rgb(94 234 212);
+    border-color: rgba(122, 139, 122, 0.28);
+    color: #7A8B7A;
   }
 
   .dark .pagination-active {
-    border-color: rgb(94 234 212 / 0.34);
-    color: rgb(94 234 212);
-    background: rgb(20 184 166 / 0.1);
+    border-color: rgba(122, 139, 122, 0.34);
+    color: #7A8B7A;
+    background: rgba(122, 139, 122, 0.1);
   }
 </style>

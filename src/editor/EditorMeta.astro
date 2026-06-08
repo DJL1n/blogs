@@ -1,0 +1,36 @@
+---
+const TYPES = [
+  { value: 'note', label: '笔记' },
+  { value: 'blog', label: '博客' },
+  { value: 'important', label: '重要记录' },
+  { value: 'diary', label: '日记' },
+];
+---
+
+<details class="surface-card mt-4" id="meta-details">
+  <summary class="cursor-pointer text-sm font-medium text-slate-500 select-none">元数据</summary>
+  <div class="mt-4 grid gap-3 sm:grid-cols-2">
+    <label class="block">
+      <span class="text-xs font-medium text-slate-500">类型</span>
+      <select id="meta-type" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-blue-400 focus:outline-none dark:border-slate-700 dark:bg-slate-800">
+        {TYPES.map((t) => <option value={t.value}>{t.label}</option>)}
+      </select>
+    </label>
+    <label class="block">
+      <span class="text-xs font-medium text-slate-500">分类</span>
+      <input id="meta-category" type="text" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-blue-400 focus:outline-none dark:border-slate-700 dark:bg-slate-800" placeholder="技术 / 概念" />
+    </label>
+    <label class="block">
+      <span class="text-xs font-medium text-slate-500">标签（逗号分隔）</span>
+      <input id="meta-tags" type="text" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-blue-400 focus:outline-none dark:border-slate-700 dark:bg-slate-800" placeholder="macOS, dns, astro" />
+    </label>
+    <label class="block">
+      <span class="text-xs font-medium text-slate-500">重要性</span>
+      <input id="meta-importance" type="number" min="1" max="5" value="2" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-blue-400 focus:outline-none dark:border-slate-700 dark:bg-slate-800" />
+    </label>
+    <label class="block sm:col-span-2">
+      <span class="text-xs font-medium text-slate-500">摘要</span>
+      <textarea id="meta-summary" rows="2" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-blue-400 focus:outline-none dark:border-slate-700 dark:bg-slate-800" placeholder="一句话描述"></textarea>
+    </label>
+  </div>
+</details>

@@ -6,7 +6,7 @@ const { categories } = Astro.props as { categories: string[] };
   {categories.map((category) => (
     <a
       href={`/categories/${encodeURIComponent(category)}`}
-      class="chip-emerald"
+      class="tag"
     >
       {category}
     </a>

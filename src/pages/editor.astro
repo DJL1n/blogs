@@ -1,12 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-
-const TYPES = [
-  { value: 'note', label: '笔记' },
-  { value: 'blog', label: '博客' },
-  { value: 'important', label: '重要记录' },
-  { value: 'diary', label: '日记' },
-];
+import EditorToolbar from '../editor/EditorToolbar.astro';
+import EditorMeta from '../editor/EditorMeta.astro';
 ---
 
 <BaseLayout title="写作 · 山不见我" description="Markdown 写作助手">
@@ -36,77 +31,15 @@ const TYPES = [
 
     <!-- Editor wrapper -->
     <div class="surface-card mt-4 relative">
-      <!-- Format toolbar -->
-      <div id="format-bar" class="flex flex-wrap items-center gap-0.5 border-b border-slate-100 pb-3 dark:border-slate-800">
-        <button data-cmd="undo" class="fmt-btn" title="撤销" type="button">↩</button>
-        <button data-cmd="redo" class="fmt-btn" title="重做" type="button">↪</button>
-        <span class="mx-1 text-slate-300 dark:text-slate-600">|</span>
-        <button data-cmd="bold" class="fmt-btn font-bold" title="加粗" type="button"><b>B</b></button>
-        <button data-cmd="italic" class="fmt-btn" title="斜体" type="button"><i>I</i></button>
-        <button data-cmd="strike" class="fmt-btn" title="删除线" type="button"><s>S</s></button>
-        <button data-cmd="code" class="fmt-btn" title="行内代码" type="button">&lt;/&gt;</button>
-        <span class="mx-1 text-slate-300 dark:text-slate-600">|</span>
-        <button data-cmd="h1" class="fmt-btn" title="一级标题" type="button">H1</button>
-        <button data-cmd="h2" class="fmt-btn" title="二级标题" type="button">H2</button>
-        <button data-cmd="h3" class="fmt-btn" title="三级标题" type="button">H3</button>
-        <span class="mx-1 text-slate-300 dark:text-slate-600">|</span>
-        <button data-cmd="bulletList" class="fmt-btn" title="无序列表" type="button">• 列表</button>
-        <button data-cmd="orderedList" class="fmt-btn" title="有序列表" type="button">1. 列表</button>
-        <button data-cmd="taskList" class="fmt-btn" title="任务列表" type="button">☑ 任务</button>
-        <button data-cmd="blockquote" class="fmt-btn" title="引用" type="button">〝</button>
-        <button data-cmd="codeBlock" class="fmt-btn" title="代码块" type="button">&lt;/&gt; 代码</button>
-        <span id="lang-wrapper" class="hidden items-center gap-1 ml-1">
-          <span class="text-[10px] text-slate-400 uppercase">语言</span>
-          <select id="lang-select" class="text-xs rounded border border-slate-200 bg-white px-1.5 py-0.5 focus:outline-none dark:bg-slate-800 dark:border-slate-600 dark:text-slate-200">
-            <option value="">纯文本</option>
-            <option value="javascript">JavaScript</option>
-            <option value="typescript">TypeScript</option>
-            <option value="python">Python</option>
-            <option value="html">HTML</option>
-            <option value="css">CSS</option>
-            <option value="bash">Bash</option>
-            <option value="json">JSON</option>
-            <option value="sql">SQL</option>
-          </select>
-        </span>
-        <button data-cmd="horizontalRule" class="fmt-btn" title="分割线" type="button">—</button>
-      </div>
-
-      <!-- TipTap mount -->
+      <EditorToolbar />
       <div id="editor-mount" class="editor-content"></div>
     </div>
 
-    <!-- Slash menu (created dynamically by TipTap plugin) -->
+    <!-- Slash menu container -->
     <div id="slash-container"></div>
 
-    <!-- Metadata (collapsible) -->
-    <details class="surface-card mt-4" id="meta-details">
-      <summary class="cursor-pointer text-sm font-medium text-slate-500 select-none">元数据</summary>
-      <div class="mt-4 grid gap-3 sm:grid-cols-2">
-        <label class="block">
-          <span class="text-xs font-medium text-slate-500">类型</span>
-          <select id="meta-type" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-blue-400 focus:outline-none dark:border-slate-700 dark:bg-slate-800">
-            {TYPES.map((t) => <option value={t.value}>{t.label}</option>)}
-          </select>
-        </label>
-        <label class="block">
-          <span class="text-xs font-medium text-slate-500">分类</span>
-          <input id="meta-category" type="text" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-blue-400 focus:outline-none dark:border-slate-700 dark:bg-slate-800" placeholder="技术 / 概念" />
-        </label>
-        <label class="block">
-          <span class="text-xs font-medium text-slate-500">标签（逗号分隔）</span>
-          <input id="meta-tags" type="text" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-blue-400 focus:outline-none dark:border-slate-700 dark:bg-slate-800" placeholder="macOS, dns, astro" />
-        </label>
-        <label class="block">
-          <span class="text-xs font-medium text-slate-500">重要性</span>
-          <input id="meta-importance" type="number" min="1" max="5" value="2" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-blue-400 focus:outline-none dark:border-slate-700 dark:bg-slate-800" />
-        </label>
-        <label class="block sm:col-span-2">
-          <span class="text-xs font-medium text-slate-500">摘要</span>
-          <textarea id="meta-summary" rows="2" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-blue-400 focus:outline-none dark:border-slate-700 dark:bg-slate-800" placeholder="一句话描述"></textarea>
-        </label>
-      </div>
-    </details>
+    <!-- Metadata -->
+    <EditorMeta />
 
     <!-- Status -->
     <p id="status-bar" class="mt-3 text-center text-xs text-slate-400"></p>
@@ -114,8 +47,7 @@ const TYPES = [
 </BaseLayout>
 
 <script>
-  import { Editor, Extension } from '@tiptap/core';
-  import { PluginKey } from '@tiptap/pm/state';
+  import { Editor } from '@tiptap/core';
   import StarterKit from '@tiptap/starter-kit';
   import Placeholder from '@tiptap/extension-placeholder';
   import Link from '@tiptap/extension-link';
@@ -124,52 +56,50 @@ const TYPES = [
   import TaskItem from '@tiptap/extension-task-item';
   import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
   import { createLowlight } from 'lowlight';
-  import Suggestion from '@tiptap/suggestion';
+  import javascript from 'highlight.js/lib/languages/javascript';
+  import typescript from 'highlight.js/lib/languages/typescript';
+  import python from 'highlight.js/lib/languages/python';
+  import xml from 'highlight.js/lib/languages/xml';
+  import css from 'highlight.js/lib/languages/css';
+  import bash from 'highlight.js/lib/languages/bash';
+  import json from 'highlight.js/lib/languages/json';
+  import sql from 'highlight.js/lib/languages/sql';
 
-  // Register common languages for syntax highlighting
-  import { common } from 'lowlight';
+  import { editorToMarkdown, simpleMdToHtml } from '../editor/markdown';
+  import { SlashCommands, setImageDialogHandler } from '../editor/slash-menu';
+
   const lowlight = createLowlight();
-  Object.entries(common).forEach(([k, v]) => lowlight.register(k, v));
+  lowlight.register('javascript', javascript);
+  lowlight.register('typescript', typescript);
+  lowlight.register('python', python);
+  lowlight.register('html', xml);
+  lowlight.register('css', css);
+  lowlight.register('bash', bash);
+  lowlight.register('json', json);
+  lowlight.register('sql', sql);
 
   // ── Diary auth ──
-  // When this module is imported in a browser context, diary-auth functions are available
-  // We use dynamic checks inline rather than importing the module to avoid build issues
   function diaryCheckOrPrompt(): boolean {
     try {
       const hash = localStorage.getItem('kb-diary-hash');
-      if (!hash) {
-        status('请先在 /diary/settings 设置日记密码', true);
-        return false;
-      }
+      if (!hash) { status('请先在 /diary/settings 设置日记密码', true); return false; }
       const ts = sessionStorage.getItem('kb-diary-authed');
-      if (ts) {
-        const elapsed = Date.now() - Number(ts);
-        if (elapsed < 2 * 60 * 60 * 1000) return true;
-      }
-      // Session not authed — show prompt
+      if (ts) { const elapsed = Date.now() - Number(ts); if (elapsed < 2 * 60 * 60 * 1000) return true; }
       const pw = prompt('请输入日记密码：');
       if (!pw) return false;
-      // SHA-256 verify inline
       crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw)).then(buf => {
         const hash2 = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
-        if (hash2 === hash) {
-          sessionStorage.setItem('kb-diary-authed', Date.now().toString());
-          status('日记已解锁');
-        } else {
-          status('密码错误', true);
-        }
+        if (hash2 === hash) { sessionStorage.setItem('kb-diary-authed', Date.now().toString()); status('日记已解锁'); }
+        else { status('密码错误', true); }
       });
       return false;
-    } catch {
-      return false;
-    }
+    } catch { return false; }
   }
 
   // ── DOM refs ──
   const $ = (id: string) => document.getElementById(id)!;
   const titleEl = $('title-input') as HTMLInputElement;
   const mountEl = $('editor-mount') as HTMLDivElement;
-  const slashContainer = $('slash-container') as HTMLDivElement;
   const typeEl = $('meta-type') as HTMLSelectElement;
   const categoryEl = $('meta-category') as HTMLInputElement;
   const tagsEl = $('meta-tags') as HTMLInputElement;
@@ -178,478 +108,17 @@ const TYPES = [
   const saveBtn = $('save-btn') as HTMLButtonElement;
   const copyBtn = $('copy-btn') as HTMLButtonElement;
   const statusBar = $('status-bar') as HTMLParagraphElement;
+  const langWrapper = $('lang-wrapper') as HTMLElement;
+  const langSelect = $('lang-select') as HTMLSelectElement;
 
   const LS_KEY = 'kb-editor-v3';
   const DEBOUNCE_MS = 600;
   let editor: Editor | null = null;
   let draftTimer: number | null = null;
 
-  // ── Status ──
-  function status(msg, err = false) {
+  function status(msg: string, err = false) {
     statusBar.textContent = msg;
     statusBar.className = `mt-3 text-center text-xs ${err ? 'text-rose-500' : 'text-slate-400'}`;
-  }
-
-  // ── Slash menu items ──
-  const SLASH_ITEMS = [
-    {
-      title: '一级标题',
-      description: '大章节标题',
-      icon: 'H1',
-      command: ({ editor, range }) => editor.chain().focus().deleteRange(range).setHeading({ level: 1 }).run(),
-    },
-    {
-      title: '二级标题',
-      description: '章节标题',
-      icon: 'H2',
-      command: ({ editor, range }) => editor.chain().focus().deleteRange(range).setHeading({ level: 2 }).run(),
-    },
-    {
-      title: '三级标题',
-      description: '小节标题',
-      icon: 'H3',
-      command: ({ editor, range }) => editor.chain().focus().deleteRange(range).setHeading({ level: 3 }).run(),
-    },
-    {
-      title: '无序列表',
-      description: '圆点列表',
-      icon: '•',
-      command: ({ editor, range }) => editor.chain().focus().deleteRange(range).toggleBulletList().run(),
-    },
-    {
-      title: '有序列表',
-      description: '编号列表',
-      icon: '1.',
-      command: ({ editor, range }) => editor.chain().focus().deleteRange(range).toggleOrderedList().run(),
-    },
-    {
-      title: '任务列表',
-      description: '带复选框的列表',
-      icon: '☑',
-      command: ({ editor, range }) => editor.chain().focus().deleteRange(range).toggleTaskList().run(),
-    },
-    {
-      title: '引用块',
-      description: '引用文本',
-      icon: '〝',
-      command: ({ editor, range }) => editor.chain().focus().deleteRange(range).toggleBlockquote().run(),
-    },
-    {
-      title: '代码块',
-      description: '代码片段',
-      icon: '<>',
-      command: ({ editor, range }) => editor.chain().focus().deleteRange(range).toggleCodeBlock().run(),
-    },
-    {
-      title: '分割线',
-      description: '水平分隔',
-      icon: '—',
-      command: ({ editor, range }) => editor.chain().focus().deleteRange(range).setHorizontalRule().run(),
-    },
-    {
-      title: '图片',
-      description: '插入图片链接',
-      icon: '🖼',
-      command: ({ editor, range }) => {
-        showImageDialog(editor, range);
-      },
-    },
-  ];
-
-  // ── Slash command extension ──
-  const SlashCommands = Extension.create({
-    name: 'slashCommands',
-
-    addOptions() {
-      return {
-        suggestion: {
-          char: '/',
-          pluginKey: new PluginKey('slashCommands'),
-          command: ({ editor, range, props }) => {
-            props.command({ editor, range });
-          },
-          items: ({ query }) => {
-            return SLASH_ITEMS
-              .filter((item) => item.title.toLowerCase().includes(query.toLowerCase()))
-              .slice(0, 10);
-          },
-          render: () => {
-            let popupEl: HTMLElement | null = null;
-            let items: any[] = [];
-            let selectedIndex = 0;
-
-            function createPopup(props: any) {
-              popupEl = document.createElement('div');
-              popupEl.className = 'slash-menu';
-
-              const list = document.createElement('div');
-              list.className = 'slash-list';
-
-              items = props.items;
-              selectedIndex = 0;
-
-              function renderItems() {
-                list.innerHTML = '';
-                items.forEach((item, i) => {
-                  const row = document.createElement('div');
-                  row.className = `slash-item${i === selectedIndex ? ' slash-active' : ''}`;
-                  row.dataset.index = String(i);
-
-                  const icon = document.createElement('span');
-                  icon.className = 'slash-icon';
-                  icon.textContent = item.icon;
-
-                  const label = document.createElement('div');
-                  label.className = 'slash-label';
-                  const titleSpan = document.createElement('span');
-                  titleSpan.className = 'slash-title';
-                  titleSpan.textContent = item.title;
-                  const descSpan = document.createElement('span');
-                  descSpan.className = 'slash-desc';
-                  descSpan.textContent = item.description;
-                  label.appendChild(titleSpan);
-                  label.appendChild(descSpan);
-
-                  row.appendChild(icon);
-                  row.appendChild(label);
-
-                  row.addEventListener('mousedown', (e) => {
-                    e.preventDefault();
-                    props.command({ ...props, props: item });
-                  });
-
-                  row.addEventListener('mouseenter', () => {
-                    selectedIndex = i;
-                    renderItems();
-                  });
-
-                  list.appendChild(row);
-                });
-              }
-
-              renderItems();
-              popupEl.appendChild(list);
-              document.body.appendChild(popupEl);
-              positionPopup(props);
-            }
-
-            function positionPopup(props: any) {
-              if (!popupEl) return;
-              const rect = props.clientRect?.();
-              if (!rect) return;
-              popupEl.style.position = 'fixed';
-              popupEl.style.left = `${rect.left}px`;
-              popupEl.style.top = `${rect.bottom + 4}px`;
-              popupEl.style.zIndex = '1000';
-            }
-
-            return {
-              onStart: (props) => {
-                createPopup(props);
-              },
-              onUpdate: (props) => {
-                items = props.items;
-                selectedIndex = 0;
-                const list = popupEl?.querySelector('.slash-list');
-                if (list) {
-                  list.innerHTML = '';
-                  items.forEach((item, i) => {
-                    const row = document.createElement('div');
-                    row.className = `slash-item${i === selectedIndex ? ' slash-active' : ''}`;
-                    row.dataset.index = String(i);
-
-                    const icon = document.createElement('span');
-                    icon.className = 'slash-icon';
-                    icon.textContent = item.icon;
-
-                    const label = document.createElement('div');
-                    label.className = 'slash-label';
-                    const titleSpan = document.createElement('span');
-                    titleSpan.className = 'slash-title';
-                    titleSpan.textContent = item.title;
-                    const descSpan = document.createElement('span');
-                    descSpan.className = 'slash-desc';
-                    descSpan.textContent = item.description;
-                    label.appendChild(titleSpan);
-                    label.appendChild(descSpan);
-
-                    row.appendChild(icon);
-                    row.appendChild(label);
-
-                    row.addEventListener('mousedown', (e) => {
-                      e.preventDefault();
-                      props.command({ ...props, props: item });
-                    });
-
-                    row.addEventListener('mouseenter', () => {
-                      selectedIndex = i;
-                      const allRows = list.querySelectorAll('.slash-item');
-                      allRows.forEach((r, idx) => r.classList.toggle('slash-active', idx === selectedIndex));
-                    });
-
-                    list.appendChild(row);
-                  });
-                }
-                positionPopup(props);
-              },
-              onKeyDown: (props) => {
-                const { event } = props;
-                if (event.key === 'ArrowDown') {
-                  event.preventDefault();
-                  selectedIndex = Math.min(selectedIndex + 1, items.length - 1);
-                  const rows = popupEl?.querySelectorAll('.slash-item');
-                  if (rows) {
-                    rows.forEach((r, i) => r.classList.toggle('slash-active', i === selectedIndex));
-                    rows[selectedIndex]?.scrollIntoView({ block: 'nearest' });
-                  }
-                  return true;
-                }
-                if (event.key === 'ArrowUp') {
-                  event.preventDefault();
-                  selectedIndex = Math.max(selectedIndex - 1, 0);
-                  const rows = popupEl?.querySelectorAll('.slash-item');
-                  if (rows) {
-                    rows.forEach((r, i) => r.classList.toggle('slash-active', i === selectedIndex));
-                    rows[selectedIndex]?.scrollIntoView({ block: 'nearest' });
-                  }
-                  return true;
-                }
-                if (event.key === 'Enter' || event.key === 'Tab') {
-                  event.preventDefault();
-                  const item = items[selectedIndex];
-                  if (item) {
-                    props.command({ ...props, props: item });
-                  }
-                  return true;
-                }
-                if (event.key === 'Escape') {
-                  event.preventDefault();
-                  if (popupEl) {
-                    popupEl.remove();
-                    popupEl = null;
-                  }
-                  return true;
-                }
-                return false;
-              },
-              onExit: () => {
-                if (popupEl) {
-                  popupEl.remove();
-                  popupEl = null;
-                }
-              },
-            };
-          },
-        },
-      };
-    },
-
-    addProseMirrorPlugins() {
-      return [
-        Suggestion({
-          editor: this.editor,
-          ...this.options.suggestion,
-        }),
-      ];
-    },
-  });
-
-  // ── Markdown serializer (TipTap JSON → Markdown) ──
-  function serializeInline(nodes) {
-    if (!nodes || nodes.length === 0) return '';
-    let md = '';
-    for (const node of nodes) {
-      if (node.type === 'text') {
-        let text = node.text || '';
-        if (node.marks) {
-          // Apply marks from outside in (bold first, then italic, etc.)
-          const linkMark = node.marks.find((m) => m.type === 'link');
-          const otherMarks = node.marks.filter((m) => m.type !== 'link');
-          for (const mark of otherMarks) {
-            switch (mark.type) {
-              case 'bold': text = `**${text}**`; break;
-              case 'italic': text = `*${text}*`; break;
-              case 'strike': text = `~~${text}~~`; break;
-              case 'code': text = `\`${text}\``; break;
-            }
-          }
-          if (linkMark) {
-            text = `[${text}](${linkMark.attrs?.href || ''})`;
-          }
-        }
-        md += text;
-      } else if (node.type === 'hardBreak') {
-        md += '\n';
-      } else if (node.type === 'image') {
-        md += `![${node.attrs?.alt || ''}](${node.attrs?.src || ''})`;
-      }
-    }
-    return md;
-  }
-
-  function getTextContent(node) {
-    if (!node.content) return '';
-    return node.content.map((n) => (n.type === 'text' ? n.text : getTextContent(n))).join('');
-  }
-
-  function serializeNode(node) {
-    const inline = serializeInline(node.content || []);
-
-    switch (node.type) {
-      case 'paragraph':
-        return inline || '';
-      case 'heading':
-        return '#'.repeat(node.attrs?.level || 1) + ' ' + inline;
-      case 'bulletList':
-        return (node.content || [])
-          .map((li) => '- ' + serializeInline(li.content || []))
-          .join('\n');
-      case 'orderedList':
-        return (node.content || [])
-          .map((li, i) => `${i + 1}. ` + serializeInline(li.content || []))
-          .join('\n');
-      case 'taskList':
-        return (node.content || [])
-          .map((li) => {
-            const checked = li.attrs?.checked ? 'x' : ' ';
-            return '- [' + checked + '] ' + serializeInline(li.content || []);
-          })
-          .join('\n');
-      case 'listItem':
-        return inline; // handled by parent
-      case 'taskItem':
-        return inline; // handled by parent
-      case 'blockquote':
-        return inline
-          .split('\n')
-          .map((line) => '> ' + line)
-          .join('\n');
-      case 'codeBlock':
-        return '```' + (node.attrs?.language || '') + '\n' + getTextContent(node) + '\n```';
-      case 'horizontalRule':
-        return '---';
-      case 'image':
-        return `![${node.attrs?.alt || ''}](${node.attrs?.src || ''})`;
-      case 'hardBreak':
-        return '\n';
-      default:
-        return inline;
-    }
-  }
-
-  function editorToMarkdown(editor) {
-    const doc = editor.getJSON();
-    if (!doc.content || doc.content.length === 0) return '';
-    return doc.content
-      .map(serializeNode)
-      .join('\n\n')
-      .replace(/\n{3,}/g, '\n\n')
-      .trim() + '\n';
-  }
-
-  // ── Simple Markdown → HTML for loading existing content ──
-  function simpleMdToHtml(md) {
-    if (!md) return '<p></p>';
-    const lines = md.split('\n');
-    const out: string[] = [];
-    let i = 0;
-    while (i < lines.length) {
-      const line = lines[i];
-
-      // Code block
-      if (/^```/.test(line)) {
-        const lang = line.slice(3).trim();
-        i++;
-        const code: string[] = [];
-        while (i < lines.length && !/^```/.test(lines[i])) {
-          code.push(lines[i].replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'));
-          i++;
-        }
-        i++; // skip closing ```
-        out.push(`<pre><code${lang ? ` data-lang="${lang}"` : ''}>${code.join('\n')}</code></pre>`);
-        continue;
-      }
-
-      // Heading
-      const hMatch = line.match(/^(#{1,6})\s+(.+)/);
-      if (hMatch) {
-        out.push(`<h${hMatch[1].length}>${escapeHtml(hMatch[2])}</h${hMatch[1].length}>`);
-        i++;
-        continue;
-      }
-
-      // HR
-      if (/^(-{3,}|\*{3,})$/.test(line.trim())) {
-        out.push('<hr>');
-        i++;
-        continue;
-      }
-
-      // Blockquote
-      if (/^>\s?/.test(line)) {
-        const quotes: string[] = [];
-        while (i < lines.length && /^>\s?/.test(lines[i])) {
-          quotes.push(lines[i].replace(/^>\s?/, ''));
-          i++;
-        }
-        out.push('<blockquote><p>' + quotes.join('<br>') + '</p></blockquote>');
-        continue;
-      }
-
-      // Unordered list
-      if (/^[-*]\s+/.test(line)) {
-        const items: string[] = [];
-        while (i < lines.length && /^[-*]\s+/.test(lines[i])) {
-          items.push('<li>' + inlineMdToHtml(lines[i].replace(/^[-*]\s+/, '')) + '</li>');
-          i++;
-        }
-        // Check if it's a task list
-        if (items.some((item) => item.includes('<li>['))) {
-          out.push('<ul data-type="taskList">' + items.join('') + '</ul>');
-        } else {
-          out.push('<ul>' + items.join('') + '</ul>');
-        }
-        continue;
-      }
-
-      // Ordered list
-      if (/^\d+\.\s+/.test(line)) {
-        const items: string[] = [];
-        while (i < lines.length && /^\d+\.\s+/.test(lines[i])) {
-          items.push('<li>' + inlineMdToHtml(lines[i].replace(/^\d+\.\s+/, '')) + '</li>');
-          i++;
-        }
-        out.push('<ol>' + items.join('') + '</ol>');
-        continue;
-      }
-
-      // Empty line
-      if (!line.trim()) {
-        out.push('<p><br></p>');
-        i++;
-        continue;
-      }
-
-      // Paragraph
-      out.push('<p>' + inlineMdToHtml(line) + '</p>');
-      i++;
-    }
-    return out.join('\n');
-  }
-
-  function escapeHtml(s) {
-    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  }
-
-  function inlineMdToHtml(s) {
-    let t = escapeHtml(s);
-    t = t.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1">');
-    t = t.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
-    t = t.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-    t = t.replace(/\*([^*]+)\*/g, '<em>$1</em>');
-    t = t.replace(/~~([^~]+)~~/g, '<del>$1</del>');
-    t = t.replace(/`([^`]+)`/g, '<code>$1</code>');
-    return t;
   }
 
   // ── Draft persistence ──
@@ -657,29 +126,14 @@ const TYPES = [
     if (!editor) return;
     if (draftTimer !== null) window.clearTimeout(draftTimer);
     draftTimer = window.setTimeout(() => {
-      const data = {
-        title: titleEl.value,
-        type: typeEl.value,
-        category: categoryEl.value,
-        tags: tagsEl.value,
-        importance: importanceEl.value,
-        summary: summaryEl.value,
-        editorJson: editor!.getJSON(),
-        savedAt: Date.now(),
-      };
-      try {
-        localStorage.setItem(LS_KEY, JSON.stringify(data));
-        status('草稿已保存');
-      } catch {
-        // localStorage quota exceeded
-      }
+      const data = { title: titleEl.value, type: typeEl.value, category: categoryEl.value, tags: tagsEl.value, importance: importanceEl.value, summary: summaryEl.value, editorJson: editor!.getJSON(), savedAt: Date.now() };
+      try { localStorage.setItem(LS_KEY, JSON.stringify(data)); status('草稿已保存'); } catch { /* quota */ }
     }, DEBOUNCE_MS);
   }
 
   function loadDraft() {
     const params = new URLSearchParams(window.location.search);
     const hasParams = params.has('title') || params.has('body') || params.has('type');
-
     if (hasParams) {
       titleEl.value = params.get('title') || '';
       typeEl.value = params.get('type') || 'note';
@@ -688,38 +142,23 @@ const TYPES = [
       importanceEl.value = params.get('importance') || '2';
       summaryEl.value = params.get('summary') || '';
       const body = params.get('body');
-      if (body && editor) {
-        const decoded = decodeURIComponent(body);
-        const html = simpleMdToHtml(decoded);
-        editor.commands.setContent(html);
-      }
+      if (body && editor) { editor.commands.setContent(simpleMdToHtml(decodeURIComponent(body))); }
       status('已加载文章内容');
       saveDraft();
       return;
     }
-
-    // Restore from localStorage
     try {
       const raw = localStorage.getItem(LS_KEY);
       if (!raw) { status('新文章'); return; }
       const d = JSON.parse(raw);
-      titleEl.value = d.title || '';
-      typeEl.value = d.type || 'note';
-      categoryEl.value = d.category || '';
-      tagsEl.value = d.tags || '';
-      importanceEl.value = d.importance || '2';
-      summaryEl.value = d.summary || '';
-      if (d.editorJson && editor) {
-        editor.commands.setContent(d.editorJson);
-      }
+      titleEl.value = d.title || ''; typeEl.value = d.type || 'note'; categoryEl.value = d.category || '';
+      tagsEl.value = d.tags || ''; importanceEl.value = d.importance || '2'; summaryEl.value = d.summary || '';
+      if (d.editorJson && editor) { editor.commands.setContent(d.editorJson); }
       status('已恢复草稿');
-    } catch {
-      status('新文章');
-    }
+    } catch { status('新文章'); }
   }
 
-  // ── Build markdown for save ──
-  function buildMarkdown() {
+  function buildMarkdown(): string {
     const title = titleEl.value.trim() || '无标题';
     const body = editor ? editorToMarkdown(editor) : '';
     const now = new Date().toISOString().slice(0, 10);
@@ -728,162 +167,94 @@ const TYPES = [
     const category = categoryEl.value.trim() || '技巧';
     const importance = Math.min(Math.max(Number(importanceEl.value) || 2, 1), 5);
     const summary = summaryEl.value.trim() || '待补充';
-
-    return [
-      '---',
-      `title: ${JSON.stringify(title)}`,
-      `date: ${now}`,
-      `updated: ${now}`,
-      `summary: ${JSON.stringify(summary)}`,
-      `tags: [${tags.map((t) => JSON.stringify(t)).join(', ')}]`,
-      `category: ${JSON.stringify(category)}`,
-      `type: ${JSON.stringify(type)}`,
-      `importance: ${importance}`,
-      'draft: false',
-      '---',
-      '',
-      body || '正文内容待补充。',
-      '',
-    ].join('\n');
+    return ['---', `title: ${JSON.stringify(title)}`, `date: ${now}`, `updated: ${now}`, `summary: ${JSON.stringify(summary)}`, `tags: [${tags.map((t) => JSON.stringify(t)).join(', ')}]`, `category: ${JSON.stringify(category)}`, `type: ${JSON.stringify(type)}`, `importance: ${importance}`, 'draft: false', '---', '', body || '正文内容待补充。', ''].join('\n');
   }
 
-  function buildFileName() {
+  function buildFileName(): string {
     const title = titleEl.value.trim() || '无标题';
     const now = new Date().toISOString().slice(0, 10);
-    const slug = title
-      .replace(/\s+/g, '-')
-      .replace(/[\\/:*?"<>|]/g, '')
-      .replace(/-+/g, '-')
-      .replace(/(^-|-$)/g, '')
-      .slice(0, 60)
-      .toLowerCase() || 'untitled';
-    return `${now}-${slug}`;
+    return `${now}-${title.replace(/\s+/g, '-').replace(/[\\/:*?"<>|]/g, '').replace(/-+/g, '-').replace(/(^-|-$)/g, '').slice(0, 60).toLowerCase()}`;
   }
 
-  // ── Save ──
   async function save() {
-    const title = titleEl.value.trim();
-    const category = categoryEl.value.trim();
-    const summary = summaryEl.value.trim();
-    if (!title) { status('请填写标题', true); return; }
-    if (!category) { status('请填写分类', true); return; }
-    if (!summary) { status('请填写摘要', true); return; }
+    if (!titleEl.value.trim()) { status('请填写标题', true); return; }
+    if (!categoryEl.value.trim()) { status('请填写分类', true); return; }
+    if (!summaryEl.value.trim()) { status('请填写摘要', true); return; }
+    if (typeEl.value === 'diary' && !diaryCheckOrPrompt()) return;
 
-    // Diary type requires password
-    if (typeEl.value === 'diary' && !diaryCheckOrPrompt()) { return; }
-
-    const markdown = buildMarkdown();
-    const filename = buildFileName(); // NO EXTENSION — API adds .md
-    const type = typeEl.value || 'note';
-
-    saveBtn.textContent = '保存中...';
-    saveBtn.disabled = true;
-
+    saveBtn.textContent = '保存中...'; saveBtn.disabled = true;
     try {
-      const resp = await fetch('/api/editor-save', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ markdown, filename, type }),
-      });
+      const resp = await fetch('/api/editor-save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ markdown: buildMarkdown(), filename: buildFileName(), type: typeEl.value }) });
       const result = await resp.json();
-      if (result.ok) {
-        status(`已保存: ${result.path}${result.commit ? ` (commit: ${result.commit})` : ''}`);
-        saveDraft();
-      } else {
-        status(`保存失败: ${result.reason}`, true);
-      }
-    } catch (e: any) {
-      status(`网络错误: ${e.message || '请确认 dev server 已启动'}`, true);
-    } finally {
-      saveBtn.textContent = '保存到文件';
-      saveBtn.disabled = false;
-    }
+      if (result.ok) { status(`已保存: ${result.path}${result.commit ? ` (commit: ${result.commit})` : ''}`); saveDraft(); }
+      else { status(`保存失败: ${result.reason}`, true); }
+    } catch (e: any) { status(`网络错误: ${e.message || '请确认 dev server 已启动'}`, true); }
+    finally { saveBtn.textContent = '保存到文件'; saveBtn.disabled = false; }
   }
 
-  // ── Copy ──
   function copyMd() {
-    const md = buildMarkdown();
-    navigator.clipboard.writeText(md).then(() => {
-      status('Markdown 已复制到剪贴板');
-      setTimeout(() => status(''), 2000);
-    }).catch(() => status('复制失败', true));
+    navigator.clipboard.writeText(buildMarkdown())
+      .then(() => { status('Markdown 已复制到剪贴板'); setTimeout(() => status(''), 2000); })
+      .catch(() => status('复制失败', true));
   }
 
-  // ── Format bar ──
-  function execCmd(cmd) {
+  function execCmd(cmd: string) {
     if (!editor) return;
     editor.chain().focus().run();
-
-    switch (cmd) {
-      case 'undo': editor.chain().undo().run(); break;
-      case 'redo': editor.chain().redo().run(); break;
-      case 'bold': editor.chain().toggleBold().run(); break;
-      case 'italic': editor.chain().toggleItalic().run(); break;
-      case 'strike': editor.chain().toggleStrike().run(); break;
-      case 'code': editor.chain().toggleCode().run(); break;
-      case 'h1': editor.chain().toggleHeading({ level: 1 }).run(); break;
-      case 'h2': editor.chain().toggleHeading({ level: 2 }).run(); break;
-      case 'h3': editor.chain().toggleHeading({ level: 3 }).run(); break;
-      case 'bulletList': editor.chain().toggleBulletList().run(); break;
-      case 'orderedList': editor.chain().toggleOrderedList().run(); break;
-      case 'taskList': editor.chain().toggleTaskList().run(); break;
-      case 'blockquote': editor.chain().toggleBlockquote().run(); break;
-      case 'codeBlock': editor.chain().toggleCodeBlock().run(); break;
-      case 'horizontalRule': editor.chain().setHorizontalRule().run(); break;
-    }
+    const cmds: Record<string, () => void> = {
+      undo: () => editor!.chain().undo().run(),
+      redo: () => editor!.chain().redo().run(),
+      bold: () => editor!.chain().toggleBold().run(),
+      italic: () => editor!.chain().toggleItalic().run(),
+      strike: () => editor!.chain().toggleStrike().run(),
+      code: () => editor!.chain().toggleCode().run(),
+      h1: () => editor!.chain().toggleHeading({ level: 1 }).run(),
+      h2: () => editor!.chain().toggleHeading({ level: 2 }).run(),
+      h3: () => editor!.chain().toggleHeading({ level: 3 }).run(),
+      bulletList: () => editor!.chain().toggleBulletList().run(),
+      orderedList: () => editor!.chain().toggleOrderedList().run(),
+      taskList: () => editor!.chain().toggleTaskList().run(),
+      blockquote: () => editor!.chain().toggleBlockquote().run(),
+      codeBlock: () => editor!.chain().toggleCodeBlock().run(),
+      horizontalRule: () => editor!.chain().setHorizontalRule().run(),
+    };
+    cmds[cmd]?.();
   }
 
-  // ── Image upload ──
   async function uploadImage(file: File) {
-    const formData = new FormData();
-    formData.append('image', file);
+    const formData = new FormData(); formData.append('image', file);
     try {
       const resp = await fetch('/api/editor-upload', { method: 'POST', body: formData });
       const result = await resp.json();
-      if (result.ok && editor) {
-        editor.chain().focus().setImage({ src: result.url }).run();
-        status('图片已上传');
-      } else {
-        status('图片上传失败', true);
-      }
-    } catch {
-      status('图片上传失败，请确认 dev server 已启动', true);
-    }
+      if (result.ok && editor) { editor.chain().focus().setImage({ src: result.url }).run(); status('图片已上传'); }
+      else { status('图片上传失败', true); }
+    } catch { status('图片上传失败，请确认 dev server 已启动', true); }
   }
 
-  // ── Image dialog ──
   function showImageDialog(editor: any, range: any) {
     const existing = document.querySelector('.editor-image-dialog');
     if (existing) existing.remove();
-
     const overlay = document.createElement('div');
     overlay.className = 'editor-image-dialog fixed inset-0 z-50 flex items-center justify-center bg-black/20 dark:bg-black/40';
     overlay.innerHTML = `
       <div class="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-xl max-w-sm w-full mx-4">
         <h3 class="text-lg font-bold mb-4 text-slate-900 dark:text-slate-100">插入图片</h3>
-
-        <!-- Upload tab -->
         <div class="mb-4">
           <div class="flex gap-2 mb-3">
             <button id="img-tab-upload" class="img-tab img-tab-active" type="button">上传文件</button>
             <button id="img-tab-url" class="img-tab" type="button">网络链接</button>
           </div>
-
-          <!-- File upload panel -->
           <div id="img-panel-upload">
             <div class="border-2 border-dashed border-slate-200 dark:border-slate-600 rounded-lg p-6 text-center cursor-pointer hover:border-blue-400 dark:hover:border-blue-500 transition-colors" id="img-dropzone">
               <p class="text-slate-400 dark:text-slate-500 text-sm">点击选择图片，或直接粘贴/拖拽</p>
               <input id="img-file-input" type="file" accept="image/*" class="hidden" />
             </div>
           </div>
-
-          <!-- URL panel -->
           <div id="img-panel-url" class="hidden">
             <label class="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1">图片 URL</label>
             <input id="img-url" type="url" class="w-full rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-400" placeholder="https://example.com/image.png" />
           </div>
         </div>
-
         <label class="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1">替代文本</label>
         <input id="img-alt" type="text" class="w-full rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-400" placeholder="图片描述（选填）" />
         <div class="flex gap-2 mt-4 justify-end">
@@ -891,7 +262,6 @@ const TYPES = [
           <button id="img-insert" class="px-4 py-2 rounded-lg bg-blue-600 text-sm text-white font-medium hover:bg-blue-500" type="button">插入</button>
         </div>
       </div>`;
-
     document.body.appendChild(overlay);
 
     const imgUrl = overlay.querySelector('#img-url') as HTMLInputElement;
@@ -904,572 +274,162 @@ const TYPES = [
     const tabUrl = overlay.querySelector('#img-tab-url') as HTMLButtonElement;
     const panelUpload = overlay.querySelector('#img-panel-upload') as HTMLDivElement;
     const panelUrl = overlay.querySelector('#img-panel-url') as HTMLDivElement;
-
     let pendingFile: File | null = null;
 
-    // Tab switching
-    tabUpload.onclick = () => {
-      tabUpload.classList.add('img-tab-active');
-      tabUrl.classList.remove('img-tab-active');
-      panelUpload.classList.remove('hidden');
-      panelUrl.classList.add('hidden');
-    };
-    tabUrl.onclick = () => {
-      tabUrl.classList.add('img-tab-active');
-      tabUpload.classList.remove('img-tab-active');
-      panelUrl.classList.remove('hidden');
-      panelUpload.classList.add('hidden');
-    };
-
-    // File picker
+    tabUpload.onclick = () => { tabUpload.classList.add('img-tab-active'); tabUrl.classList.remove('img-tab-active'); panelUpload.classList.remove('hidden'); panelUrl.classList.add('hidden'); };
+    tabUrl.onclick = () => { tabUrl.classList.add('img-tab-active'); tabUpload.classList.remove('img-tab-active'); panelUrl.classList.remove('hidden'); panelUpload.classList.add('hidden'); };
     dropzone.onclick = () => fileInput.click();
-    fileInput.onchange = () => {
-      const f = fileInput.files?.[0];
-      if (f) {
-        pendingFile = f;
-        dropzone.innerHTML = `<p class="text-sm text-blue-600 dark:text-blue-400">已选择: ${f.name}</p>`;
-      }
-    };
-
-    // Drag over dropzone
+    fileInput.onchange = () => { const f = fileInput.files?.[0]; if (f) { pendingFile = f; dropzone.innerHTML = `<p class="text-sm text-blue-600 dark:text-blue-400">已选择: ${f.name}</p>`; } };
     dropzone.ondragover = (e: DragEvent) => { e.preventDefault(); dropzone.classList.add('border-blue-400'); };
-    dropzone.ondragleave = () => { dropzone.classList.remove('border-blue-400'); };
-    dropzone.ondrop = (e: DragEvent) => {
-      e.preventDefault();
-      dropzone.classList.remove('border-blue-400');
-      const f = e.dataTransfer?.files?.[0];
-      if (f) {
-        pendingFile = f;
-        dropzone.innerHTML = `<p class="text-sm text-blue-600 dark:text-blue-400">已选择: ${f.name}</p>`;
-      }
-    };
-
+    dropzone.ondragleave = () => dropzone.classList.remove('border-blue-400');
+    dropzone.ondrop = (e: DragEvent) => { e.preventDefault(); dropzone.classList.remove('border-blue-400'); const f = e.dataTransfer?.files?.[0]; if (f) { pendingFile = f; dropzone.innerHTML = `<p class="text-sm text-blue-600 dark:text-blue-400">已选择: ${f.name}</p>`; } };
     cancelBtn.onclick = () => overlay.remove();
     insertBtn.onclick = () => {
       const alt = imgAlt.value.trim();
       if (pendingFile) {
-        // Upload file
-        const formData = new FormData();
-        formData.append('image', pendingFile);
-        fetch('/api/editor-upload', { method: 'POST', body: formData })
-          .then((r) => r.json())
-          .then((result) => {
-            if (result.ok) {
-              editor.chain().focus().deleteRange(range).setImage({ src: result.url, alt }).run();
-            } else {
-              status('图片上传失败', true);
-            }
-          })
-          .catch(() => status('图片上传失败', true));
-      } else {
-        const url = imgUrl.value.trim();
-        if (url) {
-          editor.chain().focus().deleteRange(range).setImage({ src: url, alt }).run();
-        }
-      }
+        const formData = new FormData(); formData.append('image', pendingFile);
+        fetch('/api/editor-upload', { method: 'POST', body: formData }).then((r) => r.json()).then((result) => { if (result.ok) editor.chain().focus().deleteRange(range).setImage({ src: result.url, alt }).run(); else status('图片上传失败', true); }).catch(() => status('图片上传失败', true));
+      } else { const url = imgUrl.value.trim(); if (url) editor.chain().focus().deleteRange(range).setImage({ src: url, alt }).run(); }
       overlay.remove();
     };
     overlay.onclick = (e: MouseEvent) => { if (e.target === overlay) overlay.remove(); };
     imgUrl.onkeydown = (e: KeyboardEvent) => { if (e.key === 'Enter') insertBtn.click(); };
   }
 
-  // ── Init editor ──
+  setImageDialogHandler(showImageDialog);
+
   function initEditor() {
     editor = new Editor({
       element: mountEl,
       extensions: [
-        StarterKit.configure({
-          // TaskList requires custom list handling, disable default list
-          bulletList: { keepMarks: true },
-          orderedList: { keepMarks: true },
-          codeBlock: false,
-        }),
-        CodeBlockLowlight.configure({
-          lowlight,
-        }),
-        Placeholder.configure({
-          placeholder: '按 / 选择块类型，或直接输入…',
-        }),
-        Link.configure({
-          openOnClick: true,
-          HTMLAttributes: { class: 'editor-link' },
-        }),
-        Image.configure({
-          inline: false,
-          allowBase64: true,
-          HTMLAttributes: { class: 'editor-image' },
-        }),
-        TaskList,
-        TaskItem.configure({
-          nested: true,
-          HTMLAttributes: { class: 'editor-task-item' },
-        }),
+        StarterKit.configure({ bulletList: { keepMarks: true }, orderedList: { keepMarks: true }, codeBlock: false }),
+        CodeBlockLowlight.configure({ lowlight }),
+        Placeholder.configure({ placeholder: '按 / 选择块类型，或直接输入…' }),
+        Link.configure({ openOnClick: true, HTMLAttributes: { class: 'editor-link' } }),
+        Image.configure({ inline: false, allowBase64: true, HTMLAttributes: { class: 'editor-image' } }),
+        TaskList, TaskItem.configure({ nested: true, HTMLAttributes: { class: 'editor-task-item' } }),
         SlashCommands,
       ],
       editorProps: {
-        attributes: {
-          class: 'prose prose-slate dark:prose-invert max-w-none focus:outline-none min-h-[50vh]',
-        },
+        attributes: { class: 'prose prose-slate dark:prose-invert max-w-none focus:outline-none min-h-[50vh]' },
         handleDOMEvents: {
           keydown: (_view, event) => {
-            // Ctrl+S / Cmd+S
-            if ((event.metaKey || event.ctrlKey) && event.key === 's') {
-              event.preventDefault();
-              save();
-              return true;
-            }
+            if ((event.metaKey || event.ctrlKey) && event.key === 's') { event.preventDefault(); save(); return true; }
             return false;
           },
           paste: (_view, event) => {
-            // Check clipboardData.files first (macOS Finder copy)
             const files = event.clipboardData?.files;
-            if (files && files.length > 0) {
-              for (const file of Array.from(files)) {
-                if (file.type.startsWith('image/')) {
-                  event.preventDefault();
-                  uploadImage(file);
-                  return true;
-                }
-              }
-            }
-            // Then check items (browser/web copy)
+            if (files && files.length > 0) { for (const file of Array.from(files)) { if (file.type.startsWith('image/')) { event.preventDefault(); uploadImage(file); return true; } } }
             const items = event.clipboardData?.items;
             if (!items) return false;
-            for (const item of Array.from(items)) {
-              if (item.type.startsWith('image/')) {
-                event.preventDefault();
-                const file = item.getAsFile();
-                if (file) uploadImage(file);
-                return true;
-              }
-            }
+            for (const item of Array.from(items)) { if (item.type.startsWith('image/')) { event.preventDefault(); const file = item.getAsFile(); if (file) uploadImage(file); return true; } }
             return false;
           },
           drop: (_view, event) => {
             const files = event.dataTransfer?.files;
-            if (!files || files.length === 0) return false;
-            for (const file of Array.from(files)) {
-              if (file.type.startsWith('image/')) {
-                event.preventDefault();
-                uploadImage(file);
-                return true;
-              }
-            }
+            if (!files) return false;
+            for (const file of Array.from(files)) { if (file.type.startsWith('image/')) { event.preventDefault(); uploadImage(file); return true; } }
             return false;
           },
         },
       },
-      onCreate: () => {
-        loadDraft();
-        status('就绪');
-      },
-      onUpdate: () => {
-        saveDraft();
-      },
+      onCreate: () => { loadDraft(); status('就绪'); },
+      onUpdate: () => { saveDraft(); },
       onSelectionUpdate: () => {
         const inCodeBlock = editor!.isActive('codeBlock');
         langWrapper.classList.toggle('hidden', !inCodeBlock);
-        if (inCodeBlock) {
-          const lang = editor!.getAttributes('codeBlock').language || '';
-          langSelect.value = lang;
-        }
+        if (inCodeBlock) { langSelect.value = editor!.getAttributes('codeBlock').language || ''; }
       },
     });
   }
 
   // ── Event bindings ──
-  document.querySelectorAll('[data-cmd]').forEach((btn) => {
-    (btn as HTMLElement).addEventListener('click', () => execCmd((btn as HTMLElement).dataset.cmd));
-  });
-
-  [titleEl, typeEl, categoryEl, tagsEl, importanceEl, summaryEl].forEach((el) =>
-    el?.addEventListener('input', () => saveDraft())
-  );
-
-  // Diary type: prompt for password on selection
-  typeEl.addEventListener('change', () => {
-    if (typeEl.value === 'diary') {
-      diaryCheckOrPrompt();
-    }
-  });
-
+  document.querySelectorAll('[data-cmd]').forEach((btn) => { (btn as HTMLElement).addEventListener('click', () => { const cmd = (btn as HTMLElement).dataset.cmd; if (cmd) execCmd(cmd); }); });
+  [titleEl, typeEl, categoryEl, tagsEl, importanceEl, summaryEl].forEach((el) => el?.addEventListener('input', () => saveDraft()));
+  typeEl.addEventListener('change', () => { if (typeEl.value === 'diary') diaryCheckOrPrompt(); });
   saveBtn.addEventListener('click', () => save());
   copyBtn.addEventListener('click', () => copyMd());
+  langSelect.addEventListener('change', () => { if (!editor) return; editor.chain().focus().updateAttributes('codeBlock', { language: langSelect.value }).run(); });
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') saveDraft(); });
+  window.addEventListener('beforeunload', () => editor?.destroy());
 
-  // ── Language selector ──
-  const langWrapper = $('lang-wrapper') as HTMLElement;
-  const langSelect = $('lang-select') as HTMLSelectElement;
-
-  langSelect.addEventListener('change', () => {
-    if (!editor) return;
-    editor.chain().focus().updateAttributes('codeBlock', { language: langSelect.value }).run();
-  });
-
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') saveDraft();
-  });
-
-  // Cleanup on page leave
-  window.addEventListener('beforeunload', () => {
-    editor?.destroy();
-  });
-
-  // ── Go! ──
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initEditor);
-  } else {
-    initEditor();
-  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initEditor);
+  else initEditor();
 </script>
 
 <style>
-  /* ── TipTap editor content ── */
-  .editor-content {
-    padding: 1rem 0 0.5rem;
-  }
-
-  .editor-content .ProseMirror {
-    min-height: 50vh;
-    outline: none;
-    font-size: 1.05rem;
-    line-height: 1.8;
-    color: #0f172a;
-    padding: 0.25rem 0.25rem 1rem;
-  }
-
-  .dark .editor-content .ProseMirror {
-    color: #f1f5f9;
-  }
-
-  /* Block-level hover effect — Notion-like block separation */
-  .editor-content .ProseMirror > :is(p, h1, h2, h3, h4, h5, h6, blockquote, pre) {
-    padding: 0.15rem 0.5rem;
-    margin: 0.15rem 0;
-    border-radius: 0.25rem;
-    transition: background-color 0.12s;
-    position: relative;
-  }
-
-  .editor-content .ProseMirror > :is(p, h1, h2, h3, h4, h5, h6, blockquote, pre):hover {
-    background-color: #f8fafc;
-  }
-
-  .dark .editor-content .ProseMirror > :is(p, h1, h2, h3, h4, h5, h6, blockquote, pre):hover {
-    background-color: #1e293b;
-  }
-
-  .editor-content .ProseMirror p {
-    margin: 0.25rem 0;
-  }
-
-  .editor-content .ProseMirror h1 {
-    font-size: 1.8rem;
-    font-weight: 800;
-    margin: 1.5rem 0 0.5rem;
-    line-height: 1.3;
-  }
-
-  .editor-content .ProseMirror h2 {
-    font-size: 1.5rem;
-    font-weight: 700;
-    margin: 1.25rem 0 0.4rem;
-    line-height: 1.35;
-    border-bottom: 1px solid #e2e8f0;
-    padding-bottom: 0.25rem;
-  }
-
-  .dark .editor-content .ProseMirror h2 {
-    border-bottom-color: #334155;
-  }
-
-  .editor-content .ProseMirror h3 {
-    font-size: 1.25rem;
-    font-weight: 700;
-    margin: 1rem 0 0.3rem;
-    line-height: 1.4;
-  }
-
-  .editor-content .ProseMirror code {
-    background: #f1f5f9;
-    padding: 0.15rem 0.4rem;
-    border-radius: 0.3rem;
-    font-size: 0.88em;
-    color: #0f172a;
-  }
-
-  .dark .editor-content .ProseMirror code {
-    background: #334155;
-    color: #e2e8f0;
-  }
-
-  .editor-content .ProseMirror pre {
-    background: #f1f5f9;
-    border-radius: 0.5rem;
-    padding: 0.75rem;
-    margin: 0.6rem 0;
-    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
-    font-size: 0.85rem;
-    line-height: 1.5;
-    overflow-x: auto;
-  }
-
-  .dark .editor-content .ProseMirror pre {
-    background: #0f172a;
-  }
-
-  .editor-content .ProseMirror pre code {
-    background: none;
-    padding: 0;
-    border-radius: 0;
-    font-size: inherit;
-    color: inherit;
-  }
-
-  /* lowlight / highlight.js syntax highlighting colors */
-  .editor-content .ProseMirror pre .hljs-keyword,
-  .editor-content .ProseMirror pre .hljs-selector-tag,
-  .editor-content .ProseMirror pre .hljs-title { color: #d73a49; }
-  .editor-content .ProseMirror pre .hljs-string,
-  .editor-content .ProseMirror pre .hljs-title.class_,
-  .editor-content .ProseMirror pre .hljs-title.function_ { color: #0a3069; }
-  .editor-content .ProseMirror pre .hljs-number,
-  .editor-content .ProseMirror pre .hljs-literal { color: #005cc5; }
+  .editor-content { padding: 1rem 0 0.5rem; }
+  .editor-content .ProseMirror { min-height: 50vh; outline: none; font-size: 1.05rem; line-height: 1.8; color: #0f172a; padding: 0.25rem 0.25rem 1rem; }
+  .dark .editor-content .ProseMirror { color: #f1f5f9; }
+  .editor-content .ProseMirror > :is(p, h1, h2, h3, h4, h5, h6, blockquote, pre) { padding: 0.15rem 0.5rem; margin: 0.15rem 0; border-radius: 0.25rem; transition: background-color 0.12s; }
+  .editor-content .ProseMirror > :is(p, h1, h2, h3, h4, h5, h6, blockquote, pre):hover { background-color: #f8fafc; }
+  .dark .editor-content .ProseMirror > :is(p, h1, h2, h3, h4, h5, h6, blockquote, pre):hover { background-color: #1e293b; }
+  .editor-content .ProseMirror p { margin: 0.25rem 0; }
+  .editor-content .ProseMirror h1 { font-size: 1.8rem; font-weight: 800; margin: 1.5rem 0 0.5rem; line-height: 1.3; }
+  .editor-content .ProseMirror h2 { font-size: 1.5rem; font-weight: 700; margin: 1.25rem 0 0.4rem; line-height: 1.35; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.25rem; }
+  .dark .editor-content .ProseMirror h2 { border-bottom-color: #334155; }
+  .editor-content .ProseMirror h3 { font-size: 1.25rem; font-weight: 700; margin: 1rem 0 0.3rem; line-height: 1.4; }
+  .editor-content .ProseMirror code { background: #f1f5f9; padding: 0.15rem 0.4rem; border-radius: 0.3rem; font-size: 0.88em; color: #0f172a; }
+  .dark .editor-content .ProseMirror code { background: #334155; color: #e2e8f0; }
+  .editor-content .ProseMirror pre { background: #f1f5f9; border-radius: 0.5rem; padding: 0.75rem; margin: 0.6rem 0; font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace; font-size: 0.85rem; line-height: 1.5; overflow-x: auto; }
+  .dark .editor-content .ProseMirror pre { background: #0f172a; }
+  .editor-content .ProseMirror pre code { background: none; padding: 0; border-radius: 0; font-size: inherit; color: inherit; }
+  .editor-content .ProseMirror pre .hljs-keyword, .editor-content .ProseMirror pre .hljs-selector-tag, .editor-content .ProseMirror pre .hljs-title { color: #d73a49; }
+  .editor-content .ProseMirror pre .hljs-string, .editor-content .ProseMirror pre .hljs-title.class_, .editor-content .ProseMirror pre .hljs-title.function_ { color: #0a3069; }
+  .editor-content .ProseMirror pre .hljs-number, .editor-content .ProseMirror pre .hljs-literal { color: #005cc5; }
   .editor-content .ProseMirror pre .hljs-comment { color: #6a737d; font-style: italic; }
-  .editor-content .ProseMirror pre .hljs-attr,
-  .editor-content .ProseMirror pre .hljs-attribute { color: #e36209; }
+  .editor-content .ProseMirror pre .hljs-attr, .editor-content .ProseMirror pre .hljs-attribute { color: #e36209; }
   .editor-content .ProseMirror pre .hljs-built_in { color: #6f42c1; }
   .editor-content .ProseMirror pre .hljs-variable { color: #e36209; }
   .editor-content .ProseMirror pre .hljs-property { color: #005cc5; }
   .editor-content .ProseMirror pre .hljs-punctuation { color: #24292e; }
-
-  .dark .editor-content .ProseMirror pre .hljs-keyword,
-  .dark .editor-content .ProseMirror pre .hljs-selector-tag,
-  .dark .editor-content .ProseMirror pre .hljs-title { color: #f97583; }
-  .dark .editor-content .ProseMirror pre .hljs-string,
-  .dark .editor-content .ProseMirror pre .hljs-title.class_,
-  .dark .editor-content .ProseMirror pre .hljs-title.function_ { color: #79b8ff; }
-  .dark .editor-content .ProseMirror pre .hljs-number,
-  .dark .editor-content .ProseMirror pre .hljs-literal { color: #79b8ff; }
+  .dark .editor-content .ProseMirror pre .hljs-keyword, .dark .editor-content .ProseMirror pre .hljs-selector-tag, .dark .editor-content .ProseMirror pre .hljs-title { color: #f97583; }
+  .dark .editor-content .ProseMirror pre .hljs-string, .dark .editor-content .ProseMirror pre .hljs-title.class_, .dark .editor-content .ProseMirror pre .hljs-title.function_ { color: #79b8ff; }
+  .dark .editor-content .ProseMirror pre .hljs-number, .dark .editor-content .ProseMirror pre .hljs-literal { color: #79b8ff; }
   .dark .editor-content .ProseMirror pre .hljs-comment { color: #6a737d; font-style: italic; }
-  .dark .editor-content .ProseMirror pre .hljs-attr,
-  .dark .editor-content .ProseMirror pre .hljs-attribute { color: #ffab70; }
+  .dark .editor-content .ProseMirror pre .hljs-attr, .dark .editor-content .ProseMirror pre .hljs-attribute { color: #ffab70; }
   .dark .editor-content .ProseMirror pre .hljs-built_in { color: #b392f0; }
   .dark .editor-content .ProseMirror pre .hljs-variable { color: #ffab70; }
   .dark .editor-content .ProseMirror pre .hljs-property { color: #79b8ff; }
   .dark .editor-content .ProseMirror pre .hljs-punctuation { color: #e1e4e8; }
-
-  .editor-content .ProseMirror ul,
-  .editor-content .ProseMirror ol {
-    padding-left: 1.5rem;
-    margin: 0.5rem 0;
-  }
-
-  .editor-content .ProseMirror li {
-    margin: 0.15rem 0;
-  }
-
-  .editor-content .ProseMirror ul[data-type="taskList"] {
-    list-style: none;
-    padding-left: 0;
-  }
-
-  .editor-content .ProseMirror ul[data-type="taskList"] li {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.5rem;
-  }
-
-  .editor-content .ProseMirror ul[data-type="taskList"] li label {
-    flex-shrink: 0;
-    margin-top: 0.25rem;
-  }
-
-  .editor-content .ProseMirror ul[data-type="taskList"] li input[type="checkbox"] {
-    cursor: pointer;
-    width: 1rem;
-    height: 1rem;
-    accent-color: #3b82f6;
-  }
-
-  .editor-content .ProseMirror ul[data-type="taskList"] li[data-checked="true"] > div > p {
-    text-decoration: line-through;
-    color: #94a3b8;
-  }
-
-  .editor-content .ProseMirror blockquote {
-    margin: 0.6rem 0;
-    padding-left: 0.9rem;
-    border-left: 3px solid #94a3b8;
-    color: #475569;
-  }
-
-  .dark .editor-content .ProseMirror blockquote {
-    color: #94a3b8;
-    border-color: #64748b;
-  }
-
-  .editor-content .ProseMirror hr {
-    border: none;
-    border-top: 1px solid #e2e8f0;
-    margin: 1rem 0;
-  }
-
-  .dark .editor-content .ProseMirror hr {
-    border-top-color: #334155;
-  }
-
-  .editor-content .ProseMirror a {
-    color: #2563eb;
-    text-decoration: underline;
-    cursor: pointer;
-  }
-
-  .editor-content .ProseMirror img {
-    max-width: 100%;
-    border-radius: 0.5rem;
-    margin: 0.75rem 0;
-  }
-
-  .editor-content .ProseMirror img.ProseMirror-selectednode {
-    outline: 3px solid #3b82f6;
-    outline-offset: 2px;
-  }
-
-  /* ProseMirror placeholder */
-  .editor-content .ProseMirror p.is-editor-empty:first-child::before {
-    content: attr(data-placeholder);
-    float: left;
-    color: #94a3b8;
-    pointer-events: none;
-    height: 0;
-    font-style: italic;
-  }
-
-  /* ── Format buttons ── */
-  .fmt-btn {
-    border: 1px solid transparent;
-    border-radius: 0.375rem;
-    padding: 0.2rem 0.45rem;
-    font-size: 0.78rem;
-    color: #475569;
-    background: transparent;
-    cursor: pointer;
-    font-family: inherit;
-    transition: all 0.15s;
-    line-height: 1.4;
-  }
-  .fmt-btn:hover {
-    background: #f1f5f9;
-    border-color: #cbd5e1;
-  }
+  .editor-content .ProseMirror ul, .editor-content .ProseMirror ol { padding-left: 1.5rem; margin: 0.5rem 0; }
+  .editor-content .ProseMirror li { margin: 0.15rem 0; }
+  .editor-content .ProseMirror ul[data-type="taskList"] { list-style: none; padding-left: 0; }
+  .editor-content .ProseMirror ul[data-type="taskList"] li { display: flex; align-items: flex-start; gap: 0.5rem; }
+  .editor-content .ProseMirror ul[data-type="taskList"] li label { flex-shrink: 0; margin-top: 0.25rem; }
+  .editor-content .ProseMirror ul[data-type="taskList"] li input[type="checkbox"] { cursor: pointer; width: 1rem; height: 1rem; accent-color: #3b82f6; }
+  .editor-content .ProseMirror ul[data-type="taskList"] li[data-checked="true"] > div > p { text-decoration: line-through; color: #94a3b8; }
+  .editor-content .ProseMirror blockquote { margin: 0.6rem 0; padding-left: 0.9rem; border-left: 3px solid #94a3b8; color: #475569; }
+  .dark .editor-content .ProseMirror blockquote { color: #94a3b8; border-color: #64748b; }
+  .editor-content .ProseMirror hr { border: none; border-top: 1px solid #e2e8f0; margin: 1rem 0; }
+  .dark .editor-content .ProseMirror hr { border-top-color: #334155; }
+  .editor-content .ProseMirror a { color: #2563eb; text-decoration: underline; cursor: pointer; }
+  .editor-content .ProseMirror img { max-width: 100%; border-radius: 0.5rem; margin: 0.75rem 0; }
+  .editor-content .ProseMirror img.ProseMirror-selectednode { outline: 3px solid #3b82f6; outline-offset: 2px; }
+  .editor-content .ProseMirror p.is-editor-empty:first-child::before { content: attr(data-placeholder); float: left; color: #94a3b8; pointer-events: none; height: 0; font-style: italic; }
+  .fmt-btn { border: 1px solid transparent; border-radius: 0.375rem; padding: 0.2rem 0.45rem; font-size: 0.78rem; color: #475569; background: transparent; cursor: pointer; font-family: inherit; transition: all 0.15s; line-height: 1.4; }
+  .fmt-btn:hover { background: #f1f5f9; border-color: #cbd5e1; }
   .dark .fmt-btn { color: #94a3b8; }
   .dark .fmt-btn:hover { background: #1e293b; border-color: #475569; }
-
-  /* ── Slash menu ── */
-  .slash-menu {
-    background: white;
-    border: 1px solid #e2e8f0;
-    border-radius: 0.75rem;
-    box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.1), 0 4px 10px -6px rgb(0 0 0 / 0.1);
-    padding: 0.4rem;
-    min-width: 220px;
-    max-height: 320px;
-    overflow-y: auto;
-  }
-  .dark .slash-menu {
-    background: #1e293b;
-    border-color: #334155;
-    box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.3);
-  }
-
-  .slash-list {
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
-  }
-
-  .slash-item {
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    padding: 0.45rem 0.6rem;
-    border-radius: 0.4rem;
-    font-size: 0.85rem;
-    cursor: pointer;
-    color: #334155;
-    transition: background 0.1s;
-  }
+  .slash-menu { background: white; border: 1px solid #e2e8f0; border-radius: 0.75rem; box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.1), 0 4px 10px -6px rgb(0 0 0 / 0.1); padding: 0.4rem; min-width: 220px; max-height: 320px; overflow-y: auto; }
+  .dark .slash-menu { background: #1e293b; border-color: #334155; box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.3); }
+  .slash-list { display: flex; flex-direction: column; gap: 1px; }
+  .slash-item { display: flex; align-items: center; gap: 0.6rem; padding: 0.45rem 0.6rem; border-radius: 0.4rem; font-size: 0.85rem; cursor: pointer; color: #334155; transition: background 0.1s; }
   .dark .slash-item { color: #cbd5e1; }
-  .slash-item:hover,
-  .slash-active {
-    background: #eff6ff;
-    color: #1d4ed8;
-  }
-  .dark .slash-item:hover,
-  .dark .slash-active {
-    background: #1e3a5f;
-    color: #93c5fd;
-  }
-
-  .slash-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 1.6rem;
-    height: 1.6rem;
-    border-radius: 0.3rem;
-    background: #f1f5f9;
-    font-size: 0.7rem;
-    font-weight: 700;
-    font-family: monospace;
-    flex-shrink: 0;
-  }
+  .slash-item:hover, .slash-active { background: #eff6ff; color: #1d4ed8; }
+  .dark .slash-item:hover, .dark .slash-active { background: #1e3a5f; color: #93c5fd; }
+  .slash-icon { display: inline-flex; align-items: center; justify-content: center; width: 1.6rem; height: 1.6rem; border-radius: 0.3rem; background: #f1f5f9; font-size: 0.7rem; font-weight: 700; font-family: monospace; flex-shrink: 0; }
   .dark .slash-icon { background: #334155; }
-
-  .slash-label {
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-  }
-  .slash-title {
-    font-weight: 600;
-    font-size: 0.85rem;
-  }
-  .slash-desc {
-    font-size: 0.7rem;
-    color: #94a3b8;
-  }
+  .slash-label { display: flex; flex-direction: column; min-width: 0; }
+  .slash-title { font-weight: 600; font-size: 0.85rem; }
+  .slash-desc { font-size: 0.7rem; color: #94a3b8; }
   .dark .slash-desc { color: #64748b; }
-
-  /* ── Image dialog tabs ── */
-  .img-tab {
-    padding: 0.3rem 0.9rem;
-    border-radius: 0.4rem;
-    font-size: 0.8rem;
-    font-weight: 500;
-    color: #64748b;
-    background: transparent;
-    border: 1px solid transparent;
-    cursor: pointer;
-    transition: all 0.12s;
-  }
-  .img-tab:hover {
-    background: #f1f5f9;
-  }
-  .img-tab-active {
-    background: #2563eb;
-    color: white;
-    border-color: #2563eb;
-  }
-  .img-tab-active:hover {
-    background: #1d4ed8;
-  }
+  .img-tab { padding: 0.3rem 0.9rem; border-radius: 0.4rem; font-size: 0.8rem; font-weight: 500; color: #64748b; background: transparent; border: 1px solid transparent; cursor: pointer; transition: all 0.12s; }
+  .img-tab:hover { background: #f1f5f9; }
+  .img-tab-active { background: #2563eb; color: white; border-color: #2563eb; }
+  .img-tab-active:hover { background: #1d4ed8; }
   .dark .img-tab { color: #94a3b8; }
   .dark .img-tab:hover { background: #1e293b; }
   .dark .img-tab-active { background: #3b82f6; color: white; border-color: #3b82f6; }
-
-  /* ── Details/summary ── */
-  details summary::marker {
-    font-size: 0.7rem;
-  }
+  details summary::marker { font-size: 0.7rem; }
 </style>
